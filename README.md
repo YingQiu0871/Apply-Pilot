@@ -34,8 +34,11 @@ Node 20 or later. (Recent npm versions refuse `npm i github:...` by default, so 
 export APPLY_PILOT_HOME=~/job-search          # your data folder, keep it private
 apply-pilot init --example pharma-m2-europe  # or: apply-pilot init (generic)
 # edit ~/job-search/profile.json: your facts, rubric, filters, search queries
-apply-pilot ui                               # dashboard on http://localhost:4321
+apply-pilot ui --open                        # dashboard + control panel on http://localhost:4321
+apply-pilot shortcut                         # optional: desktop icon, double-click to open the panel
 ```
+
+The control panel runs scans (career sites, LinkedIn), the follow-up check, the setup check and the Excel export, with live output. It only runs those local tasks; nothing in it sends email or submits applications. It listens on 127.0.0.1 and accepts requests only with a per-run token from its own page.
 
 Track an application:
 
@@ -63,7 +66,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 | Command | What it does |
 |---|---|
 | `init`, `doctor` | create and check the data folder |
-| `ui` | live dashboard: KPIs, timeline of recent replies, rejections and follow-ups, searchable list |
+| `ui`, `shortcut` | live dashboard and control panel (KPIs, timeline of replies, rejections and follow-ups, searchable list, buttons for scans/checks/export); `shortcut` puts a double-click launcher on the desktop (Windows .lnk, macOS .command, Linux .desktop) |
 | `add`, `status`, `note`, `list` | the tracker (`data/applications.md`), with duplicate detection by URL and by company + role |
 | `followups` | rows due a follow-up (`afterDays`, `maxFollowUps`, `skipAppliedBefore`), split by email vs portal |
 | `eval prompt / score / run` | rubric scoring with hard filters; works with an agent or with DeepSeek, OpenAI, OpenRouter, Ollama, Anthropic |

@@ -1,16 +1,43 @@
-// Read-only dashboard over the tracker. Serves http://localhost:PORT and pushes
-// a reload event (server-sent events) whenever the tracker file changes.
+// Dashboard and control panel over the tracker. Serves http://localhost:PORT,
+// pushes a reload event (server-sent events) when the tracker file changes, and
+// runs a fixed list of local tasks (scans, checks, exports) on request.
+//
+// The panel can only start the tasks in TASKS below. None of them sends email,
+// submits a form or writes to an external site. Requests must carry the
+// per-run token and come from this host, so other web pages cannot trigger them.
+import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
-import { readFileSync, watch } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { localDate } from '../config.mjs';
 import { followUpStatus } from '../followups.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const CLI = resolve(HERE, '..', '..', 'bin', 'apply-pilot.mjs');
 
-export function serve({ trackerFile, profile, port = 4321, host = '127.0.0.1' }) {
+const TASKS = {
+  doctor: { label: 'doctor', args: () => ['doctor'] },
+  portals: { label: 'scan portals', args: () => ['scan', 'portals', '--pipeline'] },
+  linkedin: { label: 'linkedin scan', args: () => ['linkedin', 'scan', '--pipeline'] },
+  followups: { label: 'followups', args: () => ['followups'] },
+  export: { label: 'export xlsx', args: (p) => ['export', 'xlsx', join(p.output, `applications-${localDate()}.xlsx`)] },
+};
+
+export function openInBrowser(url) {
+  const cmd = process.platform === 'win32' ? ['cmd', ['/c', 'start', '""', url]] : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+  spawn(cmd[0], cmd[1], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
+}
+
+function openFolder(dir) {
+  const cmd = process.platform === 'win32' ? 'explorer' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+  spawn(cmd, [dir], { detached: true, stdio: 'ignore' }).unref();
+}
+
+export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.0.1', open = false }) {
+  const token = randomBytes(16).toString('hex');
   const data = () => {
     const today = localDate();
     return new Tracker(trackerFile).rows().map((r) => {
@@ -24,20 +51,50 @@ export function serve({ trackerFile, profile, port = 4321, host = '127.0.0.1' })
   };
 
   const clients = new Set();
+  const push = (event, payload) => { for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`); };
   let timer = null;
   watch(dirname(trackerFile), (_e, name) => {
     if (name && String(name) !== basename(trackerFile)) return;
     clearTimeout(timer);
-    timer = setTimeout(() => { for (const res of clients) res.write('data: changed\n\n'); }, 300);
+    timer = setTimeout(() => push('changed', {}), 300);
   });
+
+  let running = null;
+  const runTask = (id) => {
+    if (running) return { ok: false, error: `"${running}" is still running` };
+    const task = TASKS[id];
+    if (!task) return { ok: false, error: 'unknown task' };
+    running = task.label;
+    push('task', { state: 'start', task: task.label, at: new Date().toISOString() });
+    const child = spawn(process.execPath, [CLI, ...task.args(paths)], { env: { ...process.env, APPLY_PILOT_HOME: paths.home }, windowsHide: true });
+    const line = (chunk) => String(chunk).split(/\r?\n/).filter(Boolean).forEach((text) => push('log', { text }));
+    child.stdout.on('data', line);
+    child.stderr.on('data', line);
+    child.on('close', (code) => { push('task', { state: 'end', task: task.label, code }); running = null; });
+    return { ok: true };
+  };
+
+  const latestInbox = () => {
+    if (!existsSync(paths.inbox)) return [];
+    return readdirSync(paths.inbox).filter((f) => f.endsWith('.json'))
+      .map((f) => ({ file: f, mtime: statSync(join(paths.inbox, f)).mtimeMs })).sort((a, b) => b.mtime - a.mtime).slice(0, 8)
+      .map(({ file, mtime }) => ({ file, at: new Date(mtime).toISOString() }));
+  };
+
+  const allowed = (req) => {
+    const hostHeader = String(req.headers.host || '');
+    const origin = String(req.headers.origin || '');
+    const local = new RegExp(`^(localhost|127\\.0\\.0\\.1):${port}$`);
+    return local.test(hostHeader) && (!origin || new RegExp(`^http://(localhost|127\\.0\\.0\\.1):${port}$`).test(origin)) && req.headers['x-token'] === token;
+  };
+
+  const json = (res, code, body) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); };
 
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try {
-        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-        res.end(JSON.stringify({ generated: new Date().toISOString(), followUpDays: profile.followUp.afterDays, rows: data() }));
-      } catch (err) { res.writeHead(500).end(String(err)); }
+      try { json(res, 200, { generated: new Date().toISOString(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS) }); }
+      catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
     if (pathname === '/events') {
@@ -47,13 +104,35 @@ export function serve({ trackerFile, profile, port = 4321, host = '127.0.0.1' })
       req.on('close', () => clients.delete(res));
       return;
     }
+    if (pathname.startsWith('/api/') && req.method === 'POST') {
+      if (!allowed(req)) return json(res, 403, { ok: false, error: 'forbidden' });
+      if (pathname === '/api/run') {
+        let body = '';
+        req.on('data', (c) => { body += c; if (body.length > 1e4) req.destroy(); });
+        req.on('end', () => { try { json(res, 200, runTask(JSON.parse(body || '{}').task)); } catch { json(res, 400, { ok: false, error: 'bad request' }); } });
+        return;
+      }
+      if (pathname === '/api/open-data') { mkdirSync(paths.home, { recursive: true }); openFolder(paths.home); return json(res, 200, { ok: true }); }
+      if (pathname === '/api/quit') { json(res, 200, { ok: true }); setTimeout(() => process.exit(0), 200); return; }
+      return json(res, 404, { ok: false });
+    }
     if (pathname === '/' || pathname === '/index.html') {
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
-      res.end(readFileSync(join(HERE, 'index.html')));
+      res.end(readFileSync(join(HERE, 'index.html'), 'utf8').replace('__TOKEN__', token));
       return;
     }
     res.writeHead(404).end();
   });
-  server.listen(port, host, () => console.log(`apply-pilot dashboard: http://localhost:${port}  (tracker: ${trackerFile})`));
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`port ${port} is already in use: apply-pilot is probably running, opening it`);
+      if (open) openInBrowser(`http://localhost:${port}`);
+      setTimeout(() => process.exit(0), 500);
+    } else throw err;
+  });
+  server.listen(port, host, () => {
+    console.log(`apply-pilot panel: http://localhost:${port}  (tracker: ${trackerFile})`);
+    if (open) openInBrowser(`http://localhost:${port}`);
+  });
   return server;
 }

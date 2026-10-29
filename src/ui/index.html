@@ -67,6 +67,13 @@ h2 { font-size: 15px; margin: 0 0 10px; }
 .k { font-size: 12px; padding: 0 6px; border-radius: 999px; border: 1px solid currentColor; text-align: center; white-space: nowrap; }
 .k.rejected { color: var(--rejected); } .k.reply { color: var(--responded); } .k.interview { color: var(--interview); }
 .k.sent { color: var(--applied); } .k.followup { color: var(--warn); } .k.note { color: var(--muted); }
+.btn { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.quiet { border-color: var(--line); color: var(--muted); }
+.ctlstate { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+.log { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 12px/1.45 ui-monospace, Consolas, monospace; max-height: 220px; overflow: auto; white-space: pre-wrap; margin: 0; display: none; }
+.inbox { font-size: 12px; color: var(--muted); margin-top: 8px; }
 .empty { padding: 28px; text-align: center; color: var(--muted); }
 .err { background: var(--warnbg); color: var(--warn); padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; display: none; }
 @media (max-width: 760px) {
@@ -86,6 +93,13 @@ h2 { font-size: 15px; margin: 0 0 10px; }
   <div class="err" id="err"></div>
   <div class="kpis" id="kpis"></div>
   <section class="panel">
+    <h2 id="ctlTitle"></h2>
+    <div class="bar" id="ctl"></div>
+    <div class="ctlstate" id="ctlState"></div>
+    <pre class="log" id="log"></pre>
+    <div class="inbox" id="inbox"></div>
+  </section>
+  <section class="panel">
     <h2 id="feedTitle"></h2>
     <div class="bar" id="feedctl"></div>
     <div class="feed" id="feed"></div>
@@ -101,6 +115,13 @@ h2 { font-size: 15px; margin: 0 0 10px; }
 <script>
 // Language: ?lang=zh|en, otherwise the browser language.
 const LANG = new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+const TOKEN = '__TOKEN__';
+const CTL = {
+  zh: { title: '控制面板', portals: '扫描企业招聘系统', linkedin: '扫描领英', followups: '查看待跟进', doctor: '自检', export: '导出 Excel', data: '打开数据文件夹', quit: '退出',
+    idle: '空闲。扫描结果会写入 pipeline.md 和 inbox/，不会发送或提交任何东西。', running: (t) => `正在运行：${t}…`, done: (t, c) => `${t} 已结束（退出码 ${c}）`, inbox: '最近的扫描文件：', bye: '已退出，可以关闭这个页面。' },
+  en: { title: 'Control panel', portals: 'Scan career sites', linkedin: 'Scan LinkedIn', followups: 'Follow-ups due', doctor: 'Check setup', export: 'Export Excel', data: 'Open data folder', quit: 'Quit',
+    idle: 'Idle. Scans write to pipeline.md and inbox/; nothing is sent or submitted.', running: (t) => `Running: ${t}…`, done: (t, c) => `${t} finished (exit ${c})`, inbox: 'Latest scan files:', bye: 'Stopped. You can close this page.' },
+}[LANG === 'zh' ? 'zh' : 'en'];
 const T = {
   zh: { title: '申请进度', feed: '最近动态', list: '全部申请', search: '搜索公司、岗位、联系人或备注…', rows: '行', updated: '更新于', connecting: '连接中…',
     status: { Applied: '已投递', Responded: '有回复', Interview: '面试', Offer: 'Offer', Rejected: '被拒', Evaluated: '待决定', SKIP: '跳过', Discarded: '已关闭' },
@@ -140,6 +161,27 @@ try { const s = JSON.parse(localStorage.getItem('apply-pilot-ui') || '{}'); Obje
 const save = () => { try { localStorage.setItem('apply-pilot-ui', JSON.stringify({ filter: state.filter, feedDays: state.feedDays })); } catch {} };
 
 document.getElementById('title').textContent = T.title;
+document.getElementById('ctlTitle').textContent = CTL.title;
+document.getElementById('ctl').innerHTML =
+  ['portals', 'linkedin', 'followups', 'doctor', 'export'].map((t) => `<button class="btn" data-task="${t}">${CTL[t]}</button>`).join('') +
+  '<span class="sep"></span>' +
+  `<button class="btn quiet" data-act="open-data">${CTL.data}</button><button class="btn quiet" data-act="quit">${CTL.quit}</button>`;
+let running = null;
+const logEl = document.getElementById('log');
+const setRunning = (task) => {
+  running = task;
+  document.querySelectorAll('[data-task]').forEach((b) => { b.disabled = Boolean(task); });
+  document.getElementById('ctlState').textContent = task ? CTL.running(task) : CTL.idle;
+};
+const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-token': TOKEN }, body: JSON.stringify(body || {}) }).then((r) => r.json());
+const appendLog = (text) => {
+  logEl.style.display = 'block';
+  logEl.textContent += `${text}\n`;
+  const lines = logEl.textContent.split('\n');
+  if (lines.length > 400) logEl.textContent = lines.slice(-400).join('\n');
+  logEl.scrollTop = logEl.scrollHeight;
+};
+setRunning(null);
 document.getElementById('feedTitle').textContent = T.feed;
 document.getElementById('listTitle').textContent = T.list;
 document.getElementById('q').placeholder = T.search;
@@ -200,6 +242,9 @@ async function load() {
     const data = await res.json();
     state.rows = data.rows;
     followDays = data.followUpDays;
+    if (data.running !== running) setRunning(data.running);
+    document.getElementById('inbox').textContent = data.inbox?.length
+      ? `${CTL.inbox} ${data.inbox.map((f) => `${f.file} (${new Date(f.at).toLocaleString()})`).join(' · ')}` : '';
     document.getElementById('updated').textContent = `${state.rows.length} ${T.rows} · ${T.updated} ${new Date(data.generated).toLocaleTimeString()}`;
     document.getElementById('err').style.display = 'none';
     render();
@@ -208,7 +253,20 @@ async function load() {
   }
 }
 
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
+  const tb = e.target.closest('[data-task]');
+  if (tb) {
+    logEl.textContent = '';
+    const r = await post('/api/run', { task: tb.dataset.task });
+    if (!r.ok) appendLog(`! ${r.error}`);
+    return;
+  }
+  const ab = e.target.closest('[data-act]');
+  if (ab) {
+    if (ab.dataset.act === 'quit') { await post('/api/quit'); document.getElementById('ctlState').textContent = CTL.bye; document.getElementById('dot').classList.remove('on'); es.close(); }
+    else await post(`/api/${ab.dataset.act}`);
+    return;
+  }
   const db = e.target.closest('[data-days]');
   if (db) { state.feedDays = Number(db.dataset.days); save(); render(); return; }
   const kb = e.target.closest('[data-kind]');
@@ -231,7 +289,13 @@ document.getElementById('q').addEventListener('input', (e) => { state.q = e.targ
 const es = new EventSource('/events');
 es.onopen = () => document.getElementById('dot').classList.add('on');
 es.onerror = () => document.getElementById('dot').classList.remove('on');
-es.onmessage = () => load();
+es.addEventListener('changed', () => load());
+es.addEventListener('log', (m) => appendLog(JSON.parse(m.data).text));
+es.addEventListener('task', (m) => {
+  const t = JSON.parse(m.data);
+  if (t.state === 'start') { setRunning(t.task); appendLog(`$ ${t.task}`); }
+  else { setRunning(null); document.getElementById('ctlState').textContent = CTL.done(t.task, t.code); load(); }
+});
 setInterval(load, 60000);
 load();
 </script>

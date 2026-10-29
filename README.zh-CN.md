@@ -41,8 +41,11 @@ npm install playwright exceljs                # 可选：领英扫描、导出 E
 export APPLY_PILOT_HOME=~/job-search          # 你的数据目录，不要公开
 apply-pilot init --example pharma-m2-europe   # 或 apply-pilot init（通用模板）
 # 编辑 profile.json：你的真实经历、评分维度、过滤条件、搜索关键词
-apply-pilot ui                                # 打开 http://localhost:4321
+apply-pilot ui --open                         # 打开看板和控制面板 http://localhost:4321
+apply-pilot shortcut                          # 可选：在桌面生成图标，双击即可打开控制面板
 ```
+
+控制面板上可以一键运行：扫描企业招聘系统、扫描领英、查看待跟进、自检、导出 Excel，并实时显示输出。面板只跑这些本地任务，不会发邮件，也不会提交申请；它只监听本机，必须带上页面自己的一次性令牌才接受请求。
 
 常用命令：
 

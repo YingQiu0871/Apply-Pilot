@@ -32,7 +32,8 @@ Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applic
 
   init [--example NAME]                 create the data directory (examples: ${['generic', 'pharma-m2-europe'].join(', ')})
   doctor                                check setup (node, profile, tracker, optional tools, API keys)
-  ui [--port 4321]                      live dashboard over the tracker
+  ui [--port 4321] [--open]             dashboard + control panel (scans, checks, export) in your browser
+  shortcut [--dir DIR]                  put a double-click launcher for the panel on your desktop
   list [--status S] [--q TEXT]          print tracker rows
   add --company C --role R [--url U] [--score N] [--status S] [--notes N] [--force]
   status NUM STATUS [--note TEXT]       change status and append a dated note
@@ -47,7 +48,7 @@ Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applic
   docx list FILE.docx                   show paragraph indices of a template
   docx build TEMPLATE OUT CHANGES.json  fill paragraphs, keep everything else identical
   scan portals [--only NAME] [--pipeline [FILE]]  company career sites: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio
-  linkedin login | linkedin scan [--jobs|--posts]
+  linkedin login | linkedin scan [--jobs|--posts] [--pipeline]
   triage SCAN.json [--json OUT] [--pipeline [FILE]]   new candidates, minus tracked and filtered; optionally append to data/pipeline.md
   merge-additions [DIR] [--dry-run]     merge batch TSV tracker additions (default DIR: batch/tracker-additions)
   export xlsx OUT.xlsx                  tracker to a fresh spreadsheet
@@ -86,13 +87,19 @@ async function main() {
         let has = true; try { await import(mod); } catch { has = false; }
         ok(has, `${mod} ${has ? 'installed' : 'not installed (optional)'}`);
       }
-      ok(Boolean(findCareerOps()), `career-ops ${findCareerOps() || 'not found (optional)'}`);
+      if (findCareerOps()) ok(true, `career-ops ${findCareerOps()} (optional companion)`);
       for (const k of ['DEEPSEEK_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY']) if (process.env[k]) ok(true, `${k} set`);
       break;
     }
     case 'ui': {
       const { serve } = await import('../src/ui/server.mjs');
-      serve({ trackerFile: p.tracker, profile, port: Number(opt.port || process.env.PORT || 4321) });
+      serve({ trackerFile: p.tracker, profile, paths: p, port: Number(opt.port || process.env.PORT || 4321), open: Boolean(opt.open) });
+      break;
+    }
+    case 'shortcut': {
+      const { createShortcut } = await import('../src/shortcut.mjs');
+      console.log(`created ${createShortcut({ home, cli: join(PKG, 'bin', 'apply-pilot.mjs'), port: Number(opt.port || 4321), dir: opt.dir })}`);
+      console.log('Double-click it to start the panel and open it in your browser. Use the panel\'s Quit button to stop it.');
       break;
     }
     case 'list': {
@@ -182,6 +189,11 @@ async function main() {
         const res = await li.scan(profile, home, { only: opt.jobs ? 'jobs' : opt.posts ? 'posts' : undefined });
         if (res.requiresLogin) { console.log('LOGIN_REQUIRED: run `apply-pilot linkedin login` and sign in yourself'); process.exitCode = 2; break; }
         console.log(`saved ${li.saveScan(res, p.inbox)}`);
+        if (opt.pipeline) {
+          const { appendPipeline } = await import('../src/additions.mjs');
+          const t = triage(res, tracker().rows(), profile);
+          console.log(`triage: ${t.fresh.length} new, ${t.tracked.length} already tracked; ${appendPipeline(join(home, 'data', 'pipeline.md'), t.fresh)} appended to data/pipeline.md`);
+        }
         break;
       }
       throw new Error('linkedin login|scan');
