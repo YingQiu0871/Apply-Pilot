@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { localDate } from '../config.mjs';
 import { followUpStatus } from '../followups.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
+import { AGENT_TASKS, detectAgents, launchInteractive, readAgent, saveAgent, taskCommand } from '../agents.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI = resolve(HERE, '..', '..', 'bin', 'apply-pilot.mjs');
@@ -60,13 +61,26 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
   });
 
   let running = null;
+  let agents = detectAgents();
   const runTask = (id) => {
     if (running) return { ok: false, error: `"${running}" is still running` };
-    const task = TASKS[id];
-    if (!task) return { ok: false, error: 'unknown task' };
-    running = task.label;
-    push('task', { state: 'start', task: task.label, at: new Date().toISOString() });
-    const child = spawn(process.execPath, [CLI, ...task.args(paths)], { env: { ...process.env, APPLY_PILOT_HOME: paths.home }, windowsHide: true });
+    let label, cmd, args, shell = false;
+    if (TASKS[id]) {
+      ({ label } = TASKS[id]);
+      cmd = process.execPath; args = [CLI, ...TASKS[id].args(paths)];
+    } else if (AGENT_TASKS[id]) {
+      const agent = readAgent(paths.home);
+      if (!agent) return { ok: false, error: 'choose an AI agent first' };
+      const c = taskCommand(agent, id, { home: paths.home, cli: CLI });
+      if (!c) return { ok: false, error: `${agent} cannot run this task here (install opencode or use Claude/Codex)` };
+      label = `${AGENT_TASKS[id].label} · ${agent}`;
+      ({ cmd, args, shell } = c);
+      if (shell) args = args.map((a) => (/\s/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a));
+    } else return { ok: false, error: 'unknown task' };
+    running = label;
+    push('task', { state: 'start', task: label, at: new Date().toISOString() });
+    const child = spawn(cmd, args, { cwd: paths.home, shell, env: { ...process.env, APPLY_PILOT_HOME: paths.home }, windowsHide: true });
+    child.on('error', (e) => { push('log', { text: `! ${e.message}` }); });
     const line = (chunk) => String(chunk).split(/\r?\n/).filter(Boolean).forEach((text) => push('log', { text }));
     child.stdout.on('data', line);
     child.stderr.on('data', line);
@@ -93,7 +107,7 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try { json(res, 200, { generated: new Date().toISOString(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS) }); }
+      try { json(res, 200, { generated: new Date().toISOString(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home) }); }
       catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
@@ -106,12 +120,15 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
     }
     if (pathname.startsWith('/api/') && req.method === 'POST') {
       if (!allowed(req)) return json(res, 403, { ok: false, error: 'forbidden' });
-      if (pathname === '/api/run') {
+      const withBody = (fn) => {
         let body = '';
         req.on('data', (c) => { body += c; if (body.length > 1e4) req.destroy(); });
-        req.on('end', () => { try { json(res, 200, runTask(JSON.parse(body || '{}').task)); } catch { json(res, 400, { ok: false, error: 'bad request' }); } });
-        return;
-      }
+        req.on('end', () => { try { json(res, 200, fn(JSON.parse(body || '{}'))); } catch (e) { json(res, 400, { ok: false, error: e.message || 'bad request' }); } });
+      };
+      if (pathname === '/api/run') return withBody((b) => runTask(b.task));
+      if (pathname === '/api/agent/select') return withBody((b) => ({ ok: true, agent: saveAgent(paths.home, b.agent) }));
+      if (pathname === '/api/agent/launch') return withBody((b) => ({ ok: launchInteractive(b.agent, { home: paths.home }) }));
+      if (pathname === '/api/agent/refresh') { agents = detectAgents(); return json(res, 200, { ok: true, agents }); }
       if (pathname === '/api/open-data') { mkdirSync(paths.home, { recursive: true }); openFolder(paths.home); return json(res, 200, { ok: true }); }
       if (pathname === '/api/quit') { json(res, 200, { ok: true }); setTimeout(() => process.exit(0), 200); return; }
       return json(res, 404, { ok: false });

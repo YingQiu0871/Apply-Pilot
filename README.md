@@ -66,6 +66,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 | Command | What it does |
 |---|---|
 | `init`, `doctor` | create and check the data folder |
+| `agent` | choose the AI agent to pair with (Claude Code, Codex CLI, DeepSeek); the panel's AI page opens it in a terminal or runs delegated tasks that only write to `output/` |
 | `ui`, `shortcut` | live dashboard and control panel (KPIs, timeline of replies, rejections and follow-ups, searchable list, buttons for scans/checks/export); `shortcut` puts a double-click launcher on the desktop (Windows .lnk, macOS .command, Linux .desktop) |
 | `add`, `status`, `note`, `list` | the tracker (`data/applications.md`), with duplicate detection by URL and by company + role |
 | `followups` | rows due a follow-up (`afterDays`, `maxFollowUps`, `skipAppliedBefore`), split by email vs portal |

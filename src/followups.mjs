@@ -7,15 +7,18 @@
 import { localDate } from './config.mjs';
 import { events, lastActivity } from './tracker.mjs';
 
-const PORTAL_RE = /workday|icims|successfactors|teamtailor|workable|smartrecruiters|greenhouse|lever\.co|taleo|career site|careers? portal|官网|网申|abg/i;
-const EMAIL_RE = /mailbox|e-?mail|邮箱|@[a-z0-9.-]+\.[a-z]{2,}/i;
+const PORTAL_RE = /workday|icims|successfactors|teamtailor|workable|smartrecruiters|greenhouse|lever\.co|taleo|eightfold|phenom|personio|career site|careers?[ -]?(portal|site|page)|jobs\.[a-z0-9-]+\.(com|fr|de)|myworkdayjobs|easy apply|candidature en ligne|官网|网申|\babg\b/i;
+// "applied with my university address" is not an email application, so look
+// for a recipient: an address after sent/to/à/发送至, or an explicit email send.
+const EMAIL_RE = /(sent|emailed|envoy[ée]|发送至|发至|to|à)\s*[^;]{0,40}@[a-z0-9.-]+\.[a-z]{2,}|\bemailed\b|e-?mail (sent|application)|邮件投递|发送(给|至)/i;
 
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 
+/** How the application went out: a person to write to ("email") or a portal. */
 export function channelOf(row) {
   const notes = String(row.notes || '');
-  if (EMAIL_RE.test(notes) && !/via (abg|workday|icims)/i.test(notes)) return 'email';
-  return PORTAL_RE.test(notes) ? 'portal' : 'unknown';
+  if (PORTAL_RE.test(`${notes} ${row.url || ''}`)) return EMAIL_RE.test(notes) && !/workday|icims|successfactors|myworkdayjobs/i.test(notes) ? 'email' : 'portal';
+  return EMAIL_RE.test(notes) ? 'email' : 'unknown';
 }
 
 export function followUpStatus(row, rules, today = localDate()) {

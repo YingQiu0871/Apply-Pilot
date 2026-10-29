@@ -62,6 +62,10 @@ apply-pilot jd URL --out jd.txt               # 抓取完整 JD
 apply-pilot keywords report.md --cv cv.md     # 检查 CV 覆盖了 JD 的哪些关键词
 ```
 
+## AI 助手
+
+控制面板的「AI 助手」页可以选择搭配 Claude Code、Codex 或 DeepSeek：一键在终端中打开它（工作目录就是你的数据目录），或让它代跑「评估新岗位」「起草跟进邮件」两项任务。这些任务只把结果写到 `output/`，不会发送或提交任何东西。命令行：`apply-pilot agent claude|codex|deepseek`。
+
 ## 安全原则
 
 - 不会自动发邮件，也不会自动提交申请。agent 必须先把内容给你看，得到你的明确同意后才能发送或提交（见 [AGENTS.md](AGENTS.md)）。

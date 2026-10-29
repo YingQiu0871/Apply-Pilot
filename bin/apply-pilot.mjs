@@ -42,6 +42,8 @@ Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applic
   eval prompt JD.txt                    print the scoring prompt for your agent to answer
   eval score ANSWER.json [--jd JD.txt]  weighted score from the agent's JSON answer
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
+  eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
+  agent [claude|codex|deepseek]         show or choose the AI agent the panel pairs with
   jd URL [--out FILE] [--browser] [--json]   fetch a job description (ATS APIs, page text, optional browser)
   keywords REPORT.md [--cv cv.md] [--json]   which "## Keywords extracted" items your CV covers
   lint FILE...                          plain-writing check for letters and emails
@@ -94,6 +96,15 @@ async function main() {
     case 'ui': {
       const { serve } = await import('../src/ui/server.mjs');
       serve({ trackerFile: p.tracker, profile, paths: p, port: Number(opt.port || process.env.PORT || 4321), open: Boolean(opt.open) });
+      break;
+    }
+    case 'agent': {
+      const { detectAgents, readAgent, saveAgent } = await import('../src/agents.mjs');
+      if (pos[0]) console.log(`selected ${saveAgent(home, pos[0])}`);
+      const sel = readAgent(home);
+      for (const a of Object.values(detectAgents())) {
+        console.log(`${a.id === sel ? '●' : '○'} ${a.label.padEnd(12)} ${a.ready ? 'ready' : 'not set up'}${a.cli ? `  cli: ${a.cli}` : ''}${a.apiKey === null ? '' : `  api key: ${a.apiKey ? 'set' : 'missing'}`}`);
+      }
       break;
     }
     case 'shortcut': {
@@ -163,7 +174,35 @@ async function main() {
         }
         break;
       }
-      throw new Error('eval prompt|score|run');
+      if (sub === 'pipeline') {
+        // Evaluate pending "- [ ] url | company | role" lines of data/pipeline.md through a model API.
+        const { fetchJd } = await import('../src/jd.mjs');
+        const pipe = join(home, 'data', 'pipeline.md');
+        const pending = existsSync(pipe) ? readFileSync(pipe, 'utf8').split(/\r?\n/).filter((l) => /^- \[ \] https?:\/\//.test(l)) : [];
+        const items = pending.slice(-Number(opt.limit || 10)).reverse().map((l) => {
+          const [url, company = '', role = ''] = l.replace(/^- \[ \] /, '').split(' | ').map((s) => s.trim());
+          return { url, company, role };
+        });
+        const results = [];
+        for (const it of items) {
+          try {
+            const jd = await fetchJd(it.url, { browser: Boolean(opt.browser) });
+            const r = await evaluateText(profile, `${it.company}\n${it.role}\n\n${jd.text}`, { provider: opt.provider || 'deepseek', model: opt.model, baseUrl: opt['base-url'] });
+            results.push({ ...it, ...r });
+            console.log(`${r.score100}/100 ${r.decision}\t${it.company} | ${it.role}`);
+          } catch (e) { results.push({ ...it, error: e.message }); console.log(`ERROR\t${it.company} | ${it.role}: ${e.message}`); }
+        }
+        mkdirSync(p.output, { recursive: true });
+        const base = join(p.output, `agent-evaluation-${new Date().toLocaleDateString('sv-SE')}`);
+        writeFileSync(`${base}.json`, JSON.stringify(results, null, 2));
+        const md = ['| Company | Role | Score | Decision | Main gap | URL |', '|---|---|---|---|---|---|',
+          ...results.map((r) => `| ${r.company} | ${r.role} | ${r.score100 ?? '–'} | ${r.decision || r.error || ''} | ${(r.gaps || [])[0] || ''} | ${r.url} |`),
+          '', ...results.filter((r) => r.summary).map((r) => `**${r.company} — ${r.role}**: ${r.summary}`)].join('\n');
+        writeFileSync(`${base}.md`, `${md}\n`);
+        console.log(`${results.length} evaluated → ${base}.md`);
+        break;
+      }
+      throw new Error('eval prompt|score|run|pipeline');
     }
     case 'lint': {
       let bad = 0;

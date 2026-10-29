@@ -6,297 +6,544 @@
 <title>apply-pilot</title>
 <style>
 :root {
-  --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #667085; --line: #e4e7ec;
-  --accent: #2f6fde; --chip: #eef2f8;
-  --applied: #2f6fde; --responded: #0f8a5f; --interview: #8a4fd8; --rejected: #c2410c;
-  --evaluated: #7a6a00; --skip: #98a2b3; --warn: #b54708; --warnbg: #fff4e5;
+  --bg: #f5f6f8; --surface: #ffffff; --surface-2: #f0f2f5; --text: #18202b; --muted: #6b7686; --faint: #98a1ae; --line: #e3e6eb;
+  --accent: #3b6cf0; --accent-soft: #e8eefd; --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
+  --applied: #3b6cf0; --responded: #12875e; --interview: #7c4ddb; --rejected: #c4431b; --evaluated: #9a7a00; --skip: #98a1ae; --warn: #b8560b;
+  --applied-bg: #e8eefd; --responded-bg: #e3f5ec; --interview-bg: #efe8fb; --rejected-bg: #fbeae4; --evaluated-bg: #f8f1d8; --skip-bg: #eef0f3; --warn-bg: #fdf0e3;
+  --radius: 12px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #12151b; --panel: #1b2028; --text: #e6e9ef; --muted: #98a2b3; --line: #2b313c;
-    --accent: #6ea0ff; --chip: #252b36;
-    --applied: #6ea0ff; --responded: #3ccf91; --interview: #b48cff; --rejected: #ff8a5c;
-    --evaluated: #e0c84a; --skip: #6b7280; --warn: #ffb54d; --warnbg: #3a2a12;
+    --bg: #0f1218; --surface: #171b23; --surface-2: #1e232d; --text: #e7eaf0; --muted: #9aa3b2; --faint: #6e7786; --line: #2a303b;
+    --accent: #7aa2ff; --accent-soft: #1f2a44; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    --applied: #7aa2ff; --responded: #4cd39a; --interview: #b597ff; --rejected: #ff8c66; --evaluated: #e8cc5a; --skip: #7d8696; --warn: #ffb35c;
+    --applied-bg: #1f2a44; --responded-bg: #173528; --interview-bg: #2a2244; --rejected-bg: #3a2119; --evaluated-bg: #353016; --skip-bg: #232831; --warn-bg: #3a2a14;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #171b23; --surface-2: #1e232d; --text: #e7eaf0; --muted: #9aa3b2; --faint: #6e7786; --line: #2a303b;
+  --accent: #7aa2ff; --accent-soft: #1f2a44; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  --applied: #7aa2ff; --responded: #4cd39a; --interview: #b597ff; --rejected: #ff8c66; --evaluated: #e8cc5a; --skip: #7d8696; --warn: #ffb35c;
+  --applied-bg: #1f2a44; --responded-bg: #173528; --interview-bg: #2a2244; --rejected-bg: #3a2119; --evaluated-bg: #353016; --skip-bg: #232831; --warn-bg: #3a2a14;
+}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text);
-  font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
-.wrap { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
-header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-h1 { font-size: 22px; margin: 0; }
-.live { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--skip); }
-.dot.on { background: var(--responded); }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; text-align: left; color: inherit; font: inherit; }
-.kpi:hover, .kpi.sel { border-color: var(--accent); }
-.kpi .n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.kpi .l { color: var(--muted); font-size: 12px; }
-.bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-.chip { border: 1px solid var(--line); background: var(--chip); color: var(--text); border-radius: 999px; padding: 4px 12px; cursor: pointer; font: inherit; font-size: 13px; }
-.chip.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
-input[type=search] { flex: 1 1 220px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; }
-.count { color: var(--muted); font-size: 12px; }
-.list { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.row { display: grid; grid-template-columns: 52px 1.3fr 2fr 70px 92px 96px; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); align-items: start; cursor: pointer; }
-.row:first-child { border-top: 0; }
-.row.head { cursor: default; color: var(--muted); font-size: 12px; background: var(--chip); }
-.row:not(.head):hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
-.num { color: var(--muted); font-variant-numeric: tabular-nums; }
-.co { font-weight: 600; overflow-wrap: anywhere; }
-.role { overflow-wrap: anywhere; }
-.latest { color: var(--muted); font-size: 12px; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.score { font-variant-numeric: tabular-nums; }
-.st { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
-.st.Applied { color: var(--applied); } .st.Responded { color: var(--responded); } .st.Interview, .st.Offer { color: var(--interview); }
-.st.Rejected { color: var(--rejected); } .st.Evaluated, .st.Consider { color: var(--evaluated); } .st.SKIP, .st.Discarded { color: var(--skip); }
-.age { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.55 "Inter", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* layout */
+.app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+.side { position: sticky; top: 0; height: 100vh; padding: 20px 14px; border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 4px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 10px 18px; font-weight: 650; font-size: 15px; }
+.logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+.nav { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--muted); cursor: pointer; border: 0; background: none; text-align: left; width: 100%; }
+.nav:hover { background: var(--surface-2); color: var(--text); }
+.nav.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.nav svg { width: 17px; height: 17px; flex: none; }
+.nav .badge { margin-left: auto; font-size: 11px; font-weight: 600; padding: 0 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.nav.on .badge { background: var(--surface); color: var(--accent); }
+.nav .badge.warn { background: var(--warn-bg); color: var(--warn); }
+.side-foot { margin-top: auto; padding: 10px; font-size: 12px; color: var(--muted); display: grid; gap: 8px; }
+.live { display: flex; align-items: center; gap: 7px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--skip); }
+.dot.on { background: var(--responded); box-shadow: 0 0 0 3px color-mix(in srgb, var(--responded) 20%, transparent); }
+.mini { display: flex; gap: 6px; }
+.mini button { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 2px 8px; cursor: pointer; font-size: 12px; color: var(--muted); }
+
+main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.page-head h1 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+.page-head p { margin: 4px 0 0; color: var(--muted); }
+.view { display: none; }
+.view.on { display: block; }
+
+/* cards */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 6px; }
+.card-h h2 { margin: 0; font-size: 14px; font-weight: 620; }
+.card-h .link { font-size: 12px; color: var(--accent); cursor: pointer; background: none; border: 0; }
+.card-b { padding: 6px 18px 16px; }
+.grid { display: grid; gap: 16px; }
+.kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 16px; }
+.kpi { padding: 16px 18px; cursor: pointer; text-align: left; border: 1px solid var(--line); transition: border-color .15s, transform .15s; }
+.kpi:hover { border-color: var(--accent); transform: translateY(-1px); }
+.kpi .n { font-size: 28px; font-weight: 680; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kpi .l { color: var(--muted); font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+.kpi .l i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.two { grid-template-columns: 1.3fr 1fr; }
+
+/* lists */
+.item { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.item:first-child { border-top: 0; }
+.item:hover .t1 { color: var(--accent); }
+.t1 { font-weight: 560; overflow-wrap: anywhere; }
+.t2 { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.grow { flex: 1; min-width: 0; }
+.meta { color: var(--faint); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.empty { padding: 26px 0; text-align: center; color: var(--muted); }
+
+/* pills */
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.s-Applied { color: var(--applied); background: var(--applied-bg); }
+.s-Responded { color: var(--responded); background: var(--responded-bg); }
+.s-Interview, .s-Offer { color: var(--interview); background: var(--interview-bg); }
+.s-Rejected { color: var(--rejected); background: var(--rejected-bg); }
+.s-Evaluated { color: var(--evaluated); background: var(--evaluated-bg); }
+.s-SKIP, .s-Discarded { color: var(--skip); background: var(--skip-bg); }
+.k-rejected { color: var(--rejected); background: var(--rejected-bg); }
+.k-reply { color: var(--responded); background: var(--responded-bg); }
+.k-interview { color: var(--interview); background: var(--interview-bg); }
+.k-followup { color: var(--warn); background: var(--warn-bg); }
+.k-sent { color: var(--applied); background: var(--applied-bg); }
+.k-note { color: var(--skip); background: var(--skip-bg); }
+
+/* toolbar */
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.search { flex: 1 1 240px; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+.search input { border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; width: 100%; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 3px; border-radius: 9px; background: var(--surface-2); }
+.seg button { border: 0; background: none; padding: 5px 11px; border-radius: 7px; cursor: pointer; color: var(--muted); font-size: 12.5px; }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); font-weight: 600; }
+.count { color: var(--faint); font-size: 12px; }
+
+/* table */
+.table { width: 100%; }
+.tr { display: grid; grid-template-columns: 56px minmax(0, 1.1fr) minmax(0, 1.6fr) 64px 104px 108px; gap: 14px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); cursor: pointer; }
+.tr:hover { background: var(--surface-2); }
+.tr.head { cursor: default; color: var(--faint); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; background: none; border-top: 0; padding-top: 10px; padding-bottom: 8px; }
+.tr .num { color: var(--faint); font-variant-numeric: tabular-nums; }
+.tr .co { font-weight: 580; overflow-wrap: anywhere; }
+.tr .role { color: var(--muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tr .score { font-variant-numeric: tabular-nums; color: var(--muted); }
+.age { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.35; }
 .age.warn { color: var(--warn); font-weight: 600; }
-.detail { grid-column: 1 / -1; background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
-.detail a { color: var(--accent); }
-h2 { font-size: 15px; margin: 0 0 10px; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 18px; }
-.sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
-.feed { max-height: 320px; overflow-y: auto; }
-.ev { display: grid; grid-template-columns: 44px 72px 1fr; gap: 8px; padding: 6px 4px; border-top: 1px solid var(--line); cursor: pointer; font-size: 13px; align-items: baseline; }
-.ev:first-child { border-top: 0; }
-.ev:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
-.evd { color: var(--muted); font-variant-numeric: tabular-nums; }
-.evb { overflow-wrap: anywhere; }
-.k { font-size: 12px; padding: 0 6px; border-radius: 999px; border: 1px solid currentColor; text-align: center; white-space: nowrap; }
-.k.rejected { color: var(--rejected); } .k.reply { color: var(--responded); } .k.interview { color: var(--interview); }
-.k.sent { color: var(--applied); } .k.followup { color: var(--warn); } .k.note { color: var(--muted); }
-.btn { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
-.btn:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
-.btn:disabled { opacity: .45; cursor: default; }
-.btn.quiet { border-color: var(--line); color: var(--muted); }
-.ctlstate { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
-.log { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 12px/1.45 ui-monospace, Consolas, monospace; max-height: 220px; overflow: auto; white-space: pre-wrap; margin: 0; display: none; }
-.inbox { font-size: 12px; color: var(--muted); margin-top: 8px; }
-.empty { padding: 28px; text-align: center; color: var(--muted); }
-.err { background: var(--warnbg); color: var(--warn); padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; display: none; }
-@media (max-width: 760px) {
-  .row { grid-template-columns: 1fr auto; }
-  .row.head { display: none; }
-  .row .num, .row .score { display: none; }
-  .row .main { grid-column: 1 / -1; order: -1; }
+.more { padding: 14px; text-align: center; }
+
+/* timeline */
+.day { padding: 14px 18px 4px; font-size: 12px; font-weight: 620; color: var(--muted); }
+.ev { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 9px 18px; cursor: pointer; align-items: baseline; }
+.ev:hover { background: var(--surface-2); }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 7px 13px; cursor: pointer; font-size: 13px; font-weight: 560; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.btn:disabled { opacity: .45; cursor: default; filter: none; }
+
+/* tools */
+.tasks { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.task { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.task h3 { margin: 0; font-size: 14px; }
+.task p { margin: 0; color: var(--muted); font-size: 12.5px; flex: 1; }
+.console { background: #0d1117; color: #c9d1d9; border-radius: 10px; padding: 12px 14px; font: 12px/1.5 ui-monospace, Consolas, monospace; height: 260px; overflow: auto; white-space: pre-wrap; margin: 0; }
+.status-line { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; }
+.spin { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; display: none; }
+.spin.on { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(10, 14, 20, .35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; right: 0; height: 100vh; width: min(520px, 100vw); background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgba(0, 0, 0, .12); transform: translateX(100%); transition: transform .22s ease; z-index: 21; display: flex; flex-direction: column; }
+.drawer.on { transform: none; }
+.d-head { padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+.d-head .x { float: right; border: 0; background: var(--surface-2); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 16px; color: var(--muted); }
+.d-head h3 { margin: 0 0 4px; font-size: 17px; padding-right: 40px; }
+.d-head .sub { color: var(--muted); }
+.d-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.d-body { padding: 16px 22px 28px; overflow: auto; }
+.d-body h4 { margin: 14px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+.tl { border-left: 2px solid var(--line); margin-left: 4px; padding-left: 14px; }
+.tl .e { position: relative; padding: 0 0 12px; }
+.tl .e::before { content: ''; position: absolute; left: -20px; top: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.tl .e .d { font-size: 12px; color: var(--faint); }
+.notes { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; color: var(--muted); background: var(--surface-2); padding: 10px 12px; border-radius: 8px; }
+.err { display: none; padding: 10px 14px; border-radius: 9px; background: var(--rejected-bg); color: var(--rejected); margin-bottom: 14px; }
+
+/* mobile */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .side { position: sticky; top: 0; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 8px 12px; z-index: 10; border-right: 0; border-bottom: 1px solid var(--line); gap: 2px; }
+  .brand { padding: 0 10px 0 0; }
+  .brand span, .side-foot { display: none; }
+  .nav { width: auto; white-space: nowrap; }
+  main { padding: 18px 16px 48px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .two { grid-template-columns: 1fr; }
+  .tr { grid-template-columns: minmax(0, 1fr) auto; }
+  .tr.head, .tr .num, .tr .score { display: none; }
+  .tr .role { grid-column: 1 / -1; }
 }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1 id="title"></h1>
-    <span class="live"><span class="dot" id="dot"></span><span id="updated"></span></span>
-  </header>
-  <div class="err" id="err"></div>
-  <div class="kpis" id="kpis"></div>
-  <section class="panel">
-    <h2 id="ctlTitle"></h2>
-    <div class="bar" id="ctl"></div>
-    <div class="ctlstate" id="ctlState"></div>
-    <pre class="log" id="log"></pre>
-    <div class="inbox" id="inbox"></div>
-  </section>
-  <section class="panel">
-    <h2 id="feedTitle"></h2>
-    <div class="bar" id="feedctl"></div>
-    <div class="feed" id="feed"></div>
-  </section>
-  <h2 id="listTitle"></h2>
-  <div class="bar" id="chips"></div>
-  <div class="bar">
-    <input type="search" id="q">
-    <span class="count" id="count"></span>
-  </div>
-  <div class="list" id="list"></div>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">A</div><span>apply-pilot</span></div>
+    <div id="navs"></div>
+    <div class="side-foot">
+      <div class="live"><span class="dot" id="dot"></span><span id="updated"></span></div>
+      <div class="mini"><button id="langBtn"></button><button id="themeBtn"></button></div>
+    </div>
+  </aside>
+  <main>
+    <div class="err" id="err"></div>
+
+    <section class="view" data-view="overview">
+      <div class="page-head"><div><h1 data-t="overviewTitle"></h1><p id="overviewSub"></p></div></div>
+      <div class="grid kpis" id="kpis"></div>
+      <div class="grid two">
+        <div class="card"><div class="card-h"><h2 data-t="needAction"></h2><button class="link" data-go="followups" data-t="seeAll"></button></div><div class="card-b" id="ovAction"></div></div>
+        <div class="card"><div class="card-h"><h2 data-t="thisWeek"></h2><button class="link" data-go="activity" data-t="seeAll"></button></div><div class="card-b" id="ovFeed"></div></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="applications">
+      <div class="page-head"><div><h1 data-t="appsTitle"></h1><p data-t="appsSub"></p></div></div>
+      <div class="card">
+        <div class="toolbar">
+          <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search"></label>
+          <div class="seg" id="filters"></div>
+          <span class="count" id="count"></span>
+        </div>
+        <div class="table" id="table"></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="followups">
+      <div class="page-head"><div><h1 data-t="fuTitle"></h1><p id="fuSub"></p></div></div>
+      <div class="grid" id="fuGroups"></div>
+    </section>
+
+    <section class="view" data-view="activity">
+      <div class="page-head"><div><h1 data-t="actTitle"></h1><p data-t="actSub"></p></div></div>
+      <div class="card">
+        <div class="toolbar"><div class="seg" id="periods"></div><div class="seg" id="kinds"></div></div>
+        <div id="timeline"></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="agents">
+      <div class="page-head"><div><h1 data-t="agentsTitle"></h1><p data-t="agentsSub"></p></div><button class="btn" data-act="agent-refresh" data-t="agRefresh"></button></div>
+      <div class="grid tasks" id="agentCards" style="margin-bottom:16px"></div>
+      <div class="card"><div class="card-h"><h2 data-t="agTasks"></h2><div class="status-line"><span class="spin" id="agSpin"></span><span id="agState"></span></div></div>
+        <div class="card-b"><div class="grid tasks" id="agentTasks" style="margin-bottom:14px"></div><pre class="console" id="agConsole"></pre></div></div>
+    </section>
+
+    <section class="view" data-view="tools">
+      <div class="page-head"><div><h1 data-t="toolsTitle"></h1><p data-t="toolsSub"></p></div>
+        <div class="mini" style="gap:8px"><button class="btn" data-act="open-data" data-t="openData"></button><button class="btn" data-act="quit" data-t="quit"></button></div></div>
+      <div class="grid tasks" id="tasks" style="margin-bottom:16px"></div>
+      <div class="card">
+        <div class="card-h"><h2 data-t="output"></h2><div class="status-line"><span class="spin" id="spin"></span><span id="runState"></span></div></div>
+        <div class="card-b"><pre class="console" id="console"></pre><div class="meta" id="inbox" style="margin-top:10px;white-space:normal"></div></div>
+      </div>
+    </section>
+  </main>
 </div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"><div class="d-head" id="dHead"></div><div class="d-body" id="dBody"></div></aside>
+
 <script>
-// Language: ?lang=zh|en, otherwise the browser language.
-const LANG = new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
 const TOKEN = '__TOKEN__';
-const CTL = {
-  zh: { title: '控制面板', portals: '扫描企业招聘系统', linkedin: '扫描领英', followups: '查看待跟进', doctor: '自检', export: '导出 Excel', data: '打开数据文件夹', quit: '退出',
-    idle: '空闲。扫描结果会写入 pipeline.md 和 inbox/，不会发送或提交任何东西。', running: (t) => `正在运行：${t}…`, done: (t, c) => `${t} 已结束（退出码 ${c}）`, inbox: '最近的扫描文件：', bye: '已退出，可以关闭这个页面。' },
-  en: { title: 'Control panel', portals: 'Scan career sites', linkedin: 'Scan LinkedIn', followups: 'Follow-ups due', doctor: 'Check setup', export: 'Export Excel', data: 'Open data folder', quit: 'Quit',
-    idle: 'Idle. Scans write to pipeline.md and inbox/; nothing is sent or submitted.', running: (t) => `Running: ${t}…`, done: (t, c) => `${t} finished (exit ${c})`, inbox: 'Latest scan files:', bye: 'Stopped. You can close this page.' },
-}[LANG === 'zh' ? 'zh' : 'en'];
-const T = {
-  zh: { title: '申请进度', feed: '最近动态', list: '全部申请', search: '搜索公司、岗位、联系人或备注…', rows: '行', updated: '更新于', connecting: '连接中…',
+let LANG = (() => { try { return localStorage.getItem('ap-lang'); } catch { return null; } })() || new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+const I18N = {
+  zh: {
+    nav: { overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', tools: '工具' },
+    agentsTitle: 'AI 助手', agentsSub: '选择和哪个 AI 搭配。它可以在终端里陪你工作，也可以替你跑下面的任务；任务只写文件到 output/，不会发送或提交任何东西。',
+    ag: { claude: 'Anthropic 的命令行 agent，读 CLAUDE.md / AGENTS.md，自己完成评估和起草', codex: 'OpenAI 的命令行 agent，读 AGENTS.md，用非交互模式 codex exec 执行', deepseek: '直接调用 DeepSeek API 评估岗位（需要 DEEPSEEK_API_KEY）；装了 opencode 也可以当 agent 用' },
+    agSelected: '当前搭配', agChoose: '选用', agTerminal: '在终端中打开', agReady: '已就绪', agMissing: '未安装或未配置', agCli: '命令行', agKey: 'API key', agSet: '已设置', agUnset: '未设置', agGet: '获取 / 安装', agRefresh: '重新检测',
+    agTasks: '交给 AI 的任务', agNone: '先选一个 AI 助手',
+    agTask: { 'agent-evaluate': ['评估新岗位', '读取 pipeline.md 里待处理的岗位（最多 10 个），抓 JD、按你的评分维度打分，结果写到 output/agent-evaluation-日期.md'], 'agent-followups': ['起草跟进邮件', '为到期的邮件类申请起草简短跟进，写到 output/followup-drafts-日期.md，你看过再决定发不发'] },
+    overviewTitle: '概览', needAction: '需要你处理', thisWeek: '最近 7 天', seeAll: '查看全部',
+    appsTitle: '申请', appsSub: '点任意一行查看详情和完整时间线', fuTitle: '待跟进', actTitle: '动态', actSub: '从申请表备注里提取的带日期事件',
+    toolsTitle: '工具', toolsSub: '只运行本地任务：扫描、检查、导出。不会发送或提交任何东西。', output: '运行输出', openData: '打开数据文件夹', quit: '退出',
+    k: { applied: '已投递，等待中', reply: '有回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒' },
+    f: { active: '进行中', applied: '已投递', reply: '回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒', all: '全部' },
     status: { Applied: '已投递', Responded: '有回复', Interview: '面试', Offer: 'Offer', Rejected: '被拒', Evaluated: '待决定', SKIP: '跳过', Discarded: '已关闭' },
     kind: { rejected: '被拒', interview: '面试', reply: '回复', followup: '跟进', sent: '投递/发出', note: '记录' },
-    f: { active: '进行中', applied: '已投递', reply: '有回复 / 面试', follow: (d) => `待跟进（≥${d} 天无动静）`, pending: '待决定', rejected: '被拒', all: '全部' },
-    k: { applied: '已投递，等待中', reply: '有回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒' },
-    head: ['#', '公司 / 联系人', '岗位 · 最新进展', '评分', '状态', '最近动态'], days: (n) => `近 ${n} 天`, ago: (n) => (n <= 0 ? '今天' : `${n} 天前`),
-    count: (n) => `${n} 条`, empty: '没有符合条件的申请', emptyFeed: '这段时间没有动态', more: (n) => `还有 ${n} 条，缩小时间范围或按类型筛选`, open: '打开岗位链接 ↗', fail: '读取失败：', all: '全部' },
-  en: { title: 'Applications', feed: 'Recent activity', list: 'All applications', search: 'Search company, role, contact or notes…', rows: 'rows', updated: 'updated', connecting: 'connecting…',
+    channel: { email: '邮件联系', portal: '招聘系统', unknown: '渠道不明' },
+    head: ['#', '公司 / 联系人', '岗位', '评分', '状态', '最近动态'],
+    tasks: {
+      portals: ['扫描企业招聘系统', 'Workday、SuccessFactors、Phenom 等，新岗位写入 pipeline.md'],
+      linkedin: ['扫描领英', '用已登录的浏览器配置搜索岗位和动态'],
+      followups: ['检查待跟进', '按跟进规则列出到期的申请'],
+      doctor: ['自检', '检查环境、配置和申请表'],
+      export: ['导出 Excel', '生成一份新的申请表 Excel'],
+    },
+    run: '运行', running: (t) => `正在运行：${t}`, done: (t, c) => `${t} 已结束（退出码 ${c}）`, idle: '空闲',
+    inbox: '最近的扫描文件：', bye: '已退出，可以关闭这个页面。',
+    days: (n) => `近 ${n} 天`, ago: (n) => (n <= 0 ? '今天' : `${n} 天前`), quiet: (n) => `${n} 天没动静`, count: (n) => `${n} 条`, all: '全部',
+    empty: '没有符合条件的申请', emptyFeed: '这段时间没有动态', emptyAction: '暂时没有要处理的事', more: (n) => `显示更多（还有 ${n} 条）`,
+    search: '搜索公司、岗位、联系人或备注…', rows: '行', updated: '更新于', connecting: '连接中…',
+    fuSub: (d, n) => `已投递或有回复、${d} 天以上没有新记录的申请，共 ${n} 条。只是提醒，发不发由你决定。`,
+    overviewSub: (n, a) => `共 ${n} 条记录，其中 ${a} 条正在进行`, open: '打开岗位页面', timeline: '时间线', notes: '完整备注', score: '评分', added: '记录日期', theme: '主题', lang: 'EN',
+  },
+  en: {
+    nav: { overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', tools: 'Tools' },
+    agentsTitle: 'AI agent', agentsSub: 'Choose which AI to pair with. It can work with you in a terminal or run the tasks below for you; tasks only write files to output/ and never send or submit anything.',
+    ag: { claude: 'Anthropic command-line agent; reads CLAUDE.md / AGENTS.md and does the evaluation and drafting itself', codex: 'OpenAI command-line agent; reads AGENTS.md and runs non-interactively with codex exec', deepseek: 'Calls the DeepSeek API directly to score postings (needs DEEPSEEK_API_KEY); with opencode installed it can act as an agent too' },
+    agSelected: 'Paired', agChoose: 'Use this', agTerminal: 'Open in terminal', agReady: 'Ready', agMissing: 'Not installed or not configured', agCli: 'CLI', agKey: 'API key', agSet: 'set', agUnset: 'missing', agGet: 'Get / install', agRefresh: 'Re-detect',
+    agTasks: 'Tasks for the AI', agNone: 'Choose an AI agent first',
+    agTask: { 'agent-evaluate': ['Evaluate new postings', 'Up to 10 pending postings from pipeline.md: fetch the JD, score it against your rubric, write output/agent-evaluation-DATE.md'], 'agent-followups': ['Draft follow-ups', 'Short follow-ups for due email applications, written to output/followup-drafts-DATE.md for you to review'] },
+    overviewTitle: 'Overview', needAction: 'Needs your attention', thisWeek: 'Last 7 days', seeAll: 'See all',
+    appsTitle: 'Applications', appsSub: 'Click a row for details and the full timeline', fuTitle: 'Follow-ups', actTitle: 'Activity', actSub: 'Dated events taken from the tracker notes',
+    toolsTitle: 'Tools', toolsSub: 'Runs local tasks only: scans, checks, export. Nothing is sent or submitted.', output: 'Output', openData: 'Open data folder', quit: 'Quit',
+    k: { applied: 'Applied, waiting', reply: 'Replies / interviews', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
+    f: { active: 'Active', applied: 'Applied', reply: 'Replies', follow: 'Follow-up', pending: 'To decide', rejected: 'Rejected', all: 'All' },
     status: { Applied: 'Applied', Responded: 'Responded', Interview: 'Interview', Offer: 'Offer', Rejected: 'Rejected', Evaluated: 'To decide', SKIP: 'Skipped', Discarded: 'Closed' },
     kind: { rejected: 'Rejected', interview: 'Interview', reply: 'Reply', followup: 'Follow-up', sent: 'Sent', note: 'Note' },
-    f: { active: 'Active', applied: 'Applied', reply: 'Replies / interviews', follow: (d) => `Follow-up due (≥${d} days quiet)`, pending: 'To decide', rejected: 'Rejected', all: 'All' },
-    k: { applied: 'Applied, waiting', reply: 'Replies / interviews', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
-    head: ['#', 'Company / contact', 'Role · latest', 'Score', 'Status', 'Last activity'], days: (n) => `${n} days`, ago: (n) => (n <= 0 ? 'today' : `${n} d ago`),
-    count: (n) => `${n}`, empty: 'No matching applications', emptyFeed: 'Nothing in this period', more: (n) => `${n} more, narrow the period or type`, open: 'Open posting ↗', fail: 'Load failed: ', all: 'All' },
-}[LANG === 'zh' ? 'zh' : 'en'];
+    channel: { email: 'By email', portal: 'Through a portal', unknown: 'Channel unknown' },
+    head: ['#', 'Company / contact', 'Role', 'Score', 'Status', 'Last activity'],
+    tasks: {
+      portals: ['Scan career sites', 'Workday, SuccessFactors, Phenom and more; new postings go to pipeline.md'],
+      linkedin: ['Scan LinkedIn', 'Jobs and posts with your logged-in browser profile'],
+      followups: ['Check follow-ups', 'Applications due a follow-up under your rules'],
+      doctor: ['Check setup', 'Environment, profile and tracker'],
+      export: ['Export Excel', 'A fresh spreadsheet of the tracker'],
+    },
+    run: 'Run', running: (t) => `Running: ${t}`, done: (t, c) => `${t} finished (exit ${c})`, idle: 'Idle',
+    inbox: 'Latest scan files:', bye: 'Stopped. You can close this page.',
+    days: (n) => `${n} days`, ago: (n) => (n <= 0 ? 'today' : `${n} d ago`), quiet: (n) => `${n} days quiet`, count: (n) => `${n}`, all: 'All',
+    empty: 'No matching applications', emptyFeed: 'Nothing in this period', emptyAction: 'Nothing needs you right now', more: (n) => `Show more (${n} left)`,
+    search: 'Search company, role, contact or notes…', rows: 'rows', updated: 'updated', connecting: 'connecting…',
+    fuSub: (d, n) => `${n} applications that are applied or answered and have had no new entry for ${d}+ days. A reminder only; you decide what to send.`,
+    overviewSub: (n, a) => `${n} records, ${a} active`, open: 'Open posting', timeline: 'Timeline', notes: 'Full notes', score: 'Score', added: 'Added', theme: 'Theme', lang: '中文',
+  },
+};
+let T = I18N[LANG === 'zh' ? 'zh' : 'en'];
 
+const ICONS = {
+  overview: '<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v8h8V3zM3 21h8v-6H3z"/>',
+  applications: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+  followups: '<path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/>',
+  activity: '<path d="M3 12h4l3 8 4-16 3 8h4"/>',
+  agents: '<rect x="6" y="7" width="12" height="11" rx="2"/><path d="M12 3v4M9.5 12h.01M14.5 12h.01M10 15h4"/>',
+  tools: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.8-.7-.7-2.8z"/>',
+};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const today = () => new Date(new Date().toLocaleDateString('sv-SE'));
 const days = (d) => Math.round((today() - new Date(d)) / 86400000);
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const FEED_DAYS = [7, 14, 30];
-let followDays = 14;
+const pill = (s) => `<span class="pill s-${esc(s)}">${T.status[s] || esc(s)}</span>`;
+const kpill = (k) => `<span class="pill k-${k}">${T.kind[k]}</span>`;
+const store = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 
-const FILTERS = [
-  { id: 'active', test: (r) => ['Applied', 'Responded', 'Interview', 'Offer', 'Evaluated'].includes(r.status) },
-  { id: 'applied', test: (r) => r.status === 'Applied' },
-  { id: 'reply', test: (r) => ['Responded', 'Interview', 'Offer'].includes(r.status) },
-  { id: 'follow', test: (r) => r.due },
-  { id: 'pending', test: (r) => r.status === 'Evaluated' },
-  { id: 'rejected', test: (r) => r.status === 'Rejected' },
-  { id: 'all', test: () => true },
-];
-const fLabel = (id) => (typeof T.f[id] === 'function' ? T.f[id](followDays) : T.f[id]);
-
-let state = { rows: [], filter: 'active', q: '', open: new Set(), feedDays: 7, feedKind: 'all' };
-try { const s = JSON.parse(localStorage.getItem('apply-pilot-ui') || '{}'); Object.assign(state, { filter: s.filter || state.filter, feedDays: s.feedDays || 7 }); } catch {}
-const save = () => { try { localStorage.setItem('apply-pilot-ui', JSON.stringify({ filter: state.filter, feedDays: state.feedDays })); } catch {} };
-
-document.getElementById('title').textContent = T.title;
-document.getElementById('ctlTitle').textContent = CTL.title;
-document.getElementById('ctl').innerHTML =
-  ['portals', 'linkedin', 'followups', 'doctor', 'export'].map((t) => `<button class="btn" data-task="${t}">${CTL[t]}</button>`).join('') +
-  '<span class="sep"></span>' +
-  `<button class="btn quiet" data-act="open-data">${CTL.data}</button><button class="btn quiet" data-act="quit">${CTL.quit}</button>`;
-let running = null;
-const logEl = document.getElementById('log');
-const setRunning = (task) => {
-  running = task;
-  document.querySelectorAll('[data-task]').forEach((b) => { b.disabled = Boolean(task); });
-  document.getElementById('ctlState').textContent = task ? CTL.running(task) : CTL.idle;
+const FILTERS = {
+  active: (r) => ['Applied', 'Responded', 'Interview', 'Offer', 'Evaluated'].includes(r.status),
+  applied: (r) => r.status === 'Applied',
+  reply: (r) => ['Responded', 'Interview', 'Offer'].includes(r.status),
+  follow: (r) => r.due,
+  pending: (r) => r.status === 'Evaluated',
+  rejected: (r) => r.status === 'Rejected',
+  all: () => true,
 };
-const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-token': TOKEN }, body: JSON.stringify(body || {}) }).then((r) => r.json());
-const appendLog = (text) => {
-  logEl.style.display = 'block';
-  logEl.textContent += `${text}\n`;
-  const lines = logEl.textContent.split('\n');
-  if (lines.length > 400) logEl.textContent = lines.slice(-400).join('\n');
-  logEl.scrollTop = logEl.scrollHeight;
-};
-setRunning(null);
-document.getElementById('feedTitle').textContent = T.feed;
-document.getElementById('listTitle').textContent = T.list;
-document.getElementById('q').placeholder = T.search;
-document.getElementById('updated').textContent = T.connecting;
+const KPI_COLORS = { applied: 'var(--applied)', reply: 'var(--responded)', follow: 'var(--warn)', pending: 'var(--evaluated)', rejected: 'var(--rejected)' };
 
-function renderFeed() {
-  // Skipped and closed rows only carry screening notes, so they are left out.
-  const all = state.rows.filter((r) => !['SKIP', 'Discarded'].includes(r.status))
-    .flatMap((r) => r.events.filter((e) => days(e.date) <= state.feedDays).map((e) => ({ ...e, r })));
-  const counts = { rejected: 0, reply: 0, interview: 0, followup: 0, sent: 0 };
-  all.forEach((e) => { if (e.kind in counts) counts[e.kind] += 1; });
-  const shown = all.filter((e) => (state.feedKind === 'all' ? e.kind !== 'note' : e.kind === state.feedKind))
+const S = { rows: [], view: read('ap-view') || 'overview', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', followDays: 14, running: null, inbox: [] };
+
+function setView(v) {
+  S.view = v; store('ap-view', v);
+  document.querySelectorAll('.view').forEach((el) => el.classList.toggle('on', el.dataset.view === v));
+  renderNav(); render();
+  if (location.hash !== `#${v}`) history.replaceState(null, '', `#${v}`);
+}
+
+function renderNav() {
+  const badge = { followups: S.rows.filter(FILTERS.follow).length, applications: S.rows.filter(FILTERS.active).length };
+  $('navs').innerHTML = Object.keys(T.nav).map((v) => `<button class="nav ${S.view === v ? 'on' : ''}" data-go="${v}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[v]}</svg>${T.nav[v]}
+    ${badge[v] ? `<span class="badge ${v === 'followups' ? 'warn' : ''}">${badge[v]}</span>` : ''}
+    ${v === 'tools' && S.running ? '<span class="spin on" style="margin-left:auto"></span>' : ''}</button>`).join('');
+}
+
+function eventsSince(n) {
+  return S.rows.filter((r) => !['SKIP', 'Discarded'].includes(r.status))
+    .flatMap((r) => r.events.filter((e) => days(e.date) <= n && e.kind !== 'note').map((e) => ({ ...e, r })))
     .sort((a, b) => b.date.localeCompare(a.date) || b.r.num - a.r.num);
-  document.getElementById('feedctl').innerHTML =
-    FEED_DAYS.map((d) => `<button class="chip ${state.feedDays === d ? 'sel' : ''}" data-days="${d}">${T.days(d)}</button>`).join('') +
-    '<span class="sep"></span>' +
-    [['all', T.all], ...Object.keys(counts).map((k) => [k, `${T.kind[k]} ${counts[k]}`])]
-      .map(([k, l]) => `<button class="chip ${state.feedKind === k ? 'sel' : ''}" data-kind="${k}">${l}</button>`).join('');
-  document.getElementById('feed').innerHTML = shown.length
-    ? shown.slice(0, 60).map((e) => `<div class="ev" data-goto="${e.r.num}"><span class="evd">${e.date.slice(5)}</span><span class="k ${e.kind}">${T.kind[e.kind]}</span><span class="evb"><b>#${e.r.num} ${esc(e.r.company)}</b> · ${esc(e.text)}</span></div>`).join('')
-      + (shown.length > 60 ? `<div class="empty">${T.more(shown.length - 60)}</div>` : '')
-    : `<div class="empty">${T.emptyFeed}</div>`;
+}
+
+function renderOverview() {
+  const active = S.rows.filter(FILTERS.active).length;
+  $('overviewSub').textContent = T.overviewSub(S.rows.length, active);
+  $('kpis').innerHTML = Object.keys(T.k).map((id) => `<button class="card kpi" data-kpi="${id}"><div class="n">${S.rows.filter(FILTERS[id]).length}</div><div class="l"><i style="background:${KPI_COLORS[id]}"></i>${T.k[id]}</div></button>`).join('');
+  const replies = S.rows.filter(FILTERS.reply);
+  const due = S.rows.filter(FILTERS.follow).sort((a, b) => days(b.lastActivity) - days(a.lastActivity));
+  const items = [...replies.map((r) => ({ r, meta: pill(r.status) })), ...due.slice(0, 6).map((r) => ({ r, meta: `<span class="age warn">${T.quiet(days(r.lastActivity))}</span>` }))];
+  $('ovAction').innerHTML = items.length ? items.map(({ r, meta }) => `<div class="item" data-open="${r.num}"><div class="grow"><div class="t1">${esc(r.company)}</div><div class="t2">${esc(r.role)}</div></div>${meta}</div>`).join('') : `<div class="empty">${T.emptyAction}</div>`;
+  const ev = eventsSince(7).slice(0, 8);
+  $('ovFeed').innerHTML = ev.length ? ev.map((e) => `<div class="item" data-open="${e.r.num}"><div class="grow"><div class="t1">${esc(e.r.company)}</div><div class="t2">${esc(e.text)}</div></div><div style="text-align:right">${kpill(e.kind)}<div class="meta">${e.date.slice(5)}</div></div></div>`).join('') : `<div class="empty">${T.emptyFeed}</div>`;
+}
+
+function renderApps() {
+  $('filters').innerHTML = Object.keys(T.f).map((f) => `<button class="${S.filter === f ? 'on' : ''}" data-filter="${f}">${T.f[f]}</button>`).join('');
+  const q = S.q.trim().toLowerCase();
+  const rows = S.rows.filter(FILTERS[S.filter]).filter((r) => !q || `${r.num} ${r.company} ${r.role} ${r.notes}`.toLowerCase().includes(q))
+    .sort((a, b) => b.lastActivity.localeCompare(a.lastActivity) || b.num - a.num);
+  $('count').textContent = T.count(rows.length);
+  const head = `<div class="tr head">${T.head.map((h) => `<div>${h}</div>`).join('')}</div>`;
+  $('table').innerHTML = rows.length ? head + rows.slice(0, S.limit).map((r) => `<div class="tr" data-open="${r.num}">
+      <div class="num">${r.num}</div><div class="co">${esc(r.company)}</div><div class="role">${esc(r.role)}</div>
+      <div class="score">${r.score ?? '–'}</div><div>${pill(r.status)}</div>
+      <div class="age ${r.due ? 'warn' : ''}">${esc(r.lastActivity)}<br>${T.ago(days(r.lastActivity))}</div></div>`).join('')
+    + (rows.length > S.limit ? `<div class="more"><button class="btn" data-more>${T.more(rows.length - S.limit)}</button></div>` : '')
+    : `<div class="empty">${T.empty}</div>`;
+}
+
+function renderFollowups() {
+  const due = S.rows.filter(FILTERS.follow).sort((a, b) => days(b.lastActivity) - days(a.lastActivity));
+  $('fuSub').textContent = T.fuSub(S.followDays, due.length);
+  const groups = ['email', 'portal', 'unknown'].map((c) => [c, due.filter((r) => (r.channel || 'unknown') === c)]).filter(([, l]) => l.length);
+  $('fuGroups').innerHTML = groups.length ? groups.map(([c, list]) => `<div class="card"><div class="card-h"><h2>${T.channel[c]} · ${list.length}</h2></div><div class="card-b">
+    ${list.map((r) => `<div class="item" data-open="${r.num}"><div class="grow"><div class="t1">${esc(r.company)}</div><div class="t2">${esc(r.role)}</div></div><div style="text-align:right"><div class="age warn">${T.quiet(days(r.lastActivity))}</div><div class="meta">#${r.num} · ${esc(r.lastActivity)}</div></div></div>`).join('')}
+    </div></div>`).join('') : `<div class="card"><div class="empty">${T.emptyAction}</div></div>`;
+}
+
+function renderActivity() {
+  $('periods').innerHTML = [7, 14, 30, 90].map((d) => `<button class="${S.period === d ? 'on' : ''}" data-period="${d}">${T.days(d)}</button>`).join('');
+  const all = eventsSince(S.period);
+  const counts = {};
+  all.forEach((e) => { counts[e.kind] = (counts[e.kind] || 0) + 1; });
+  $('kinds').innerHTML = [['all', `${T.all} ${all.length}`], ...['rejected', 'reply', 'interview', 'followup', 'sent'].map((k) => [k, `${T.kind[k]} ${counts[k] || 0}`])]
+    .map(([k, l]) => `<button class="${S.kind === k ? 'on' : ''}" data-kind="${k}">${l}</button>`).join('');
+  const shown = all.filter((e) => S.kind === 'all' || e.kind === S.kind).slice(0, 200);
+  if (!shown.length) { $('timeline').innerHTML = `<div class="empty">${T.emptyFeed}</div>`; return; }
+  let html = '', last = '';
+  for (const e of shown) {
+    if (e.date !== last) { html += `<div class="day">${e.date} · ${T.ago(days(e.date))}</div>`; last = e.date; }
+    html += `<div class="ev" data-open="${e.r.num}"><div>${kpill(e.kind)}</div><div><span class="t1">#${e.r.num} ${esc(e.r.company)}</span><div class="t2">${esc(e.text)}</div></div></div>`;
+  }
+  $('timeline').innerHTML = html;
+}
+
+const base = (p) => String(p || '').split(/[\\/]/).pop();
+function renderAgents() {
+  const cards = Object.values(S.agents || {});
+  $('agentCards').innerHTML = cards.map((a) => {
+    const sel = S.agent === a.id;
+    return `<div class="card task" style="${sel ? 'border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)' : ''}">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3>${esc(a.label)}</h3>${sel ? `<span class="pill s-Applied">${T.agSelected}</span>` : ''}
+      <span class="pill ${a.ready ? 's-Responded' : 's-SKIP'}" style="margin-left:auto">${a.ready ? T.agReady : T.agMissing}</span></div>
+    <p>${T.ag[a.id]}</p>
+    <div class="meta" style="white-space:normal">${T.agCli}: ${a.cli ? esc(base(a.cli)) : '—'}${a.apiKey === null ? '' : ` · ${T.agKey}: ${a.apiKey ? T.agSet : T.agUnset}`}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ${sel ? '' : 'primary'}" data-agent="${a.id}" ${sel ? 'disabled' : ''}>${T.agChoose}</button>
+      ${a.cli ? `<button class="btn" data-launch="${a.id}">${T.agTerminal}</button>` : `<a class="btn" href="${esc(a.site)}" target="_blank" rel="noopener">${T.agGet} ↗</a>`}
+    </div></div>`;
+  }).join('');
+  $('agentTasks').innerHTML = Object.entries(T.agTask).map(([id, [name, desc]]) => `<div class="card task"><h3>${name}</h3><p>${desc}</p>
+    <div><button class="btn primary" data-task="${id}" ${S.running || !S.agent ? 'disabled' : ''}>${T.run}</button></div></div>`).join('');
+  $('agSpin').classList.toggle('on', Boolean(S.running));
+  $('agState').textContent = !S.agent ? T.agNone : S.running ? T.running(S.running) : ($('agState').dataset.done || T.idle);
+}
+
+function renderTools() {
+  $('tasks').innerHTML = Object.entries(T.tasks).map(([id, [name, desc]]) => `<div class="card task"><h3>${name}</h3><p>${desc}</p>
+    <div><button class="btn primary" data-task="${id}" ${S.running ? 'disabled' : ''}>${T.run}</button></div></div>`).join('');
+  $('spin').classList.toggle('on', Boolean(S.running));
+  if (S.running) $('runState').textContent = T.running(S.running);
+  else if (!$('runState').textContent) $('runState').textContent = T.idle;
+  $('inbox').textContent = S.inbox.length ? `${T.inbox} ${S.inbox.map((f) => `${f.file} (${new Date(f.at).toLocaleString()})`).join(' · ')}` : '';
 }
 
 function render() {
-  renderFeed();
-  const f = FILTERS.find((x) => x.id === state.filter) || FILTERS[0];
-  document.getElementById('kpis').innerHTML = Object.keys(T.k).map((id) => {
-    const n = state.rows.filter(FILTERS.find((x) => x.id === id).test).length;
-    return `<button class="kpi ${state.filter === id ? 'sel' : ''}" data-f="${id}"><div class="n">${n}</div><div class="l">${T.k[id]}</div></button>`;
-  }).join('');
-  document.getElementById('chips').innerHTML = FILTERS.map((x) => `<button class="chip ${x.id === state.filter ? 'sel' : ''}" data-f="${x.id}">${fLabel(x.id)}</button>`).join('');
-  const q = state.q.trim().toLowerCase();
-  const rows = state.rows.filter(f.test)
-    .filter((r) => !q || `${r.num} ${r.company} ${r.role} ${r.notes}`.toLowerCase().includes(q))
-    .sort((a, b) => b.lastActivity.localeCompare(a.lastActivity) || b.num - a.num);
-  document.getElementById('count').textContent = T.count(rows.length);
-  const head = `<div class="row head">${T.head.map((h) => `<div>${h}</div>`).join('')}</div>`;
-  document.getElementById('list').innerHTML = rows.length ? head + rows.map((r) => {
-    const latest = r.events.at(-1)?.text || r.notes.slice(-200);
-    const open = state.open.has(r.num);
-    return `<div class="row" data-n="${r.num}">
-      <div class="num">${r.num}</div>
-      <div class="co">${esc(r.company)}</div>
-      <div class="main"><div class="role">${esc(r.role)}</div><div class="latest">${esc(latest)}</div></div>
-      <div class="score">${r.score ?? '–'}</div>
-      <div><span class="st ${esc(r.status)}">${T.status[r.status] || esc(r.status)}</span></div>
-      <div class="age ${r.due ? 'warn' : ''}">${esc(r.lastActivity)}<br>${T.ago(days(r.lastActivity))}</div>
-      ${open ? `<div class="detail">${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${T.open}</a>\n\n` : ''}${esc(r.notes)}</div>` : ''}
-    </div>`;
-  }).join('') : `<div class="empty">${T.empty}</div>`;
+  document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T[el.dataset.t]; });
+  $('q').placeholder = T.search;
+  $('langBtn').textContent = T.lang;
+  $('themeBtn').textContent = T.theme;
+  ({ overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, tools: renderTools })[S.view]?.();
+}
+
+function openDrawer(num) {
+  const r = S.rows.find((x) => x.num === Number(num));
+  if (!r) return;
+  $('dHead').innerHTML = `<button class="x" data-close>×</button><h3>${esc(r.company)}</h3><div class="sub">${esc(r.role)}</div>
+    <div class="d-meta">${pill(r.status)}<span class="meta">#${r.num} · ${T.added} ${esc(r.date)}</span>${r.score != null ? `<span class="meta">${T.score} ${r.score}</span>` : ''}
+    ${r.due ? `<span class="pill k-followup">${T.quiet(days(r.lastActivity))}</span>` : ''}</div>
+    ${r.url ? `<div style="margin-top:14px"><a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">${T.open} ↗</a></div>` : ''}`;
+  const ev = [...r.events].reverse();
+  $('dBody').innerHTML = (ev.length ? `<h4>${T.timeline}</h4><div class="tl">${ev.map((e) => `<div class="e"><div class="d">${e.date} · ${T.kind[e.kind]}</div><div>${esc(e.text)}</div></div>`).join('')}</div>` : '')
+    + `<h4>${T.notes}</h4><div class="notes">${esc(r.notes || '—')}</div>`;
+  $('drawer').classList.add('on'); $('scrim').classList.add('on');
+}
+const closeDrawer = () => { $('drawer').classList.remove('on'); $('scrim').classList.remove('on'); };
+
+// A 403 means the server restarted and issued a new token: reload to pick it up.
+const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-token': TOKEN }, body: JSON.stringify(body || {}) })
+  .then((r) => { if (r.status === 403) { location.reload(); return { ok: false, error: 'reloading' }; } return r.json(); });
+function log(text) {
+  for (const id of ['console', 'agConsole']) logTo($(id), text);
+}
+function logTo(c, text) {
+  c.textContent += `${text}\n`;
+  const lines = c.textContent.split('\n');
+  if (lines.length > 500) c.textContent = lines.slice(-500).join('\n');
+  c.scrollTop = c.scrollHeight;
 }
 
 async function load() {
   try {
     const res = await fetch('/api/data', { cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    state.rows = data.rows;
-    followDays = data.followUpDays;
-    if (data.running !== running) setRunning(data.running);
-    document.getElementById('inbox').textContent = data.inbox?.length
-      ? `${CTL.inbox} ${data.inbox.map((f) => `${f.file} (${new Date(f.at).toLocaleString()})`).join(' · ')}` : '';
-    document.getElementById('updated').textContent = `${state.rows.length} ${T.rows} · ${T.updated} ${new Date(data.generated).toLocaleTimeString()}`;
-    document.getElementById('err').style.display = 'none';
-    render();
-  } catch (e) {
-    const el = document.getElementById('err'); el.textContent = T.fail + e.message; el.style.display = 'block';
-  }
+    const d = await res.json();
+    Object.assign(S, { rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent });
+    $('updated').textContent = `${d.rows.length} ${T.rows} · ${new Date(d.generated).toLocaleTimeString()}`;
+    $('err').style.display = 'none';
+    renderNav(); render();
+  } catch (e) { $('err').textContent = e.message; $('err').style.display = 'block'; }
 }
 
 document.addEventListener('click', async (e) => {
-  const tb = e.target.closest('[data-task]');
-  if (tb) {
-    logEl.textContent = '';
-    const r = await post('/api/run', { task: tb.dataset.task });
-    if (!r.ok) appendLog(`! ${r.error}`);
-    return;
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-period],[data-kind],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],#langBtn,#themeBtn,#scrim');
+  if (!t) return;
+  if (t.dataset.go) return setView(t.dataset.go);
+  if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
+  if (t.dataset.filter) { S.filter = t.dataset.filter; store('ap-filter', S.filter); S.limit = 60; return render(); }
+  if (t.dataset.period) { S.period = Number(t.dataset.period); store('ap-period', S.period); return render(); }
+  if (t.dataset.kind) { S.kind = t.dataset.kind; return render(); }
+  if (t.dataset.open) return openDrawer(t.dataset.open);
+  if (t.hasAttribute('data-close') || t.id === 'scrim') return closeDrawer();
+  if (t.hasAttribute('data-more')) { S.limit += 100; return render(); }
+  if (t.dataset.agent) { await post('/api/agent/select', { agent: t.dataset.agent }); return load(); }
+  if (t.dataset.launch) { await post('/api/agent/launch', { agent: t.dataset.launch }); return; }
+  if (t.dataset.act === 'agent-refresh') { const r = await post('/api/agent/refresh'); if (r.agents) S.agents = r.agents; return render(); }
+  if (t.dataset.task) { $('console').textContent = ''; $('agConsole').textContent = ''; const r = await post('/api/run', { task: t.dataset.task }); if (!r.ok) log(`! ${r.error}`); return; }
+  if (t.dataset.act === 'quit') { await post('/api/quit'); $('runState').textContent = T.bye; $('dot').classList.remove('on'); es.close(); return; }
+  if (t.dataset.act) return post(`/api/${t.dataset.act}`);
+  if (t.id === 'langBtn') { LANG = LANG === 'zh' ? 'en' : 'zh'; store('ap-lang', LANG); T = I18N[LANG]; renderNav(); return render(); }
+  if (t.id === 'themeBtn') {
+    const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next; store('ap-theme', next);
   }
-  const ab = e.target.closest('[data-act]');
-  if (ab) {
-    if (ab.dataset.act === 'quit') { await post('/api/quit'); document.getElementById('ctlState').textContent = CTL.bye; document.getElementById('dot').classList.remove('on'); es.close(); }
-    else await post(`/api/${ab.dataset.act}`);
-    return;
-  }
-  const db = e.target.closest('[data-days]');
-  if (db) { state.feedDays = Number(db.dataset.days); save(); render(); return; }
-  const kb = e.target.closest('[data-kind]');
-  if (kb) { state.feedKind = kb.dataset.kind; render(); return; }
-  const go = e.target.closest('[data-goto]');
-  if (go) {
-    const n = Number(go.dataset.goto);
-    state.filter = 'all'; state.q = ''; document.getElementById('q').value = ''; state.open.add(n); render();
-    document.querySelector(`.row[data-n="${n}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
-  const fb = e.target.closest('[data-f]');
-  if (fb) { state.filter = fb.dataset.f; save(); render(); return; }
-  if (e.target.closest('a')) return;
-  const row = e.target.closest('.row[data-n]');
-  if (row) { const n = Number(row.dataset.n); state.open.has(n) ? state.open.delete(n) : state.open.add(n); render(); }
 });
-document.getElementById('q').addEventListener('input', (e) => { state.q = e.target.value; render(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+$('q').addEventListener('input', (e) => { S.q = e.target.value; S.limit = 60; renderApps(); });
+window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (v && v !== S.view && T.nav[v]) setView(v); });
 
+const theme = read('ap-theme'); if (theme) document.documentElement.dataset.theme = theme;
+$('updated').textContent = T.connecting;
 const es = new EventSource('/events');
-es.onopen = () => document.getElementById('dot').classList.add('on');
-es.onerror = () => document.getElementById('dot').classList.remove('on');
+es.onopen = () => $('dot').classList.add('on');
+es.onerror = () => $('dot').classList.remove('on');
 es.addEventListener('changed', () => load());
-es.addEventListener('log', (m) => appendLog(JSON.parse(m.data).text));
+es.addEventListener('log', (m) => log(JSON.parse(m.data).text));
 es.addEventListener('task', (m) => {
-  const t = JSON.parse(m.data);
-  if (t.state === 'start') { setRunning(t.task); appendLog(`$ ${t.task}`); }
-  else { setRunning(null); document.getElementById('ctlState').textContent = CTL.done(t.task, t.code); load(); }
+  const d = JSON.parse(m.data);
+  if (d.state === 'start') { S.running = d.task; log(`$ ${d.task}`); }
+  else { S.running = null; $('runState').textContent = T.done(d.task, d.code); $('agState').dataset.done = T.done(d.task, d.code); load(); }
+  renderNav(); if (S.view === 'tools') renderTools(); if (S.view === 'agents') renderAgents();
 });
 setInterval(load, 60000);
+const initial = location.hash.slice(1);
+setView(T.nav[initial] ? initial : S.view);
 load();
 </script>
 </body>
