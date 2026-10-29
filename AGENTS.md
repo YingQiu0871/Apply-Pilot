@@ -1,4 +1,4 @@
-# Agent guide for apply-pilot
+# Agent guide for Apply-Pilot
 
 Read this before you act on someone's job search with this package. It applies to every harness: Codex, Claude Code, opencode, DeepSeek or any other model driving the CLI.
 

@@ -160,7 +160,7 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
   });
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`port ${port} is already in use: apply-pilot is probably running, opening it`);
+      console.log(`port ${port} is already in use: Apply-Pilot is probably running, opening it`);
       if (open) openInBrowser(`http://localhost:${port}`);
       setTimeout(() => process.exit(0), 500);
     } else throw err;

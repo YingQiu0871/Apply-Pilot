@@ -1,10 +1,17 @@
 # Changelog
 
+## 0.2.1 — 2026-10-29
+
+- Project name is now written **Apply-Pilot** (repository `YingQiu0871/Apply-Pilot`; the old URL redirects). The command, npm package and file names stay lowercase `apply-pilot`.
+- README is bilingual, English and Chinese side by side; `README.zh-CN.md` is merged into it.
+- New `INSTALL_FOR_AI.md`: step-by-step installation and setup for AI agents, with a check after each step.
+- Desktop launchers are named `Apply-Pilot.lnk`, `Apply-Pilot.command` and `Apply-Pilot.desktop`.
+
 ## 0.2.0 — 2026-10-29
 
 **Import**
 - `apply-pilot import PATH` reads an existing application database from a file or a folder. Supported sources:
-  - apply-pilot / career-ops `applications.md`, other Markdown tables;
+  - Apply-Pilot / career-ops `applications.md`, other Markdown tables;
   - Excel `.xlsx` (built-in reader, no extra dependency), CSV/TSV, JSON;
   - SQLite `.db` (Node 22.5+).
 - Column names are recognised in English, French, German and Chinese, and statuses map to the tracker states.

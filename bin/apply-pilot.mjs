@@ -26,7 +26,7 @@ function parseArgs(argv) {
   return { pos, opt };
 }
 
-const HELP = `apply-pilot — local job/internship application pipeline
+const HELP = `Apply-Pilot — local job/internship application pipeline
 
 Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applications.md, inbox/, output/.
 

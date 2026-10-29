@@ -3,9 +3,9 @@ name: apply-pilot
 description: Run a job or internship search with the apply-pilot CLI. Covers scanning postings, deduplicating and scoring them against the user's rubric, tracking applications, finding follow-ups that are due, linting letters, and showing the live dashboard. Use whenever the user mentions applications, internships, job postings, follow-ups, or the application tracker.
 ---
 
-# apply-pilot
+# Apply-Pilot
 
-1. Read `AGENTS.md` in the apply-pilot package (`npm root -g`/apply-pilot or the repo clone). Its ground rules are mandatory:
+1. Read `AGENTS.md` in the Apply-Pilot package (`npm root -g`/apply-pilot or the repo clone). Its ground rules are mandatory:
    - never send or submit without explicit approval;
    - never invent experience;
    - log every action at once;

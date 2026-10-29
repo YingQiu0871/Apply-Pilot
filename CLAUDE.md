@@ -1,4 +1,4 @@
-# Claude Code notes for apply-pilot
+# Claude Code notes for Apply-Pilot
 
 Follow [AGENTS.md](AGENTS.md); its ground rules apply to you in full.
 

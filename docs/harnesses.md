@@ -1,11 +1,11 @@
-# Using apply-pilot from different agent harnesses
+# Using Apply-Pilot from different agent harnesses
 
-apply-pilot is a plain Node CLI with a JSON-in/JSON-out evaluation step, so any agent that can run shell commands can drive it. The rules in [AGENTS.md](../AGENTS.md) apply to all of them.
+Apply-Pilot is a plain Node CLI with a JSON-in/JSON-out evaluation step, so any agent that can run shell commands can drive it. The rules in [AGENTS.md](../AGENTS.md) apply to all of them.
 
 ## Claude Code
 
 ```bash
-git clone https://github.com/YingQiu0871/apply-pilot.git && cd apply-pilot && npm install && npm link
+git clone https://github.com/YingQiu0871/Apply-Pilot.git && cd Apply-Pilot && npm install && npm link
 cp -r skills/apply-pilot ~/.claude/skills/
 ```
 
