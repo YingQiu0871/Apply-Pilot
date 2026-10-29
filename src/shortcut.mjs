@@ -4,7 +4,10 @@
 import { execFileSync } from 'node:child_process';
 import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ICON = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'apply-pilot.ico');
 
 function desktopDir() {
   if (process.platform === 'win32') {
@@ -37,11 +40,11 @@ export function createShortcut({ home, cli, port = 4321, dir }) {
       "$s.TargetPath = \"$env:WINDIR\\System32\\wscript.exe\"",
       '$s.Arguments = \'"\' + $env:AP_VBS + \'"\'',
       '$s.WorkingDirectory = $env:AP_HOME',
-      "$s.IconLocation = \"$env:WINDIR\\System32\\imageres.dll,109\"",
+      '$s.IconLocation = $env:AP_ICON + ",0"',
       "$s.Description = 'Apply-Pilot control panel'",
       '$s.Save()',
     ].join('; ');
-    execFileSync('powershell', ['-NoProfile', '-Command', ps], { env: { ...process.env, AP_LNK: lnk, AP_VBS: vbs, AP_HOME: home } });
+    execFileSync('powershell', ['-NoProfile', '-Command', ps], { env: { ...process.env, AP_LNK: lnk, AP_VBS: vbs, AP_HOME: home, AP_ICON: ICON } });
     return lnk;
   }
 

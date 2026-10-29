@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Apply-Pilot per-user MSI (WiX Toolset 3.14). Built by scripts/build-msi.mjs,
+     which stages the files and generates Files.wxs next to this file. -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Apply-Pilot" Language="!(loc.LanguageId)" Codepage="!(loc.Codepage)" Version="$(var.Version)"
+           Manufacturer="Yuning Gu" UpgradeCode="3b0468d2-bc68-48a8-b194-20fb0f738ac6">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" Platform="x64"
+             Languages="!(loc.LanguageId)" SummaryCodepage="!(loc.Codepage)" Description="Apply-Pilot $(var.Version)" Manufacturer="Yuning Gu" />
+    <MajorUpgrade DowngradeErrorMessage="!(loc.Downgrade)" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="ApplyPilot.ico" SourceFile="$(var.Assets)\apply-pilot.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ApplyPilot.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/YingQiu0871/Apply-Pilot" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/YingQiu0871/Apply-Pilot/issues" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
+    <!-- Only set APPLY_PILOT_HOME when the user has none, or when an earlier
+         Apply-Pilot install set it (so upgrades keep it). -->
+    <Property Id="EXISTINGHOME">
+      <RegistrySearch Id="FindHome" Root="HKCU" Key="Environment" Name="APPLY_PILOT_HOME" Type="raw" />
+    </Property>
+    <Property Id="OURHOME">
+      <RegistrySearch Id="FindOurHome" Root="HKCU" Key="Software\Apply-Pilot" Name="DataDirSet" Type="raw" />
+    </Property>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="LocalAppDataFolder">
+        <Directory Id="ProgramsDir" Name="Programs">
+          <Directory Id="INSTALLDIR" Name="Apply-Pilot" />
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder" />
+      <Directory Id="DesktopFolder" />
+      <Directory Id="PersonalFolder" />
+    </Directory>
+
+    <DirectoryRef Id="INSTALLDIR">
+      <Component Id="Core" Guid="5d1f0a43-7c1e-4f0b-9a52-2f7b6d0e9c11">
+        <RegistryValue Root="HKCU" Key="Software\Apply-Pilot" Name="InstallDir" Type="string" Value="[INSTALLDIR]" KeyPath="yes" />
+        <Environment Id="PathEntry" Name="PATH" Value="[INSTALLDIR]" Part="last" Action="set" System="no" />
+        <RemoveFolder Id="RmInstallDir" On="uninstall" />
+        <RemoveFolder Id="RmProgramsDir" Directory="ProgramsDir" On="uninstall" />
+      </Component>
+      <Component Id="HomeVar" Guid="9c3a7e2b-1d4f-4b8a-8e6c-0a5b3f2d7e41">
+        <Condition>NOT EXISTINGHOME OR OURHOME</Condition>
+        <RegistryValue Root="HKCU" Key="Software\Apply-Pilot" Name="DataDirSet" Type="integer" Value="1" KeyPath="yes" />
+        <Environment Id="HomeVar" Name="APPLY_PILOT_HOME" Value="[PersonalFolder]Apply-Pilot" Action="set" Part="all" System="no" />
+      </Component>
+      <Component Id="Shortcuts" Guid="e2b84c6d-3f1a-4d9e-b7c5-6a0f8d1e2c93">
+        <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="Apply-Pilot" Description="!(loc.ShortcutDesc)"
+                  Target="[System64Folder]wscript.exe" Arguments="&quot;[INSTALLDIR]launcher.vbs&quot;" WorkingDirectory="INSTALLDIR" Icon="ApplyPilot.ico" />
+        <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="Apply-Pilot" Description="!(loc.ShortcutDesc)"
+                  Target="[System64Folder]wscript.exe" Arguments="&quot;[INSTALLDIR]launcher.vbs&quot;" WorkingDirectory="INSTALLDIR" Icon="ApplyPilot.ico" />
+        <RegistryValue Root="HKCU" Key="Software\Apply-Pilot" Name="Shortcuts" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="Main" Title="Apply-Pilot" Level="1">
+      <ComponentRef Id="Core" />
+      <ComponentRef Id="HomeVar" />
+      <ComponentRef Id="Shortcuts" />
+      <ComponentGroupRef Id="AppFiles" />
+    </Feature>
+
+    <CustomAction Id="LaunchApp" Directory="INSTALLDIR" ExeCommand="&quot;[System64Folder]wscript.exe&quot; &quot;[INSTALLDIR]launcher.vbs&quot;" Return="asyncNoWait" Impersonate="yes" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchText)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <UI>
+      <UIRef Id="WixUI_Minimal" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApp">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+    </UI>
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.Stage)\license.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.Installer)\banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.Installer)\dialog.bmp" />
+  </Product>
+</Wix>

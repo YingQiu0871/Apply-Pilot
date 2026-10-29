@@ -1,6 +1,6 @@
 {
   "name": "apply-pilot",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A local, agent-agnostic job and internship application pipeline: scan, deduplicate, score, track, follow up, and review letters. Works with Claude Code, Codex, DeepSeek and any OpenAI-compatible model.",
   "type": "module",
   "bin": {
@@ -11,6 +11,8 @@
   },
   "files": [
     "bin",
+    "assets/icon.svg",
+    "assets/apply-pilot.ico",
     "src",
     "config",
     "examples",
@@ -19,12 +21,15 @@
     "AGENTS.md",
     "CLAUDE.md",
     "INSTALL_FOR_AI.md",
+    "PRIVACY.md",
     "NOTICE.md",
     "CHANGELOG.md"
   ],
   "scripts": {
     "test": "node --test test/core.test.mjs",
-    "ui": "node bin/apply-pilot.mjs ui"
+    "ui": "node bin/apply-pilot.mjs ui",
+    "build:icons": "node scripts/build-icons.mjs && python scripts/make-installer-bitmaps.py",
+    "build:msi": "node scripts/build-msi.mjs"
   },
   "engines": {
     "node": ">=20"

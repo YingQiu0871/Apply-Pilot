@@ -156,6 +156,11 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
       res.end(readFileSync(join(HERE, 'index.html'), 'utf8').replace('__TOKEN__', token));
       return;
     }
+    if (pathname === '/icon.svg') {
+      res.writeHead(200, { 'content-type': 'image/svg+xml', 'cache-control': 'max-age=86400' });
+      res.end(readFileSync(join(HERE, '..', '..', 'assets', 'icon.svg')));
+      return;
+    }
     res.writeHead(404).end();
   });
   server.on('error', (err) => {

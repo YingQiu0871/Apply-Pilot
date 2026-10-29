@@ -18,3 +18,5 @@ The author of Apply-Pilot used career-ops for their own search, and its tracker 
 
 - [JSZip](https://github.com/Stuk/jszip): MIT or GPLv3 (used under MIT)
 - Optional: [Playwright](https://github.com/microsoft/playwright) (Apache-2.0), [ExcelJS](https://github.com/exceljs/exceljs) (MIT)
+
+The Windows installer (MSI) also bundles [Node.js](https://nodejs.org) (MIT; full licence at https://github.com/nodejs/node/blob/main/LICENSE), JSZip, ExcelJS and their dependencies, each under its own licence in `app\node_modules`. The installer is built with the [WiX Toolset](https://wixtoolset.org) (MS-RL); no WiX code is shipped in it.

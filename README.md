@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon.svg" width="96" alt="Apply-Pilot icon"></p>
+
 # Apply-Pilot
 
 [![ci](https://github.com/YingQiu0871/Apply-Pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/YingQiu0871/Apply-Pilot/actions/workflows/ci.yml)
@@ -33,6 +35,16 @@ Apply-Pilot does that bookkeeping. You and your agent do the judgement.
 这些记账的活交给 Apply-Pilot，判断留给你和你的 agent。
 
 ## Install · 安装
+
+### Windows installer · Windows 安装包
+
+Download `Apply-Pilot-VERSION-x64-zh-CN.msi` (中文界面) or `...-en-US.msi` from the [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) page and double-click it. It needs no administrator rights and no separate Node.js: the runtime is included. It adds Start-menu and desktop icons and the `apply-pilot` command, and creates your data folder at `Documents\Apply-Pilot` on first launch (unless `APPLY_PILOT_HOME` is already set). Uninstalling from Settings → Apps keeps your data folder.
+
+从 [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) 页面下载 `Apply-Pilot-版本号-x64-zh-CN.msi`（中文界面）或 `en-US` 版，双击安装即可。不需要管理员权限，也不需要另装 Node.js（已内置）。安装后会添加开始菜单和桌面图标以及 `apply-pilot` 命令，第一次打开时在 `文档\Apply-Pilot` 创建数据目录（如果已设置 `APPLY_PILOT_HOME` 则沿用）。在"设置 → 应用"中卸载时会保留数据目录。
+
+The installer includes Node.js, JSZip and ExcelJS. LinkedIn scanning needs Playwright and is only available in the source install below. 安装包内置 Node.js、JSZip 和 ExcelJS；领英扫描需要 Playwright，只能用下面的源码安装方式。
+
+### From source (Windows, macOS, Linux) · 源码安装
 
 ```bash
 git clone https://github.com/YingQiu0871/Apply-Pilot.git
@@ -122,6 +134,7 @@ Windows 10/11、macOS、Linux 都能用（Node 20 以上），CI 在三个系统
 
 | | Windows | macOS |
 |---|---|---|
+| Installer / 安装包 | `.msi`, per user, Node.js included / 按用户安装，内置 Node.js | source install / 源码安装 |
 | Desktop launcher / 桌面图标 | `Apply-Pilot.lnk`, no console window / 不弹命令行窗口 | `Apply-Pilot.command` |
 | Open data folder / 打开数据文件夹 | Explorer / 资源管理器 | Finder |
 | Agent "Open in terminal" / 在终端中打开 | new `cmd` window | new Terminal window / 新的"终端"窗口 |
@@ -161,6 +174,8 @@ Apply-Pilot only uses official APIs, documented public feeds and plain public pa
 只用官方接口、公开数据源和普通公开网页。有反爬保护或需要登录的网站（比如目前的 Indeed、Welcome to the Jungle）不绕过保护，交给你自己的浏览器或 agent 在浏览器里查。各平台的 key 放在 `APPLY_PILOT_HOME/.env`（模板见 `config/env.example`），不写进 `profile.json`。
 
 ## Privacy and safety · 隐私与安全
+
+Full policy / 完整隐私策略：[PRIVACY.md](PRIVACY.md).
 
 - Nothing in the CLI sends email or submits forms. An agent must show you the draft and get your approval first.
 - Letters may only claim experience listed in `profile.json`.

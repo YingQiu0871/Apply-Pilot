@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="zh-CN" Codepage="936" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+  <String Id="LanguageId">2052</String>
+  <String Id="Codepage">936</String>
+  <String Id="Downgrade">已安装更新版本的 Apply-Pilot。</String>
+  <String Id="ShortcutDesc">Apply-Pilot 控制面板</String>
+  <String Id="LaunchText">立即打开 Apply-Pilot</String>
+</WixLocalization>

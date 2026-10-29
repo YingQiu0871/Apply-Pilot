@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 — 2026-10-29
+
+- Windows installer: per-user `.msi` in English and Chinese, built by `npm run build:msi` (WiX Toolset 3.14) and attached to each GitHub release by the `msi` workflow. It needs no administrator rights and bundles Node.js, JSZip and ExcelJS. It adds Start-menu and desktop icons, puts `apply-pilot` on `PATH`, and sets `APPLY_PILOT_HOME` to `Documents\Apply-Pilot` unless one is already set. The first launch creates the data folder. Uninstalling keeps the data.
+- New icon (`assets/icon.svg`, `assets/apply-pilot.ico`), used by the panel, the desktop launcher and the installer. `npm run build:icons` re-renders it.
+- `PRIVACY.md`: what is stored, where, and when data leaves your computer.
+
 ## 0.2.1 — 2026-10-29
 
 - Project name is now written **Apply-Pilot** (repository `YingQiu0871/Apply-Pilot`; the old URL redirects). The command, npm package and file names stay lowercase `apply-pilot`.

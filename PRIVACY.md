@@ -1,0 +1,84 @@
+# Privacy Policy · 隐私策略
+
+Last updated / 最后更新：2026-10-29
+
+Apply-Pilot is free, open-source software that runs on your own computer. It has no server, no account system, no analytics and no telemetry. The author receives no data from you.
+
+Apply-Pilot 是在你自己电脑上运行的免费开源软件。它没有服务器、没有账号系统，也没有任何统计或遥测功能。作者收不到你的任何数据。
+
+## 1. What is stored, and where · 存储哪些数据、存在哪里
+
+Everything Apply-Pilot reads or writes stays in your data folder (`APPLY_PILOT_HOME`) on your own disk:
+
+- `profile.json`: your experience, scoring rubric, filters and search settings;
+- `data/applications.md` and `data/pipeline.md`: your applications and candidate postings;
+- `inbox/`, `output/`: scan results, evaluations, drafts and exports;
+- `browser/`: the browser session you create with `apply-pilot linkedin login`;
+- `.env`: API keys you add yourself;
+- `agent.json`: which AI agent you chose.
+
+You can read, edit, move or delete any of these files at any time. `apply-pilot init` writes a `.gitignore` so that browser sessions, scans, exports and `.env` are not committed by accident.
+
+Apply-Pilot 读写的所有数据都放在你自己硬盘上的数据目录（`APPLY_PILOT_HOME`）里：
+
+- `profile.json`：你的经历、评分标准、过滤条件和搜索设置；
+- `data/applications.md`、`data/pipeline.md`：申请记录和待筛岗位；
+- `inbox/`、`output/`：扫描结果、评估、草稿和导出文件；
+- `browser/`：你用 `apply-pilot linkedin login` 登录后保存的浏览器状态；
+- `.env`：你自己填写的 API key；
+- `agent.json`：你选择搭配的 AI 助手。
+
+这些文件你可以随时查看、修改、移动或删除。`apply-pilot init` 会写好 `.gitignore`，防止浏览器登录状态、扫描结果、导出文件和 `.env` 被误提交。
+
+## 2. When data leaves your computer · 数据什么时候会离开你的电脑
+
+Only when you run a command or click a button that needs the network:
+
+| Action / 操作 | Sent to / 发往 | What is sent / 发送内容 |
+|---|---|---|
+| `scan portals`, `jd` | the career sites you list in `profile.json` (Workday, Greenhouse, SmartRecruiters…) / 你在 `profile.json` 里列出的企业招聘网站 | search keywords and page requests, as a browser would send / 搜索关键词和普通页面请求 |
+| `scan boards` | JobTech, Euraxess, France Travail, Adzuna, Jooble, Careerjet | search keywords, location, and your API key for that service / 搜索关键词、地区和该平台的 key |
+| `scan websearch` | Brave Search, Mojeek or your SearXNG / 或你自建的 SearXNG | your search queries and API key / 搜索语句和 key |
+| `linkedin scan` | LinkedIn, through your own logged-in browser / 通过你自己登录的浏览器 | the same as browsing LinkedIn yourself / 与你手动浏览领英相同 |
+| `eval run`, `eval pipeline` | the model provider you choose: DeepSeek, OpenAI, OpenRouter, Anthropic; Ollama stays local / 你选择的模型服务商；Ollama 在本机运行 | the job description, plus the summary, facts, gaps and rubric from your `profile.json` / 岗位描述，以及 `profile.json` 中的目标概述、经历、短板和评分标准 |
+| AI agent page: open or run Claude Code, Codex or DeepSeek / AI 助手页 | that agent's own service / 对应 agent 自己的服务 | whatever the agent reads in your data folder while it works / agent 工作时读取的数据目录内容 |
+
+Each of these services handles the data under its own privacy policy. Read them before you add a key or log in. If you do not want your profile sent to a model provider, score postings with your own agent (`eval prompt` / `eval score`) or a local Ollama model.
+
+这些服务按各自的隐私政策处理数据，填写 key 或登录前请先阅读。如果不希望把个人经历发给模型服务商，可以用 `eval prompt` / `eval score` 交给你自己的 agent 打分，或使用本机运行的 Ollama。
+
+## 3. What Apply-Pilot never does · Apply-Pilot 绝不会做的事
+
+- It never sends email, submits applications, fills forms or messages anyone. Those actions stay with you.
+- It never uploads your data to the author or to any service you did not choose.
+- It never stores passwords. You sign in to websites yourself, in your own browser.
+- It never works around a website's bot protection.
+
+- 不发邮件、不提交申请、不填表单、不给任何人发消息，这些操作始终由你本人完成。
+- 不把你的数据上传给作者，也不上传给任何你没有选择的服务。
+- 不保存密码。网站登录由你自己在浏览器里完成。
+- 不绕过任何网站的反爬保护。
+
+## 4. The control panel · 控制面板
+
+The panel (`apply-pilot ui`) listens only on `127.0.0.1`, so other computers on your network cannot reach it. Each run creates a one-time token, and requests without it are refused. It loads no external scripts, fonts or trackers.
+
+控制面板（`apply-pilot ui`）只监听本机地址 `127.0.0.1`，局域网内其他电脑无法访问。每次启动都会生成一次性令牌，没有令牌的请求一律拒绝。面板不加载任何外部脚本、字体或追踪代码。
+
+## 5. The Windows installer · Windows 安装包
+
+The MSI installs program files into your user profile (`%LOCALAPPDATA%\Programs\Apply-Pilot`) and adds Start-menu and desktop shortcuts. It collects nothing and does not check for updates. Uninstalling removes the program files but keeps your data folder (`Documents\Apply-Pilot` by default), so your records are not lost. Delete that folder yourself if you want everything gone.
+
+MSI 安装包把程序文件装在你的用户目录（`%LOCALAPPDATA%\Programs\Apply-Pilot`），并添加开始菜单和桌面快捷方式。它不收集任何信息，也不检查更新。卸载时会删除程序文件，但保留你的数据目录（默认是 `文档\Apply-Pilot`），以免记录丢失。如需彻底清除，请自行删除该文件夹。
+
+## 6. Your data, your responsibility · 你的数据由你掌控
+
+Because all data is local, you decide who can see it. Do not put your data folder in a public repository or a shared drive. Back it up the way you back up other personal files.
+
+因为所有数据都在本地，谁能看到它由你决定。请不要把数据目录放进公开仓库或共享网盘，并像备份其他个人文件一样备份它。
+
+## 7. Changes and contact · 变更与联系
+
+Changes to this policy are recorded in this file's history and in [CHANGELOG.md](CHANGELOG.md). Questions: open an issue at https://github.com/YingQiu0871/Apply-Pilot/issues.
+
+本策略的修改会记录在本文件的历史和 [CHANGELOG.md](CHANGELOG.md) 中。如有问题，请在 https://github.com/YingQiu0871/Apply-Pilot/issues 提交 issue。

@@ -31,6 +31,16 @@ Ask only what you cannot find out yourself:
 
 Do not ask for passwords. Do not ask for API keys in chat: the user pastes keys into `.env` themselves (step 5).
 
+## Windows shortcut: the MSI
+
+If the user is on Windows and only wants to use Apply-Pilot (not develop it or scan LinkedIn), the installer is simpler than steps 1 to 3. Point them to the latest `Apply-Pilot-VERSION-x64-zh-CN.msi` or `-en-US.msi` on https://github.com/YingQiu0871/Apply-Pilot/releases and let them run it themselves, since installing software is their decision. It needs no administrator rights and includes Node.js. Then:
+
+- The command is `%LOCALAPPDATA%\Programs\Apply-Pilot\apply-pilot.cmd`, on `PATH` for new terminals.
+- `APPLY_PILOT_HOME` is set to `Documents\Apply-Pilot` unless the user already had one.
+- The first launch from the Start-menu or desktop icon runs `apply-pilot init` and opens the panel.
+
+Continue at step 4 (profile). Playwright is not included, so `linkedin` and `jd --browser` need the source install.
+
 ## Step 1: check prerequisites
 
 ```bash

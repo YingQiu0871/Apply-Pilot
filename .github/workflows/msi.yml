@@ -1,0 +1,58 @@
+name: msi
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    # windows-2022 ships WiX Toolset 3.14 (WIX environment variable).
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      - name: Install WiX 3.14 if the image has none
+        shell: pwsh
+        run: |
+          if (-not $env:WIX) {
+            choco install wixtoolset --version 3.14.1 -y --no-progress
+            "WIX=C:\Program Files (x86)\WiX Toolset v3.14\" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+      - run: node scripts/build-msi.mjs
+      - name: Smoke test the staged app
+        shell: bash
+        run: |
+          export APPLY_PILOT_HOME="$RUNNER_TEMP/ap-home"
+          dist/msi/stage/node.exe dist/msi/stage/app/bin/apply-pilot.mjs init
+          dist/msi/stage/node.exe dist/msi/stage/app/bin/apply-pilot.mjs add --company "Demo Lab" --role "M2 internship"
+          dist/msi/stage/node.exe dist/msi/stage/app/bin/apply-pilot.mjs export xlsx "$RUNNER_TEMP/t.xlsx"
+      - name: Install and uninstall test
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem dist\*-en-US.msi | Select-Object -First 1
+          $p = Start-Process msiexec -ArgumentList "/i `"$($msi.FullName)`" /qn /l*v install.log" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Get-Content install.log -Tail 60; exit $p.ExitCode }
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\Apply-Pilot'
+          & "$dir\apply-pilot.cmd" help | Select-Object -First 1
+          if (-not (Test-Path "$dir\launcher.vbs")) { throw 'launcher missing' }
+          $p = Start-Process msiexec -ArgumentList "/x `"$($msi.FullName)`" /qn" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { exit $p.ExitCode }
+          if (Test-Path "$dir\node.exe") { throw 'files left after uninstall' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Apply-Pilot-msi
+          path: dist/*.msi
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Apply-Pilot ${GITHUB_REF_NAME#v}" --notes "See CHANGELOG.md."
+          gh release upload "$GITHUB_REF_NAME" dist/*.msi --clobber
