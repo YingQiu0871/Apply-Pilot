@@ -41,11 +41,15 @@ Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applic
   eval prompt JD.txt                    print the scoring prompt for your agent to answer
   eval score ANSWER.json [--jd JD.txt]  weighted score from the agent's JSON answer
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
+  jd URL [--out FILE] [--browser] [--json]   fetch a job description (ATS APIs, page text, optional browser)
+  keywords REPORT.md [--cv cv.md] [--json]   which "## Keywords extracted" items your CV covers
   lint FILE...                          plain-writing check for letters and emails
   docx list FILE.docx                   show paragraph indices of a template
   docx build TEMPLATE OUT CHANGES.json  fill paragraphs, keep everything else identical
+  scan portals [--only NAME] [--pipeline [FILE]]  company career sites: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio
   linkedin login | linkedin scan [--jobs|--posts]
-  triage SCAN.json                      new candidates from a scan, minus tracked and filtered
+  triage SCAN.json [--json OUT] [--pipeline [FILE]]   new candidates, minus tracked and filtered; optionally append to data/pipeline.md
+  merge-additions [DIR] [--dry-run]     merge batch TSV tracker additions (default DIR: batch/tracker-additions)
   export xlsx OUT.xlsx                  tracker to a fresh spreadsheet
   careerops SCRIPT [ARGS]               run a career-ops script on the same data (optional)
 
@@ -182,11 +186,55 @@ async function main() {
       }
       throw new Error('linkedin login|scan');
     }
+    case 'scan': {
+      if (pos[0] !== 'portals') throw new Error('scan portals [--only NAME]');
+      const { scanPortals, savePortalScan } = await import('../src/scan/portals.mjs');
+      const res = await scanPortals(profile, { only: opt.only });
+      const file = savePortalScan(res, p.inbox);
+      console.log(`\n${res.jobs.length} kept, ${Object.entries(res.skipped).map(([k, v]) => `${v} ${k}`).join(', ') || 'none filtered'}, ${res.errors.length} errors`);
+      if (res.websearch.length) console.log(`${res.websearch.length} sources need a web search by your agent (listed under "websearch" in the file)`);
+      console.log(`saved ${file}`);
+      if (opt.pipeline) {
+        const { appendPipeline } = await import('../src/additions.mjs');
+        const t = triage(res, tracker().rows(), profile);
+        const target = opt.pipeline === true ? join(home, 'data', 'pipeline.md') : resolve(opt.pipeline);
+        console.log(`triage: ${t.fresh.length} new, ${t.tracked.length} already tracked, ${t.filtered.length} filtered; ${appendPipeline(target, t.fresh)} appended to ${target}`);
+      } else console.log(`next: apply-pilot triage ${file}`);
+      break;
+    }
+    case 'jd': {
+      const { fetchJd } = await import('../src/jd.mjs');
+      const r = await fetchJd(pos[0], { browser: Boolean(opt.browser) });
+      if (opt.out) { writeFileSync(opt.out, `${r.url}\n\n${r.text}\n`); console.log(`${r.source}: ${r.text.length} chars → ${opt.out}`); }
+      else console.log(opt.json ? JSON.stringify(r, null, 2) : r.text);
+      break;
+    }
+    case 'keywords': {
+      const { extractKeywords, coverage, coverageMarkdown, htmlToText } = await import('../src/keywords.mjs');
+      const cvFile = opt.cv || join(home, 'cv.md');
+      const cv = readFileSync(cvFile, 'utf8');
+      const cov = coverage(extractKeywords(readFileSync(pos[0], 'utf8')), /\.html?$/i.test(cvFile) ? htmlToText(cv) : cv);
+      console.log(opt.json ? JSON.stringify(cov, null, 2) : coverageMarkdown(cov, opt.cv ? cvFile : 'cv.md (base CV, before per-role tailoring)'));
+      break;
+    }
+    case 'merge-additions': {
+      // Tab-separated tracker additions (header row: # Date Company Role Score Status PDF Report Notes ... url),
+      // the batch format career-ops evaluations produce. Existing postings get a re-evaluation note instead.
+      const { mergeAdditions } = await import('../src/additions.mjs');
+      const res = mergeAdditions(tracker(), pos[0] || join(home, 'batch', 'tracker-additions'), { dryRun: Boolean(opt['dry-run']) });
+      console.log(`${res.added.length} added, ${res.updated.length} updated, ${res.files} file(s)${opt['dry-run'] ? ' (dry run)' : ''}`);
+      break;
+    }
     case 'triage': {
       const res = triage(JSON.parse(readFileSync(pos[0], 'utf8')), tracker().rows(), profile);
       console.log(`${res.fresh.length} new, ${res.tracked.length} already tracked, ${res.filtered.length} filtered out`);
       for (const c of res.fresh) console.log(`- [${c.kind}] ${c.role} | ${c.company} ${c.url || c.people?.[0] || ''}`.slice(0, 200));
       if (opt.json) writeFileSync(opt.json, JSON.stringify(res, null, 2));
+      if (opt.pipeline) {
+        const { appendPipeline } = await import('../src/additions.mjs');
+        const file = opt.pipeline === true ? join(home, 'data', 'pipeline.md') : resolve(opt.pipeline);
+        console.log(`${appendPipeline(file, res.fresh)} appended to ${file}`);
+      }
       break;
     }
     case 'export': {

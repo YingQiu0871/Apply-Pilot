@@ -21,9 +21,11 @@ scan ──► triage ──► evaluate ──► (user decides) ──► tail
 
 | Step | Command | Notes |
 |---|---|---|
+| Scan career sites | `apply-pilot scan portals --pipeline` | companies and filters in `profile.sources.portals` |
 | Scan LinkedIn | `apply-pilot linkedin scan` | needs `playwright` and a session from `apply-pilot linkedin login` |
 | Other boards | your harness's browser or web search | add rows with `apply-pilot add` |
 | Triage | `apply-pilot triage inbox/linkedin-*.json` | drops tracked, filtered and job-seeker posts |
+| Fetch a JD | `apply-pilot jd URL --out jd.txt` | add `--browser` for JavaScript-only pages |
 | Evaluate (agent) | `apply-pilot eval prompt jd.txt`, then answer with JSON, then `apply-pilot eval score answer.json --jd jd.txt` | no API key needed |
 | Evaluate (API) | `apply-pilot eval run jd.txt --provider deepseek --add` | `DEEPSEEK_API_KEY` |
 | Letters | `apply-pilot docx build ...`, then `apply-pilot lint letter.txt` | fix every lint issue or explain it |

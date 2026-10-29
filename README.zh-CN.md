@@ -54,6 +54,9 @@ apply-pilot eval prompt jd.txt                # 生成评分提示词，交给 a
 apply-pilot eval score answer.json --jd jd.txt
 DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 apply-pilot lint letter.txt                   # 检查求职信里的套话和不实说法
+apply-pilot scan portals --pipeline           # 扫描企业招聘系统（Workday、SuccessFactors、Phenom、Eightfold、SmartRecruiters、Personio）
+apply-pilot jd URL --out jd.txt               # 抓取完整 JD
+apply-pilot keywords report.md --cv cv.md     # 检查 CV 覆盖了 JD 的哪些关键词
 ```
 
 ## 安全原则
@@ -69,7 +72,7 @@ apply-pilot lint letter.txt                   # 检查求职信里的套话和�
 
 ## 致谢
 
-apply-pilot 使用的申请表格式与 Santiago Fernández de Valderrama 的 **[career-ops](https://github.com/career-ops-hq/career-ops)**（MIT）相同，两者可以共用同一个数据目录。career-ops 是可选的配套工具：本包不依赖它，也不包含它的代码。详见 [NOTICE.md](NOTICE.md)。
+apply-pilot 使用的申请表格式与 Santiago Fernández de Valderrama 的 **[career-ops](https://github.com/career-ops-hq/career-ops)**（MIT）相同，两者可以共用同一个数据目录。apply-pilot 可以独立运行，不需要安装 career-ops，也不包含它的代码。`scan portals` 用到的招聘系统公开接口最早由 career-ops 的 provider 模块整理，apply-pilot 的实现是独立编写的。详见 [NOTICE.md](NOTICE.md)。
 
 ## 许可
 

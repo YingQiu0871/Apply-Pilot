@@ -97,3 +97,29 @@ test('lint flags stock phrases and claims, but allows honest negations', () => {
   const ok = lintText('I have not used flow cytometry yet, and I would learn it with the team.', profile);
   assert.equal(ok.issues.length, 0);
 });
+
+test('portal title and location rules', async () => {
+  const { ruleMatch, passesFilters } = await import('../src/scan/portals.mjs');
+  assert.ok(ruleMatch('STAGE R&D Oncologie - Biologie Cellulaire', 'stage + biologie'));
+  assert.ok(!ruleMatch('Internal auditor', 'word:intern'));
+  const cfg = { titleFilter: { positive: ['stage + formulation'], negative: ['word:RH'] }, locationFilter: { allow: ['word:FR', 'France'], deny: ['Netherlands'] }, maxAgeDays: 14 };
+  assert.equal(passesFilters({ title: 'Stage formulation', location: 'SURESNES, FR', posted: '2026-10-20' }, cfg, '2026-10-29'), null);
+  assert.equal(passesFilters({ title: 'Stage formulation', location: 'Leiden, Netherlands' }, cfg), 'location-deny');
+  assert.equal(passesFilters({ title: 'Stage formulation', location: 'Paris, France', posted: '2026-09-01' }, cfg, '2026-10-29'), 'too-old');
+});
+
+test('merge-additions adds new rows and re-notes known ones', async () => {
+  const { mergeAdditions, appendPipeline } = await import('../src/additions.mjs');
+  const { mkdtempSync, writeFileSync: w, existsSync: ex, readFileSync: r } = await import('node:fs');
+  const dir = mkdtempSync(join(tmpdir(), 'ap-add-'));
+  const t = new Tracker(join(dir, 'applications.md'));
+  t.add({ company: 'Sanofi', role: 'Old role', url: 'https://www.linkedin.com/jobs/view/4479504584/' });
+  w(join(dir, 'a.tsv'), '#\tDate\tCompany\tRole\tScore\tStatus\tPDF\tReport\tNotes\tvia\tlocation\turl\n517\t2026-10-22\tSanofi\tDrug product\t3.95/5\tEvaluated\t-\t-\tConsider\t-\tLyon\thttps://www.linkedin.com/jobs/view/4479504584/\n518\t2026-10-22\tIpsen\tAnalytical intern\t4.1/5\tEvaluated\t-\t-\tApply\t-\tParis\thttps://ipsen.example/job/1\n');
+  const res = mergeAdditions(t, dir);
+  assert.deepEqual([res.added.length, res.updated.length], [1, 1]);
+  assert.ok(ex(join(dir, 'merged', 'a.tsv')));
+  const pipe = join(dir, 'pipeline.md');
+  assert.equal(appendPipeline(pipe, [{ url: 'https://x.example/1', company: 'X', role: 'Stage' }]), 1);
+  assert.equal(appendPipeline(pipe, [{ url: 'https://x.example/1', company: 'X', role: 'Stage' }]), 0);
+  assert.match(r(pipe, 'utf8'), /- \[ \] https:\/\/x\.example\/1 \| X \| Stage/);
+});

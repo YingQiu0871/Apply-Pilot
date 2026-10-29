@@ -20,7 +20,18 @@ export function triage(scan, rows, profile) {
     const dupes = findDuplicates(rows, candidate).map((r) => r.num);
     out.push({ ...candidate, filtered, tracked: dupes });
   };
-  for (const s of scan.jobs || []) for (const it of s.items) push('job', s.query, it);
+  for (const s of scan.jobs || []) {
+    // Portal scans list jobs directly; LinkedIn scans group cards under queries.
+    if (!s.items) {
+      const key = s.url;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const candidate = { kind: 'portal', query: s.provider, url: s.url, company: s.company, role: s.title, text: `${s.title} ${s.location || ''}`, location: s.location, posted: s.posted };
+      out.push({ ...candidate, filtered: hardFilter(profile, { company: s.company, text: s.title }), tracked: findDuplicates(rows, candidate).map((r) => r.num) });
+      continue;
+    }
+    for (const it of s.items) push('job', s.query, it);
+  }
   for (const s of scan.posts || []) for (const it of s.items) push('post', s.query, it);
   return {
     fresh: out.filter((c) => !c.filtered.length && !c.tracked.length),

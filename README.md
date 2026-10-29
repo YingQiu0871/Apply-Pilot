@@ -69,9 +69,12 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 | `eval prompt / score / run` | rubric scoring with hard filters; works with an agent or with DeepSeek, OpenAI, OpenRouter, Ollama, Anthropic |
 | `lint` | flags stock phrases, claims you listed as forbidden (but allows honest "I have not used X"), semicolons, long lists |
 | `docx list / build` | fill a Word template paragraph by paragraph, every other part byte-identical (photo, styles) |
-| `linkedin login / scan`, `triage` | job and post search with your own logged-in browser profile, then new-only candidates |
+| `scan portals` | company career sites through their public feeds: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio; title, location and age filters |
+| `linkedin login / scan`, `triage` | job and post search with your own logged-in browser profile, then new-only candidates (`--pipeline` appends them to `data/pipeline.md`) |
+| `jd`, `keywords` | fetch a full job description (ATS APIs, page text, optional browser); keyword coverage of your CV against a report |
+| `merge-additions` | merge batch TSV tracker additions from an evaluation run |
 | `export xlsx` | tracker to a fresh spreadsheet |
-| `careerops` | run a [career-ops](https://github.com/career-ops-hq/career-ops) script on the same data |
+| `careerops` | optional: run a [career-ops](https://github.com/career-ops-hq/career-ops) script on the same data |
 
 ## Your profile
 
@@ -98,7 +101,7 @@ The package contains no personal data and needs none to run its tests. CVs, trac
 
 ## Acknowledgements
 
-apply-pilot reads and writes the same tracker format as **[career-ops](https://github.com/career-ops-hq/career-ops)** by Santiago Fernández de Valderrama (MIT). career-ops is an optional companion, not a dependency, and no career-ops code is included here. See [NOTICE.md](NOTICE.md).
+apply-pilot reads and writes the same tracker format as **[career-ops](https://github.com/career-ops-hq/career-ops)** by Santiago Fernández de Valderrama (MIT). apply-pilot runs on its own; career-ops is not required, and no career-ops code is included here. The public career-site endpoints used by `scan portals` were first documented by career-ops' provider modules; apply-pilot's implementations are written independently. See [NOTICE.md](NOTICE.md).
 
 ## License
 
