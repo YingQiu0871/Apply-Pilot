@@ -13,7 +13,6 @@
     <Property Id="ARPPRODUCTICON" Value="ApplyPilot.ico" />
     <Property Id="ARPURLINFOABOUT" Value="https://github.com/YingQiu0871/Apply-Pilot" />
     <Property Id="ARPHELPLINK" Value="https://github.com/YingQiu0871/Apply-Pilot/issues" />
-    <Property Id="ARPNOMODIFY" Value="1" />
 
     <!-- Only set APPLY_PILOT_HOME when the user has none, or when an earlier
          Apply-Pilot install set it (so upgrades keep it). -->
