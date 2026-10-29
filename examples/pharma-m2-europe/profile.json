@@ -1,0 +1,62 @@
+{
+  "candidate": {
+    "summary": "Pharmacy M2 student (drug and health product development) looking for a 6-month formulation, drug-delivery or analytical internship in France or continental Europe, starting January to March 2027, English working language preferred.",
+    "facts": [
+      "Example only, replace with your own: 4-month formulation internship, wet granulation and tablet compression",
+      "Example only: 6-month quality-control internship with HPLC and dissolution testing",
+      "Example only: undergraduate project with LC-MS and statistics in R"
+    ],
+    "languages": ["English (fluent)", "French (A2)"]
+  },
+  "scoring": {
+    "dimensions": [
+      { "id": "formulation", "label": "Formulation / drug delivery", "weight": 25, "guide": "Hands-on formulation, delivery systems, process work" },
+      { "id": "analytical", "label": "Analytical techniques", "weight": 15, "guide": "HPLC, spectroscopy, characterisation" },
+      { "id": "gmp_process", "label": "GMP / process", "weight": 10, "guide": "GMP environment, scale-up, process development" },
+      { "id": "research", "label": "Research depth", "weight": 15, "guide": "Real research question, publication potential" },
+      { "id": "english", "label": "English working environment", "weight": 20, "guide": "5 = English stated as working language; 2 = French-only JD" },
+      { "id": "timing", "label": "Start Jan-Mar, 6 months", "weight": 10, "guide": "5 = 6 months starting January to March" },
+      { "id": "phd_path", "label": "PhD / CIFRE continuation", "weight": 5, "guide": "Explicit PhD or CIFRE follow-up" }
+    ],
+    "thresholds": { "apply": 80, "consider": 65 }
+  },
+  "filters": {
+    "excludeCompanies": [],
+    "excludeKeywords": ["alternance", "apprentissage", "contrat de professionnalisation", "VIE"],
+    "requireKeywords": []
+  },
+  "followUp": { "afterDays": 14, "maxFollowUps": 1, "skipAppliedBefore": null },
+  "writing": {
+    "bannedPhrases": ["fluent in French", "courant en français"],
+    "forbiddenClaims": ["flow cytometry", "ELISA"],
+    "maxSemicolons": 0
+  },
+  "sources": {
+    "linkedin": {
+      "profileDir": "browser/linkedin",
+      "jobWindowDays": 14,
+      "scrolls": 2,
+      "locale": "fr-FR",
+      "timezoneId": "Europe/Paris",
+      "jobs": [
+        { "q": "stage formulation pharmaceutique", "geo": "FR" },
+        { "q": "stage drug delivery", "geo": "FR" },
+        { "q": "stage chimie analytique", "geo": "FR" },
+        { "q": "stage développement pharmaceutique", "geo": "FR" },
+        { "q": "internship formulation", "geo": "DE" },
+        { "q": "Praktikum pharmazeutische Entwicklung", "geo": "DE" },
+        { "q": "internship pharmaceutical development", "geo": "BE" },
+        { "q": "internship pharmaceutical development", "geo": "CH" }
+      ],
+      "posts": [
+        "offre de stage M2 pharmacie",
+        "stage M2 formulation pharmaceutique",
+        "Offre de stage M2",
+        "proposition de stage M2",
+        "Master's internship opportunity",
+        "M2 internship opportunity 2027",
+        "Masterarbeit pharmazeutische Technologie"
+      ]
+    }
+  }
+}

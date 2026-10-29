@@ -1,0 +1,10 @@
+node_modules/
+apply-data/
+browser/
+inbox/
+output/
+*.xlsx
+*.docx
+*.pdf
+.env
+.env.*

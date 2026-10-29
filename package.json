@@ -1,0 +1,52 @@
+{
+  "name": "apply-pilot",
+  "version": "0.1.0",
+  "description": "A local, agent-agnostic job and internship application pipeline: scan, deduplicate, score, track, follow up, and review letters. Works with Claude Code, Codex, DeepSeek and any OpenAI-compatible model.",
+  "type": "module",
+  "bin": {
+    "apply-pilot": "bin/apply-pilot.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "config",
+    "examples",
+    "skills",
+    "docs",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "NOTICE.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "ui": "node bin/apply-pilot.mjs ui"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
+  },
+  "optionalDependencies": {
+    "exceljs": "^4.4.0",
+    "playwright": "^1.48.0"
+  },
+  "keywords": [
+    "job-search",
+    "internship",
+    "application-tracker",
+    "claude-code",
+    "codex",
+    "deepseek",
+    "agent"
+  ],
+  "author": "Yuning Gu (https://github.com/YingQiu0871)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YingQiu0871/apply-pilot.git"
+  }
+}

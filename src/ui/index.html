@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>apply-pilot</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #667085; --line: #e4e7ec;
+  --accent: #2f6fde; --chip: #eef2f8;
+  --applied: #2f6fde; --responded: #0f8a5f; --interview: #8a4fd8; --rejected: #c2410c;
+  --evaluated: #7a6a00; --skip: #98a2b3; --warn: #b54708; --warnbg: #fff4e5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151b; --panel: #1b2028; --text: #e6e9ef; --muted: #98a2b3; --line: #2b313c;
+    --accent: #6ea0ff; --chip: #252b36;
+    --applied: #6ea0ff; --responded: #3ccf91; --interview: #b48cff; --rejected: #ff8a5c;
+    --evaluated: #e0c84a; --skip: #6b7280; --warn: #ffb54d; --warnbg: #3a2a12;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.5 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
+header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+h1 { font-size: 22px; margin: 0; }
+.live { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--skip); }
+.dot.on { background: var(--responded); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; text-align: left; color: inherit; font: inherit; }
+.kpi:hover, .kpi.sel { border-color: var(--accent); }
+.kpi .n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .l { color: var(--muted); font-size: 12px; }
+.bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.chip { border: 1px solid var(--line); background: var(--chip); color: var(--text); border-radius: 999px; padding: 4px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+.chip.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+input[type=search] { flex: 1 1 220px; min-width: 0; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; }
+.count { color: var(--muted); font-size: 12px; }
+.list { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.row { display: grid; grid-template-columns: 52px 1.3fr 2fr 70px 92px 96px; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); align-items: start; cursor: pointer; }
+.row:first-child { border-top: 0; }
+.row.head { cursor: default; color: var(--muted); font-size: 12px; background: var(--chip); }
+.row:not(.head):hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.num { color: var(--muted); font-variant-numeric: tabular-nums; }
+.co { font-weight: 600; overflow-wrap: anywhere; }
+.role { overflow-wrap: anywhere; }
+.latest { color: var(--muted); font-size: 12px; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.score { font-variant-numeric: tabular-nums; }
+.st { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.st.Applied { color: var(--applied); } .st.Responded { color: var(--responded); } .st.Interview, .st.Offer { color: var(--interview); }
+.st.Rejected { color: var(--rejected); } .st.Evaluated, .st.Consider { color: var(--evaluated); } .st.SKIP, .st.Discarded { color: var(--skip); }
+.age { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.age.warn { color: var(--warn); font-weight: 600; }
+.detail { grid-column: 1 / -1; background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.detail a { color: var(--accent); }
+h2 { font-size: 15px; margin: 0 0 10px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 18px; }
+.sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+.feed { max-height: 320px; overflow-y: auto; }
+.ev { display: grid; grid-template-columns: 44px 72px 1fr; gap: 8px; padding: 6px 4px; border-top: 1px solid var(--line); cursor: pointer; font-size: 13px; align-items: baseline; }
+.ev:first-child { border-top: 0; }
+.ev:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.evd { color: var(--muted); font-variant-numeric: tabular-nums; }
+.evb { overflow-wrap: anywhere; }
+.k { font-size: 12px; padding: 0 6px; border-radius: 999px; border: 1px solid currentColor; text-align: center; white-space: nowrap; }
+.k.rejected { color: var(--rejected); } .k.reply { color: var(--responded); } .k.interview { color: var(--interview); }
+.k.sent { color: var(--applied); } .k.followup { color: var(--warn); } .k.note { color: var(--muted); }
+.empty { padding: 28px; text-align: center; color: var(--muted); }
+.err { background: var(--warnbg); color: var(--warn); padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; display: none; }
+@media (max-width: 760px) {
+  .row { grid-template-columns: 1fr auto; }
+  .row.head { display: none; }
+  .row .num, .row .score { display: none; }
+  .row .main { grid-column: 1 / -1; order: -1; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title"></h1>
+    <span class="live"><span class="dot" id="dot"></span><span id="updated"></span></span>
+  </header>
+  <div class="err" id="err"></div>
+  <div class="kpis" id="kpis"></div>
+  <section class="panel">
+    <h2 id="feedTitle"></h2>
+    <div class="bar" id="feedctl"></div>
+    <div class="feed" id="feed"></div>
+  </section>
+  <h2 id="listTitle"></h2>
+  <div class="bar" id="chips"></div>
+  <div class="bar">
+    <input type="search" id="q">
+    <span class="count" id="count"></span>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+<script>
+// Language: ?lang=zh|en, otherwise the browser language.
+const LANG = new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+const T = {
+  zh: { title: '申请进度', feed: '最近动态', list: '全部申请', search: '搜索公司、岗位、联系人或备注…', rows: '行', updated: '更新于', connecting: '连接中…',
+    status: { Applied: '已投递', Responded: '有回复', Interview: '面试', Offer: 'Offer', Rejected: '被拒', Evaluated: '待决定', SKIP: '跳过', Discarded: '已关闭' },
+    kind: { rejected: '被拒', interview: '面试', reply: '回复', followup: '跟进', sent: '投递/发出', note: '记录' },
+    f: { active: '进行中', applied: '已投递', reply: '有回复 / 面试', follow: (d) => `待跟进（≥${d} 天无动静）`, pending: '待决定', rejected: '被拒', all: '全部' },
+    k: { applied: '已投递，等待中', reply: '有回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒' },
+    head: ['#', '公司 / 联系人', '岗位 · 最新进展', '评分', '状态', '最近动态'], days: (n) => `近 ${n} 天`, ago: (n) => (n <= 0 ? '今天' : `${n} 天前`),
+    count: (n) => `${n} 条`, empty: '没有符合条件的申请', emptyFeed: '这段时间没有动态', more: (n) => `还有 ${n} 条，缩小时间范围或按类型筛选`, open: '打开岗位链接 ↗', fail: '读取失败：', all: '全部' },
+  en: { title: 'Applications', feed: 'Recent activity', list: 'All applications', search: 'Search company, role, contact or notes…', rows: 'rows', updated: 'updated', connecting: 'connecting…',
+    status: { Applied: 'Applied', Responded: 'Responded', Interview: 'Interview', Offer: 'Offer', Rejected: 'Rejected', Evaluated: 'To decide', SKIP: 'Skipped', Discarded: 'Closed' },
+    kind: { rejected: 'Rejected', interview: 'Interview', reply: 'Reply', followup: 'Follow-up', sent: 'Sent', note: 'Note' },
+    f: { active: 'Active', applied: 'Applied', reply: 'Replies / interviews', follow: (d) => `Follow-up due (≥${d} days quiet)`, pending: 'To decide', rejected: 'Rejected', all: 'All' },
+    k: { applied: 'Applied, waiting', reply: 'Replies / interviews', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
+    head: ['#', 'Company / contact', 'Role · latest', 'Score', 'Status', 'Last activity'], days: (n) => `${n} days`, ago: (n) => (n <= 0 ? 'today' : `${n} d ago`),
+    count: (n) => `${n}`, empty: 'No matching applications', emptyFeed: 'Nothing in this period', more: (n) => `${n} more, narrow the period or type`, open: 'Open posting ↗', fail: 'Load failed: ', all: 'All' },
+}[LANG === 'zh' ? 'zh' : 'en'];
+
+const today = () => new Date(new Date().toLocaleDateString('sv-SE'));
+const days = (d) => Math.round((today() - new Date(d)) / 86400000);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const FEED_DAYS = [7, 14, 30];
+let followDays = 14;
+
+const FILTERS = [
+  { id: 'active', test: (r) => ['Applied', 'Responded', 'Interview', 'Offer', 'Evaluated'].includes(r.status) },
+  { id: 'applied', test: (r) => r.status === 'Applied' },
+  { id: 'reply', test: (r) => ['Responded', 'Interview', 'Offer'].includes(r.status) },
+  { id: 'follow', test: (r) => r.due },
+  { id: 'pending', test: (r) => r.status === 'Evaluated' },
+  { id: 'rejected', test: (r) => r.status === 'Rejected' },
+  { id: 'all', test: () => true },
+];
+const fLabel = (id) => (typeof T.f[id] === 'function' ? T.f[id](followDays) : T.f[id]);
+
+let state = { rows: [], filter: 'active', q: '', open: new Set(), feedDays: 7, feedKind: 'all' };
+try { const s = JSON.parse(localStorage.getItem('apply-pilot-ui') || '{}'); Object.assign(state, { filter: s.filter || state.filter, feedDays: s.feedDays || 7 }); } catch {}
+const save = () => { try { localStorage.setItem('apply-pilot-ui', JSON.stringify({ filter: state.filter, feedDays: state.feedDays })); } catch {} };
+
+document.getElementById('title').textContent = T.title;
+document.getElementById('feedTitle').textContent = T.feed;
+document.getElementById('listTitle').textContent = T.list;
+document.getElementById('q').placeholder = T.search;
+document.getElementById('updated').textContent = T.connecting;
+
+function renderFeed() {
+  // Skipped and closed rows only carry screening notes, so they are left out.
+  const all = state.rows.filter((r) => !['SKIP', 'Discarded'].includes(r.status))
+    .flatMap((r) => r.events.filter((e) => days(e.date) <= state.feedDays).map((e) => ({ ...e, r })));
+  const counts = { rejected: 0, reply: 0, interview: 0, followup: 0, sent: 0 };
+  all.forEach((e) => { if (e.kind in counts) counts[e.kind] += 1; });
+  const shown = all.filter((e) => (state.feedKind === 'all' ? e.kind !== 'note' : e.kind === state.feedKind))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.r.num - a.r.num);
+  document.getElementById('feedctl').innerHTML =
+    FEED_DAYS.map((d) => `<button class="chip ${state.feedDays === d ? 'sel' : ''}" data-days="${d}">${T.days(d)}</button>`).join('') +
+    '<span class="sep"></span>' +
+    [['all', T.all], ...Object.keys(counts).map((k) => [k, `${T.kind[k]} ${counts[k]}`])]
+      .map(([k, l]) => `<button class="chip ${state.feedKind === k ? 'sel' : ''}" data-kind="${k}">${l}</button>`).join('');
+  document.getElementById('feed').innerHTML = shown.length
+    ? shown.slice(0, 60).map((e) => `<div class="ev" data-goto="${e.r.num}"><span class="evd">${e.date.slice(5)}</span><span class="k ${e.kind}">${T.kind[e.kind]}</span><span class="evb"><b>#${e.r.num} ${esc(e.r.company)}</b> · ${esc(e.text)}</span></div>`).join('')
+      + (shown.length > 60 ? `<div class="empty">${T.more(shown.length - 60)}</div>` : '')
+    : `<div class="empty">${T.emptyFeed}</div>`;
+}
+
+function render() {
+  renderFeed();
+  const f = FILTERS.find((x) => x.id === state.filter) || FILTERS[0];
+  document.getElementById('kpis').innerHTML = Object.keys(T.k).map((id) => {
+    const n = state.rows.filter(FILTERS.find((x) => x.id === id).test).length;
+    return `<button class="kpi ${state.filter === id ? 'sel' : ''}" data-f="${id}"><div class="n">${n}</div><div class="l">${T.k[id]}</div></button>`;
+  }).join('');
+  document.getElementById('chips').innerHTML = FILTERS.map((x) => `<button class="chip ${x.id === state.filter ? 'sel' : ''}" data-f="${x.id}">${fLabel(x.id)}</button>`).join('');
+  const q = state.q.trim().toLowerCase();
+  const rows = state.rows.filter(f.test)
+    .filter((r) => !q || `${r.num} ${r.company} ${r.role} ${r.notes}`.toLowerCase().includes(q))
+    .sort((a, b) => b.lastActivity.localeCompare(a.lastActivity) || b.num - a.num);
+  document.getElementById('count').textContent = T.count(rows.length);
+  const head = `<div class="row head">${T.head.map((h) => `<div>${h}</div>`).join('')}</div>`;
+  document.getElementById('list').innerHTML = rows.length ? head + rows.map((r) => {
+    const latest = r.events.at(-1)?.text || r.notes.slice(-200);
+    const open = state.open.has(r.num);
+    return `<div class="row" data-n="${r.num}">
+      <div class="num">${r.num}</div>
+      <div class="co">${esc(r.company)}</div>
+      <div class="main"><div class="role">${esc(r.role)}</div><div class="latest">${esc(latest)}</div></div>
+      <div class="score">${r.score ?? '–'}</div>
+      <div><span class="st ${esc(r.status)}">${T.status[r.status] || esc(r.status)}</span></div>
+      <div class="age ${r.due ? 'warn' : ''}">${esc(r.lastActivity)}<br>${T.ago(days(r.lastActivity))}</div>
+      ${open ? `<div class="detail">${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${T.open}</a>\n\n` : ''}${esc(r.notes)}</div>` : ''}
+    </div>`;
+  }).join('') : `<div class="empty">${T.empty}</div>`;
+}
+
+async function load() {
+  try {
+    const res = await fetch('/api/data', { cache: 'no-store' });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    state.rows = data.rows;
+    followDays = data.followUpDays;
+    document.getElementById('updated').textContent = `${state.rows.length} ${T.rows} · ${T.updated} ${new Date(data.generated).toLocaleTimeString()}`;
+    document.getElementById('err').style.display = 'none';
+    render();
+  } catch (e) {
+    const el = document.getElementById('err'); el.textContent = T.fail + e.message; el.style.display = 'block';
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const db = e.target.closest('[data-days]');
+  if (db) { state.feedDays = Number(db.dataset.days); save(); render(); return; }
+  const kb = e.target.closest('[data-kind]');
+  if (kb) { state.feedKind = kb.dataset.kind; render(); return; }
+  const go = e.target.closest('[data-goto]');
+  if (go) {
+    const n = Number(go.dataset.goto);
+    state.filter = 'all'; state.q = ''; document.getElementById('q').value = ''; state.open.add(n); render();
+    document.querySelector(`.row[data-n="${n}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  const fb = e.target.closest('[data-f]');
+  if (fb) { state.filter = fb.dataset.f; save(); render(); return; }
+  if (e.target.closest('a')) return;
+  const row = e.target.closest('.row[data-n]');
+  if (row) { const n = Number(row.dataset.n); state.open.has(n) ? state.open.delete(n) : state.open.add(n); render(); }
+});
+document.getElementById('q').addEventListener('input', (e) => { state.q = e.target.value; render(); });
+
+const es = new EventSource('/events');
+es.onopen = () => document.getElementById('dot').classList.add('on');
+es.onerror = () => document.getElementById('dot').classList.remove('on');
+es.onmessage = () => load();
+setInterval(load, 60000);
+load();
+</script>
+</body>
+</html>

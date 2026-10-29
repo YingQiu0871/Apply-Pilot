@@ -1,0 +1,43 @@
+{
+  "candidate": {
+    "summary": "Master's student looking for a 6-month internship starting in early 2027. Replace this with your target in two or three sentences.",
+    "facts": [
+      "Replace with facts you can prove, one per line, e.g. '6-month QC internship: HPLC, sample preparation, batch records'",
+      "These are the only experiences the evaluator may count as strengths"
+    ],
+    "languages": ["English (C1)", "French (A2)"]
+  },
+  "scoring": {
+    "dimensions": [
+      { "id": "core_fit", "label": "Core skill fit", "weight": 30, "guide": "How much of the daily work matches the candidate facts" },
+      { "id": "learning", "label": "What I would learn", "weight": 15, "guide": "New methods or domain that matter for the next step" },
+      { "id": "language", "label": "Working language", "weight": 20, "guide": "5 = English working language stated; 2 = local language only" },
+      { "id": "timing", "label": "Start date and duration", "weight": 20, "guide": "5 = start and duration match the target window exactly" },
+      { "id": "employer", "label": "Employer and supervision", "weight": 15, "guide": "Named supervisor, team size, track record with interns" }
+    ],
+    "thresholds": { "apply": 80, "consider": 65 }
+  },
+  "filters": {
+    "excludeCompanies": [],
+    "excludeKeywords": ["alternance", "apprenticeship", "unpaid 12 months"],
+    "requireKeywords": []
+  },
+  "followUp": { "afterDays": 14, "maxFollowUps": 1, "skipAppliedBefore": null },
+  "writing": {
+    "bannedPhrases": [],
+    "forbiddenClaims": [],
+    "maxSemicolons": 0
+  },
+  "sources": {
+    "linkedin": {
+      "profileDir": "browser/linkedin",
+      "jobWindowDays": 14,
+      "scrolls": 2,
+      "jobs": [
+        { "q": "internship data analysis 2027", "geo": "FR" },
+        { "q": "internship research and development", "geo": "EU" }
+      ],
+      "posts": ["internship opportunity 2027", "we are looking for an intern"]
+    }
+  }
+}
