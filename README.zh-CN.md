@@ -1,5 +1,7 @@
 # apply-pilot
 
+[![ci](https://github.com/YingQiu0871/apply-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/YingQiu0871/apply-pilot/actions/workflows/ci.yml)
+
 一个在本地运行的求职 / 实习申请流水线，不绑定任何一种 agent。它能做这些事：
 - 扫描岗位，去掉重复；
 - 按你自己定的权重打分；

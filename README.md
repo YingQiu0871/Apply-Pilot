@@ -1,5 +1,7 @@
 # apply-pilot
 
+[![ci](https://github.com/YingQiu0871/apply-pilot/actions/workflows/ci.yml/badge.svg)](https://github.com/YingQiu0871/apply-pilot/actions/workflows/ci.yml)
+
 A local, agent-agnostic pipeline for job and internship applications. It scans postings, removes duplicates, scores them against your own rubric, tracks every application in one Markdown table, tells you what is due a follow-up, checks letters for stock phrases and invented claims, and shows it all on a live dashboard.
 
 It runs on your machine and keeps your data in a folder you own. Claude Code, Codex, DeepSeek or any OpenAI-compatible model can drive it.
