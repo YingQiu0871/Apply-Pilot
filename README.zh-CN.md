@@ -26,9 +26,12 @@ Claude Code、Codex、DeepSeek 或任何兼容 OpenAI 接口的模型都能驱�
 ## 安装
 
 ```bash
-npm i -g github:YingQiu0871/apply-pilot
-npm i -g playwright exceljs   # 可选：领英扫描、导出 Excel
+git clone https://github.com/YingQiu0871/apply-pilot.git
+cd apply-pilot && npm install && npm link   # 之后可以直接用 apply-pilot 命令
+npm install playwright exceljs                # 可选：领英扫描、导出 Excel
 ```
+
+新版 npm 默认禁止 `npm i github:...` 这种安装方式，所以建议用 clone 安装。
 
 需要 Node 20 或以上。
 

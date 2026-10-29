@@ -5,8 +5,8 @@ apply-pilot is a plain Node CLI with a JSON-in/JSON-out evaluation step, so any 
 ## Claude Code
 
 ```bash
-npm i -g github:YingQiu0871/apply-pilot      # or: git clone … && npm link
-cp -r "$(npm root -g)/apply-pilot/skills/apply-pilot" ~/.claude/skills/
+git clone https://github.com/YingQiu0871/apply-pilot.git && cd apply-pilot && npm install && npm link
+cp -r skills/apply-pilot ~/.claude/skills/
 ```
 
 In the project where your data lives, add to `CLAUDE.md`:

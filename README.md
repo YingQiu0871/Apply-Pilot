@@ -20,12 +20,13 @@ apply-pilot does that bookkeeping. You and your agent do the judgement.
 ## Install
 
 ```bash
-npm i -g github:YingQiu0871/apply-pilot
+git clone https://github.com/YingQiu0871/apply-pilot.git
+cd apply-pilot && npm install && npm link      # puts `apply-pilot` on your PATH
 # optional: LinkedIn scanning and spreadsheet export
-npm i -g playwright exceljs
+npm install playwright exceljs
 ```
 
-Node 20 or later.
+Node 20 or later. (Recent npm versions refuse `npm i github:...` by default, so cloning is the reliable route.)
 
 ## Quick start
 
