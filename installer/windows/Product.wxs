@@ -2,7 +2,7 @@
 <!-- Apply-Pilot per-user MSI (WiX Toolset 3.14). Built by scripts/build-msi.mjs,
      which stages the files and generates Files.wxs next to this file. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Apply-Pilot" Language="!(loc.LanguageId)" Codepage="!(loc.Codepage)" Version="$(var.Version)"
+  <Product Id="*" Name="Apply-Pilot" Language="!(loc.LanguageId)" Version="$(var.Version)"
            Manufacturer="Yuning Gu" UpgradeCode="3b0468d2-bc68-48a8-b194-20fb0f738ac6">
     <Package InstallerVersion="500" Compressed="yes" InstallScope="perUser" InstallPrivileges="limited" Platform="x64"
              Languages="!(loc.LanguageId)" SummaryCodepage="!(loc.Codepage)" Description="Apply-Pilot $(var.Version)" Manufacturer="Yuning Gu" />
