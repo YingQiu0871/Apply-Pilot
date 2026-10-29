@@ -218,3 +218,34 @@ test('import reads CSV, JSON, Markdown, Excel and SQLite, maps columns and statu
   assert.equal(again.fresh.length, 0, 'a second import adds nothing');
   assert.match(new Tracker(trackerFile).rows().at(-1).notes, /imported from/);
 });
+
+test('data folder: env, then saved setting, then default; init and inspect', async () => {
+  const { homeDir, homeSource, saveHome } = await import('../src/config.mjs');
+  const { initHome, inspectHome } = await import('../src/home.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'ap-home-'));
+  const keep = { home: process.env.APPLY_PILOT_HOME, settings: process.env.APPLY_PILOT_SETTINGS };
+  try {
+    delete process.env.APPLY_PILOT_HOME;
+    process.env.APPLY_PILOT_SETTINGS = join(dir, 'settings', 'settings.json');
+    assert.equal(homeSource(), 'default');
+
+    const data = join(dir, 'data-folder');
+    assert.equal(inspectHome(data).exists, false);
+    const { wrote } = initHome(data);
+    assert.equal(wrote.length, 3);
+    assert.equal(initHome(data).wrote.length, 0, 'existing files are kept');
+    const info = inspectHome(data);
+    assert.ok(info.hasProfile && info.hasTracker);
+    assert.equal(info.rows, 0);
+
+    saveHome(data);
+    assert.equal(homeSource(), 'settings');
+    assert.equal(homeDir(), data);
+    process.env.APPLY_PILOT_HOME = join(dir, 'other');
+    assert.equal(homeSource(), 'env');
+    assert.equal(homeDir(), join(dir, 'other'));
+  } finally {
+    if (keep.home === undefined) delete process.env.APPLY_PILOT_HOME; else process.env.APPLY_PILOT_HOME = keep.home;
+    if (keep.settings === undefined) delete process.env.APPLY_PILOT_SETTINGS; else process.env.APPLY_PILOT_SETTINGS = keep.settings;
+  }
+});

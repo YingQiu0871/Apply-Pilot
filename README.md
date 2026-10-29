@@ -38,9 +38,9 @@ Apply-Pilot does that bookkeeping. You and your agent do the judgement.
 
 ### Windows installer · Windows 安装包
 
-Download `Apply-Pilot-VERSION-x64-zh-CN.msi` (中文界面) or `...-en-US.msi` from the [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) page and double-click it. It needs no administrator rights and no separate Node.js: the runtime is included. It adds Start-menu and desktop icons and the `apply-pilot` command, and creates your data folder at `Documents\Apply-Pilot` on first launch (unless `APPLY_PILOT_HOME` is already set). Uninstalling from Settings → Apps keeps your data folder.
+Download `Apply-Pilot-VERSION-x64-zh-CN.msi` (中文界面) or `...-en-US.msi` from the [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) page and double-click it. It needs no administrator rights and no separate Node.js: the runtime is included. It adds Start-menu and desktop icons and the `apply-pilot` command. On first launch the panel asks where to keep your data: create a new folder, or pick one you already use. Uninstalling from Settings → Apps keeps your data folder.
 
-从 [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) 页面下载 `Apply-Pilot-版本号-x64-zh-CN.msi`（中文界面）或 `en-US` 版，双击安装即可。不需要管理员权限，也不需要另装 Node.js（已内置）。安装后会添加开始菜单和桌面图标以及 `apply-pilot` 命令，第一次打开时在 `文档\Apply-Pilot` 创建数据目录（如果已设置 `APPLY_PILOT_HOME` 则沿用）。在"设置 → 应用"中卸载时会保留数据目录。
+从 [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) 页面下载 `Apply-Pilot-版本号-x64-zh-CN.msi`（中文界面）或 `en-US` 版，双击安装即可。不需要管理员权限，也不需要另装 Node.js（已内置）。安装后会添加开始菜单和桌面图标以及 `apply-pilot` 命令。第一次打开时，面板会让你选择数据目录：新建一个，或者选择已有的目录。在"设置 → 应用"中卸载时会保留数据目录。
 
 The installer includes Node.js, JSZip and ExcelJS. LinkedIn scanning needs Playwright and is only available in the source install below. 安装包内置 Node.js、JSZip 和 ExcelJS；领英扫描需要 Playwright，只能用下面的源码安装方式。
 
@@ -72,6 +72,29 @@ apply-pilot shortcut                            # optional desktop icon / 可选
 On Windows PowerShell, set the folder with `$env:APPLY_PILOT_HOME = "$HOME\job-search"`.
 
 Windows PowerShell 中用 `$env:APPLY_PILOT_HOME = "$HOME\job-search"` 设置数据目录。
+
+### Data folder · 数据目录
+
+Apply-Pilot looks for your data folder in this order:
+
+1. the `APPLY_PILOT_HOME` environment variable;
+2. the folder you chose in the panel (Tools → Data folder) or with `apply-pilot home PATH`, saved in a small settings file: `%APPDATA%\Apply-Pilot\settings.json` on Windows, `~/Library/Application Support/Apply-Pilot/settings.json` on macOS, `~/.config/apply-pilot/settings.json` on Linux;
+3. `./apply-data` in the current directory.
+
+If the folder holds no data yet, the panel opens a first-run screen to create one or point to an existing one.
+
+数据目录按以下顺序查找：
+
+1. 环境变量 `APPLY_PILOT_HOME`；
+2. 在面板（工具 → 数据目录）或用 `apply-pilot home 路径` 选定的目录，保存在一个小的设置文件里：Windows 是 `%APPDATA%\Apply-Pilot\settings.json`，macOS 是 `~/Library/Application Support/Apply-Pilot/settings.json`，Linux 是 `~/.config/apply-pilot/settings.json`；
+3. 当前目录下的 `./apply-data`。
+
+如果目录里还没有数据，面板会显示首次设置界面，让你新建或选择已有目录。
+
+```bash
+apply-pilot home                                 # show the folder and where it came from / 查看当前数据目录及来源
+apply-pilot home ~/job-search --init             # save it as the default, create it if empty / 设为默认，空目录则新建
+```
 
 The control panel runs scans, the follow-up check, the setup check, imports and the Excel export, with live output. It only runs local tasks: nothing in it sends email or submits applications. It listens on 127.0.0.1 and accepts requests only with a per-run token from its own page.
 

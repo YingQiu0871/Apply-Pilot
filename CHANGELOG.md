@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.1 — 2026-10-29
+
+- The installer no longer sets `APPLY_PILOT_HOME`. In 0.3.0 it pointed users who had no such variable at a new, empty `Documents\Apply-Pilot`, so existing data seemed to vanish.
+- First-run screen: when the data folder holds no data, the panel asks for one. You can create a new folder or pick an existing one, and it shows how many applications it found there.
+- Tools → Data folder switches folders while the panel runs.
+- The choice is saved in a per-user settings file (`%APPDATA%\Apply-Pilot\settings.json`, `~/Library/Application Support/Apply-Pilot/settings.json`, `~/.config/apply-pilot/settings.json`).
+- The data folder is looked up in this order: `APPLY_PILOT_HOME`, the settings file, then `./apply-data`.
+- New `apply-pilot home [PATH] [--init]` shows or saves the data folder.
+- Fixed: the panel process crashed when a task finished.
+- Upgrading from 0.3.0: Windows removes the variable that 0.3.0 set. If the panel then asks for a folder, choose your existing one: it shows the number of tracked applications before you confirm.
+
 ## 0.3.0 — 2026-10-29
 
 - Windows installer: per-user `.msi` in English and Chinese, built by `npm run build:msi` (WiX Toolset 3.14) and attached to each GitHub release by the `msi` workflow. It needs no administrator rights and bundles Node.js, JSZip and ExcelJS. It adds Start-menu and desktop icons, puts `apply-pilot` on `PATH`, and sets `APPLY_PILOT_HOME` to `Documents\Apply-Pilot` unless one is already set. The first launch creates the data folder. Uninstalling keeps the data.

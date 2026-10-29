@@ -14,15 +14,6 @@
     <Property Id="ARPURLINFOABOUT" Value="https://github.com/YingQiu0871/Apply-Pilot" />
     <Property Id="ARPHELPLINK" Value="https://github.com/YingQiu0871/Apply-Pilot/issues" />
 
-    <!-- Only set APPLY_PILOT_HOME when the user has none, or when an earlier
-         Apply-Pilot install set it (so upgrades keep it). -->
-    <Property Id="EXISTINGHOME">
-      <RegistrySearch Id="FindHome" Root="HKCU" Key="Environment" Name="APPLY_PILOT_HOME" Type="raw" />
-    </Property>
-    <Property Id="OURHOME">
-      <RegistrySearch Id="FindOurHome" Root="HKCU" Key="Software\Apply-Pilot" Name="DataDirSet" Type="raw" />
-    </Property>
-
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="LocalAppDataFolder">
         <Directory Id="ProgramsDir" Name="Programs">
@@ -31,7 +22,6 @@
       </Directory>
       <Directory Id="ProgramMenuFolder" />
       <Directory Id="DesktopFolder" />
-      <Directory Id="PersonalFolder" />
     </Directory>
 
     <DirectoryRef Id="INSTALLDIR">
@@ -40,11 +30,6 @@
         <Environment Id="PathEntry" Name="PATH" Value="[INSTALLDIR]" Part="last" Action="set" System="no" />
         <RemoveFolder Id="RmInstallDir" On="uninstall" />
         <RemoveFolder Id="RmProgramsDir" Directory="ProgramsDir" On="uninstall" />
-      </Component>
-      <Component Id="HomeVar" Guid="9c3a7e2b-1d4f-4b8a-8e6c-0a5b3f2d7e41">
-        <Condition>NOT EXISTINGHOME OR OURHOME</Condition>
-        <RegistryValue Root="HKCU" Key="Software\Apply-Pilot" Name="DataDirSet" Type="integer" Value="1" KeyPath="yes" />
-        <Environment Id="HomeVar" Name="APPLY_PILOT_HOME" Value="[PersonalFolder]Apply-Pilot" Action="set" Part="all" System="no" />
       </Component>
       <Component Id="Shortcuts" Guid="e2b84c6d-3f1a-4d9e-b7c5-6a0f8d1e2c93">
         <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="Apply-Pilot" Description="!(loc.ShortcutDesc)"
@@ -57,7 +42,6 @@
 
     <Feature Id="Main" Title="Apply-Pilot" Level="1">
       <ComponentRef Id="Core" />
-      <ComponentRef Id="HomeVar" />
       <ComponentRef Id="Shortcuts" />
       <ComponentGroupRef Id="AppFiles" />
     </Feature>

@@ -146,6 +146,15 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .spin.on { display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* data folder picker */
+.setup { position: fixed; inset: 0; background: var(--bg); display: none; place-items: center; z-index: 30; padding: 16px; overflow: auto; }
+.setup.on { display: grid; }
+.setup-card { width: min(560px, 100%); padding: 28px; display: flex; flex-direction: column; gap: 12px; }
+.setup-card h1 { margin: 4px 0 0; font-size: 22px; }
+.setup-card p { margin: 0; color: var(--muted); }
+.home-check { color: var(--muted); font-size: 12.5px; min-height: 18px; white-space: normal; }
+.home-check.warn { color: var(--warn); }
+
 /* drawer */
 .scrim { position: fixed; inset: 0; background: rgba(10, 14, 20, .35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
 .scrim.on { opacity: 1; pointer-events: auto; }
@@ -239,6 +248,10 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
       <div class="page-head"><div><h1 data-t="toolsTitle"></h1><p data-t="toolsSub"></p></div>
         <div class="mini" style="gap:8px"><button class="btn" data-act="open-data" data-t="openData"></button><button class="btn" data-act="quit" data-t="quit"></button></div></div>
       <div class="card" style="margin-bottom:16px">
+        <div class="card-h"><h2 data-t="homeTitle"></h2></div>
+        <div class="card-b"><p class="meta" style="white-space:normal;margin:0 0 10px" id="homeNow"></p><div id="homeTools"></div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
         <div class="card-h"><h2 data-t="impTitle"></h2></div>
         <div class="card-b">
           <p class="meta" style="white-space:normal;margin:0 0 10px" data-t="impHelp"></p>
@@ -259,6 +272,13 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
   </main>
 </div>
 
+<div class="setup" id="setup"><div class="card setup-card">
+  <img src="/icon.svg" width="52" height="52" alt="">
+  <h1 data-t="setupTitle"></h1><p data-t="setupSub"></p>
+  <div id="homeSetup"></div>
+  <p class="meta" style="white-space:normal" data-t="setupNote"></p>
+</div></div>
+
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer"><div class="d-head" id="dHead"></div><div class="d-body" id="dBody"></div></aside>
 
@@ -277,6 +297,10 @@ const I18N = {
     appsTitle: '申请', appsSub: '点任意一行查看详情和完整时间线', fuTitle: '待跟进', actTitle: '动态', actSub: '从申请表备注里提取的带日期事件',
     impTitle: '导入已有数据', impHelp: '输入文件或文件夹路径（Windows 例：C:\\Users\\你\\Documents\\求职，macOS 例：~/Documents/jobs）。支持 applications.md、Markdown 表格、Excel、CSV/TSV、JSON、SQLite。先预览，确认后再导入；已存在的岗位会跳过，原文件不会被修改。',
     impPreview: '预览', impWrite: '导入新行', impPh: '文件或文件夹路径', impFiles: (f, t) => `扫描 ${f} 个文件，识别出 ${t} 个表`, impCounts: (n, d) => `${n} 条新记录，${d} 条已存在或重复`, impDone: (n) => `已导入 ${n} 条`, impNone: '没有可导入的新记录',
+    setupTitle: '选择数据目录', setupSub: '申请记录、个人配置和导出文件都保存在这个文件夹里，只在你的电脑上。可以新建一个，也可以选择已有的数据目录。', setupNote: '以后可以在「工具」页更换。',
+    homeTitle: '数据目录', homeNow: (p, src) => `当前：${p}（${src}）`, homeSrc: { env: '来自环境变量 APPLY_PILOT_HOME', settings: '已保存的设置', default: '默认位置' },
+    homeUse: '使用这个目录', homeFound: (n) => `这里已有 Apply-Pilot 数据（${n} 条申请记录），会直接使用。`, homeNew: '这里还没有数据，会新建空的申请表和配置文件。', homeIsFile: '这是一个文件，请填写文件夹路径。',
+    homeSwitched: (p) => `已切换到 ${p}`, homeEnv: '注意：环境变量 APPLY_PILOT_HOME 指向别的目录，下次启动时会优先使用它。',
     toolsTitle: '工具', toolsSub: '只运行本地任务：扫描、检查、导出。不会发送或提交任何东西。', output: '运行输出', openData: '打开数据文件夹', quit: '退出',
     k: { applied: '已投递，等待中', reply: '有回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒' },
     f: { active: '进行中', applied: '已投递', reply: '回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒', all: '全部' },
@@ -313,6 +337,10 @@ const I18N = {
     appsTitle: 'Applications', appsSub: 'Click a row for details and the full timeline', fuTitle: 'Follow-ups', actTitle: 'Activity', actSub: 'Dated events taken from the tracker notes',
     impTitle: 'Import existing data', impHelp: 'Enter a file or folder path (Windows: C:\\Users\\you\\Documents\\jobs, macOS: ~/Documents/jobs). Reads applications.md, Markdown tables, Excel, CSV/TSV, JSON and SQLite. Preview first; rows already tracked are skipped and source files are never changed.',
     impPreview: 'Preview', impWrite: 'Import new rows', impPh: 'File or folder path', impFiles: (f, t) => `${f} file(s) scanned, ${t} table(s) recognised`, impCounts: (n, d) => `${n} new, ${d} already tracked or repeated`, impDone: (n) => `Imported ${n} row(s)`, impNone: 'Nothing new to import',
+    setupTitle: 'Choose your data folder', setupSub: 'Your applications, profile and exports are kept in this folder, on your computer only. Create a new one or pick an existing data folder.', setupNote: 'You can change it later on the Tools page.',
+    homeTitle: 'Data folder', homeNow: (p, src) => `Current: ${p} (${src})`, homeSrc: { env: 'from APPLY_PILOT_HOME', settings: 'saved setting', default: 'default location' },
+    homeUse: 'Use this folder', homeFound: (n) => `Apply-Pilot data found here (${n} tracked applications). It will be used as is.`, homeNew: 'No data here yet. An empty tracker and profile will be created.', homeIsFile: 'This is a file. Enter a folder path.',
+    homeSwitched: (p) => `Switched to ${p}`, homeEnv: 'Note: APPLY_PILOT_HOME points to another folder and takes precedence at the next start.',
     toolsTitle: 'Tools', toolsSub: 'Runs local tasks only: scans, checks, export. Nothing is sent or submitted.', output: 'Output', openData: 'Open data folder', quit: 'Quit',
     k: { applied: 'Applied, waiting', reply: 'Replies / interviews', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
     f: { active: 'Active', applied: 'Applied', reply: 'Replies', follow: 'Follow-up', pending: 'To decide', rejected: 'Rejected', all: 'All' },
@@ -512,20 +540,53 @@ function logTo(c, text) {
   c.scrollTop = c.scrollHeight;
 }
 
+// Data folder picker, used by the first-run screen and the Tools page.
+function homeForm(id, value) {
+  if ($(`${id}Path`)) return;
+  $(id).innerHTML = `<div class="toolbar" style="padding:0;border:0;gap:8px"><label class="search"><input id="${id}Path" type="text" spellcheck="false" value="${esc(value)}"></label>
+    <button class="btn primary" data-home="${id}" data-t="homeUse">${T.homeUse}</button></div><div class="home-check" id="${id}Check" style="margin-top:8px"></div>`;
+  let t = null;
+  $(`${id}Path`).addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => checkHome(id), 350); });
+  checkHome(id);
+}
+async function checkHome(id) {
+  const path = $(`${id}Path`).value.trim();
+  const out = $(`${id}Check`);
+  out.classList.remove('warn');
+  if (!path) { out.textContent = ''; return; }
+  const r = await post('/api/home/check', { path });
+  out.textContent = !r.ok ? r.error : r.isFile ? T.homeIsFile : (r.hasProfile || r.hasTracker) ? T.homeFound(r.rows) : T.homeNew;
+}
+async function useHome(id) {
+  const out = $(`${id}Check`);
+  const r = await post('/api/home/use', { path: $(`${id}Path`).value.trim(), create: true });
+  if (!r.ok) { out.textContent = r.error; out.classList.add('warn'); return; }
+  out.textContent = T.homeSwitched(r.home) + (r.envOverride ? ` ${T.homeEnv}` : '');
+  out.classList.toggle('warn', Boolean(r.envOverride));
+  load();
+}
+function renderHome() {
+  if (!S.home) return;
+  $('setup').classList.toggle('on', Boolean(S.home.setup));
+  if (S.home.setup) homeForm('homeSetup', S.home.suggested.home);
+  $('homeNow').textContent = T.homeNow(S.home.path, T.homeSrc[S.home.source]);
+  homeForm('homeTools', S.home.path);
+}
+
 async function load() {
   try {
     const res = await fetch('/api/data', { cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
-    Object.assign(S, { rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent });
+    Object.assign(S, { home: d.home, rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent });
     $('updated').textContent = `${d.rows.length} ${T.rows} · ${new Date(d.generated).toLocaleTimeString()}`;
     $('err').style.display = 'none';
-    renderNav(); render();
+    renderNav(); render(); renderHome();
   } catch (e) { $('err').textContent = e.message; $('err').style.display = 'block'; }
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-period],[data-kind],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],#langBtn,#themeBtn,#scrim');
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-period],[data-kind],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],#langBtn,#themeBtn,#scrim');
   if (!t) return;
   if (t.dataset.go) return setView(t.dataset.go);
   if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
@@ -548,6 +609,7 @@ document.addEventListener('click', async (e) => {
     if (r.added) load();
     return;
   }
+  if (t.dataset.home) return useHome(t.dataset.home);
   if (t.dataset.agent) { await post('/api/agent/select', { agent: t.dataset.agent }); return load(); }
   if (t.dataset.launch) { await post('/api/agent/launch', { agent: t.dataset.launch }); return; }
   if (t.dataset.act === 'agent-refresh') { const r = await post('/api/agent/refresh'); if (r.agents) S.agents = r.agents; return render(); }

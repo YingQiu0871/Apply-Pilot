@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // apply-pilot command line. Run `apply-pilot help` for the command list.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homeDir, loadEnv, loadProfile, paths } from '../src/config.mjs';
+import { homeDir, homeSource, loadEnv, loadProfile, paths, saveHome, settingsFile } from '../src/config.mjs';
+import { initHome, inspectHome } from '../src/home.mjs';
 import { Tracker, findDuplicates, lastActivity } from '../src/tracker.mjs';
 import { buildPrompt, evaluateText, finishEvaluation, parseModelJson } from '../src/evaluate.mjs';
 import { dueFollowUps } from '../src/followups.mjs';
@@ -28,9 +29,11 @@ function parseArgs(argv) {
 
 const HELP = `Apply-Pilot — local job/internship application pipeline
 
-Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applications.md, inbox/, output/.
+Data folder: APPLY_PILOT_HOME, else the folder saved with "home PATH" or in the panel, else ./apply-data.
+It holds profile.json, data/applications.md, inbox/, output/.
 
   init [--example NAME]                 create the data directory (examples: ${['generic', 'pharma-m2-europe'].join(', ')})
+  home [PATH] [--init [EXAMPLE]]        show the data folder, or save PATH as the default (--init creates it)
   doctor                                check setup (node, profile, tracker, optional tools, API keys)
   ui [--port 4321] [--open]             dashboard + control panel (scans, checks, export) in your browser
   shortcut [--dir DIR]                  put a double-click launcher for the panel on your desktop
@@ -75,15 +78,28 @@ async function main() {
 
   switch (cmd) {
     case 'init': {
-      const name = opt.example || 'generic';
-      const src = name === 'generic' ? join(PKG, 'config', 'profile.example.json') : join(PKG, 'examples', name, 'profile.json');
-      if (!existsSync(src)) throw new Error(`no example "${name}"`);
-      mkdirSync(join(home, 'data'), { recursive: true });
-      if (existsSync(p.profile)) console.log(`kept existing ${p.profile}`);
-      else { copyFileSync(src, p.profile); console.log(`wrote ${p.profile}`); }
-      if (!existsSync(p.tracker)) { tracker().save(); console.log(`wrote ${p.tracker}`); }
-      writeFileSync(join(home, '.gitignore'), 'browser/\ninbox/\noutput/\n*.xlsx\n.env\n', { flag: 'a' });
+      const { wrote } = initHome(home, opt.example || 'generic');
+      for (const f of wrote) console.log(`wrote ${f}`);
+      if (!wrote.length) console.log(`kept existing files in ${home}`);
       console.log('Next: edit profile.json, then `apply-pilot ui`.');
+      break;
+    }
+    case 'home': {
+      if (pos[0]) {
+        const info = inspectHome(pos[0]);
+        if (info.isFile) throw new Error(`${info.home} is a file, not a folder`);
+        if (!info.hasProfile && !info.hasTracker) {
+          if (!opt.init) throw new Error(`${info.home} has no Apply-Pilot data; add --init to create it there`);
+          initHome(info.home, typeof opt.init === 'string' ? opt.init : 'generic');
+        }
+        console.log(`saved ${info.home} in ${saveHome(info.home)}`);
+        if (process.env.APPLY_PILOT_HOME) console.log(`note: APPLY_PILOT_HOME is set (${process.env.APPLY_PILOT_HOME}) and still takes precedence`);
+        break;
+      }
+      const info = inspectHome(home);
+      const from = { env: 'from APPLY_PILOT_HOME', settings: `from ${settingsFile()}`, default: 'default ./apply-data' }[homeSource()];
+      console.log(`${home}  (${from})`);
+      console.log(info.hasTracker ? `${info.rows} tracked rows` : 'no tracker yet: run `apply-pilot init` or `apply-pilot home PATH --init`');
       break;
     }
     case 'doctor': {
@@ -102,7 +118,7 @@ async function main() {
     }
     case 'ui': {
       const { serve } = await import('../src/ui/server.mjs');
-      serve({ trackerFile: p.tracker, profile, paths: p, port: Number(opt.port || process.env.PORT || 4321), open: Boolean(opt.open) });
+      serve({ home, port: Number(opt.port || process.env.PORT || 4321), open: Boolean(opt.open) });
       break;
     }
     case 'agent': {

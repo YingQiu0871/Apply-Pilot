@@ -17,6 +17,8 @@ Everything Apply-Pilot reads or writes stays in your data folder (`APPLY_PILOT_H
 - `.env`: API keys you add yourself;
 - `agent.json`: which AI agent you chose.
 
+One more small file sits outside the data folder: the per-user settings file (`%APPDATA%\Apply-Pilot\settings.json` on Windows, `~/Library/Application Support/Apply-Pilot/settings.json` on macOS, `~/.config/apply-pilot/settings.json` on Linux). It stores only the path of your data folder.
+
 You can read, edit, move or delete any of these files at any time. `apply-pilot init` writes a `.gitignore` so that browser sessions, scans, exports and `.env` are not committed by accident.
 
 Apply-Pilot 读写的所有数据都放在你自己硬盘上的数据目录（`APPLY_PILOT_HOME`）里：
@@ -27,6 +29,8 @@ Apply-Pilot 读写的所有数据都放在你自己硬盘上的数据目录（`A
 - `browser/`：你用 `apply-pilot linkedin login` 登录后保存的浏览器状态；
 - `.env`：你自己填写的 API key；
 - `agent.json`：你选择搭配的 AI 助手。
+
+数据目录之外只有一个小文件：用户设置文件（Windows 是 `%APPDATA%\Apply-Pilot\settings.json`，macOS 是 `~/Library/Application Support/Apply-Pilot/settings.json`，Linux 是 `~/.config/apply-pilot/settings.json`），里面只记录数据目录的路径。
 
 这些文件你可以随时查看、修改、移动或删除。`apply-pilot init` 会写好 `.gitignore`，防止浏览器登录状态、扫描结果、导出文件和 `.env` 被误提交。
 
@@ -67,9 +71,9 @@ The panel (`apply-pilot ui`) listens only on `127.0.0.1`, so other computers on 
 
 ## 5. The Windows installer · Windows 安装包
 
-The MSI installs program files into your user profile (`%LOCALAPPDATA%\Programs\Apply-Pilot`) and adds Start-menu and desktop shortcuts. It collects nothing and does not check for updates. Uninstalling removes the program files but keeps your data folder (`Documents\Apply-Pilot` by default), so your records are not lost. Delete that folder yourself if you want everything gone.
+The MSI installs program files into your user profile (`%LOCALAPPDATA%\Programs\Apply-Pilot`) and adds Start-menu and desktop shortcuts. It does not change environment variables other than adding its folder to your `PATH`. It collects nothing and does not check for updates. Uninstalling removes the program files but keeps your data folder and the settings file, so your records are not lost. Delete them yourself if you want everything gone.
 
-MSI 安装包把程序文件装在你的用户目录（`%LOCALAPPDATA%\Programs\Apply-Pilot`），并添加开始菜单和桌面快捷方式。它不收集任何信息，也不检查更新。卸载时会删除程序文件，但保留你的数据目录（默认是 `文档\Apply-Pilot`），以免记录丢失。如需彻底清除，请自行删除该文件夹。
+MSI 安装包把程序文件装在你的用户目录（`%LOCALAPPDATA%\Programs\Apply-Pilot`），并添加开始菜单和桌面快捷方式。除了把程序目录加入 `PATH`，它不修改任何环境变量。它不收集任何信息，也不检查更新。卸载时会删除程序文件，但保留你的数据目录和设置文件，以免记录丢失。如需彻底清除，请自行删除它们。
 
 ## 6. Your data, your responsibility · 你的数据由你掌控
 

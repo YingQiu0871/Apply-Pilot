@@ -29,3 +29,5 @@ jobs:
           node bin/apply-pilot.mjs followups
           node bin/apply-pilot.mjs import "$APPLY_PILOT_HOME/data"
           node bin/apply-pilot.mjs doctor
+          node bin/apply-pilot.mjs help > /dev/null
+          node bin/apply-pilot.mjs home

@@ -14,7 +14,7 @@ This file is written for an AI agent (Claude Code, Codex, opencode, DeepSeek or 
 | Runtime | Node.js 20 or later; npm |
 | Required dependency | `jszip` (installed by `npm install`) |
 | Optional dependencies | `playwright` (LinkedIn scan, `jd --browser`), `exceljs` (`export xlsx`) |
-| Data folder | `APPLY_PILOT_HOME`; default `./apply-data` relative to the current directory |
+| Data folder | `APPLY_PILOT_HOME`, else the folder saved with `apply-pilot home PATH` or in the panel, else `./apply-data`; `apply-pilot home` shows which |
 | Secrets | `APPLY_PILOT_HOME/.env`, never `profile.json`, never the repository |
 | Panel | `http://127.0.0.1:4321`, local only |
 
@@ -36,8 +36,8 @@ Do not ask for passwords. Do not ask for API keys in chat: the user pastes keys 
 If the user is on Windows and only wants to use Apply-Pilot (not develop it or scan LinkedIn), the installer is simpler than steps 1 to 3. Point them to the latest `Apply-Pilot-VERSION-x64-zh-CN.msi` or `-en-US.msi` on https://github.com/YingQiu0871/Apply-Pilot/releases and let them run it themselves, since installing software is their decision. It needs no administrator rights and includes Node.js. Then:
 
 - The command is `%LOCALAPPDATA%\Programs\Apply-Pilot\apply-pilot.cmd`, on `PATH` for new terminals.
-- `APPLY_PILOT_HOME` is set to `Documents\Apply-Pilot` unless the user already had one.
-- The first launch from the Start-menu or desktop icon runs `apply-pilot init` and opens the panel.
+- The installer does not set `APPLY_PILOT_HOME`. On first launch from the Start-menu or desktop icon, the panel asks the user for a data folder: a new one (it runs the same setup as `apply-pilot init`) or an existing one. The choice is saved in `%APPDATA%\Apply-Pilot\settings.json`.
+- If the user already has data, check with `apply-pilot home` which folder is active before you do anything else.
 
 Continue at step 4 (profile). Playwright is not included, so `linkedin` and `jd --browser` need the source install.
 
@@ -101,11 +101,13 @@ apply-pilot init --example pharma-m2-europe   # example: pharmacy M2 internships
 
 This writes `profile.json`, `data/applications.md` and a `.gitignore` (browser sessions, inbox, output, spreadsheets, `.env`).
 
-Make the variable permanent so later sessions find the same folder. Tell the user what you are changing first:
+Save the folder as the user's default so later sessions, the panel and the desktop icon all find it. This writes only the small per-user settings file:
 
-- macOS / Linux: add the `export` line to `~/.zshrc` or `~/.bashrc`.
-- Windows: `setx APPLY_PILOT_HOME "%USERPROFILE%\job-search"`. It applies to new terminals only.
-- Claude Code: you can instead set it in the project's `CLAUDE.md` or under `env` in `.claude/settings.json`.
+```bash
+apply-pilot home "$APPLY_PILOT_HOME"
+```
+
+An environment variable also works and takes precedence. Tell the user before changing their shell profile or `setx`. In Claude Code you can set it in the project's `CLAUDE.md` or under `env` in `.claude/settings.json`. Run `apply-pilot home` with no argument to see which folder is active and why.
 
 **Check:** `apply-pilot doctor`. Every required line starts with `✓`. A `✗` next to `playwright` or `exceljs` only means the optional dependency is missing. `doctor` exits 0 either way, so read the output.
 

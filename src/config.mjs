@@ -1,8 +1,10 @@
 // Profile and path resolution. Everything personal lives in the data directory,
-// never in the package: APPLY_PILOT_HOME (default ./apply-data) holds
-// profile.json, data/applications.md, inbox/ and output/.
-import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+// never in the package: it holds profile.json, data/applications.md, inbox/
+// and output/. The directory is APPLY_PILOT_HOME if set, else the one chosen
+// in the panel (saved in the user settings file), else ./apply-data.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 
 export const DEFAULTS = {
   tracker: 'data/applications.md',
@@ -15,8 +17,38 @@ export const DEFAULTS = {
   sources: {},
 };
 
+/** Per-user settings (not personal data): which data directory to use. */
+export function settingsFile() {
+  if (process.env.APPLY_PILOT_SETTINGS) return resolve(process.env.APPLY_PILOT_SETTINGS);
+  if (process.platform === 'win32') return join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), 'Apply-Pilot', 'settings.json');
+  if (process.platform === 'darwin') return join(homedir(), 'Library', 'Application Support', 'Apply-Pilot', 'settings.json');
+  return join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'apply-pilot', 'settings.json');
+}
+
+function readSettings() {
+  try { return JSON.parse(readFileSync(settingsFile(), 'utf8')); } catch { return {}; }
+}
+
+export function savedHome() {
+  const h = readSettings().home;
+  return typeof h === 'string' && h ? resolve(h) : null;
+}
+
+export function saveHome(home) {
+  const file = settingsFile();
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify({ ...readSettings(), home: resolve(home) }, null, 2)}\n`);
+  return file;
+}
+
+/** Where the data directory comes from: 'env', 'settings' or 'default'. */
+export function homeSource() {
+  if (process.env.APPLY_PILOT_HOME) return 'env';
+  return savedHome() ? 'settings' : 'default';
+}
+
 export function homeDir() {
-  return resolve(process.env.APPLY_PILOT_HOME || 'apply-data');
+  return resolve(process.env.APPLY_PILOT_HOME || savedHome() || 'apply-data');
 }
 
 export function profilePath(home = homeDir()) {

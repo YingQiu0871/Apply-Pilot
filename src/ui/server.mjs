@@ -11,7 +11,8 @@ import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { localDate } from '../config.mjs';
+import { homeSource, loadProfile, localDate, paths as pathsOf, saveHome } from '../config.mjs';
+import { initHome, inspectHome, suggestedHome } from '../home.mjs';
 import { followUpStatus } from '../followups.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
 import { AGENT_TASKS, detectAgents, launchInteractive, readAgent, saveAgent, taskCommand } from '../agents.mjs';
@@ -40,9 +41,12 @@ function openFolder(dir) {
   spawn(cmd, [dir], { detached: true, stdio: 'ignore' }).unref();
 }
 
-export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.0.1', open = false }) {
+export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   const token = randomBytes(16).toString('hex');
+  // The data folder can change while the panel runs (folder picker), so these are reassigned by use().
+  let profile, paths, trackerFile, setup = false, watcher = null;
   const data = () => {
+    if (!existsSync(trackerFile)) return [];
     const today = localDate();
     return new Tracker(trackerFile).rows().map((r) => {
       const f = followUpStatus(r, profile.followUp, today);
@@ -57,11 +61,37 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
   const clients = new Set();
   const push = (event, payload) => { for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`); };
   let timer = null;
-  watch(dirname(trackerFile), (_e, name) => {
-    if (name && String(name) !== basename(trackerFile)) return;
-    clearTimeout(timer);
-    timer = setTimeout(() => push('changed', {}), 300);
-  });
+  const use = (dir) => {
+    profile = loadProfile(dir);
+    paths = pathsOf(dir, profile);
+    trackerFile = paths.tracker;
+    setup = !existsSync(paths.profile) && !existsSync(trackerFile);
+    watcher?.close();
+    watcher = null;
+    if (existsSync(dirname(trackerFile))) {
+      watcher = watch(dirname(trackerFile), (_e, name) => {
+        if (name && String(name) !== basename(trackerFile)) return;
+        clearTimeout(timer);
+        timer = setTimeout(() => push('changed', {}), 300);
+      });
+    }
+  };
+  use(resolve(home));
+  const homeInfo = () => ({ path: paths.home, source: homeSource(), setup, suggested: inspectHome(homeSource() === 'env' ? paths.home : suggestedHome()) });
+  const useHome = ({ path, create }) => {
+    if (running) throw new Error(`"${running}" is still running`);
+    if (!path) throw new Error('enter a folder path');
+    const info = inspectHome(path);
+    if (info.isFile) throw new Error(`${info.home} is a file, not a folder`);
+    const created = !info.hasProfile && !info.hasTracker;
+    if (created && !create) throw new Error(`no Apply-Pilot data in ${info.home}`);
+    if (created) initHome(info.home);
+    saveHome(info.home);
+    use(info.home);
+    agents = detectAgents();
+    push('changed', {});
+    return { ok: true, home: info.home, created, envOverride: Boolean(process.env.APPLY_PILOT_HOME) && resolve(process.env.APPLY_PILOT_HOME) !== info.home };
+  };
 
   let running = null;
   let agents = detectAgents();
@@ -87,7 +117,7 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
     const line = (chunk) => String(chunk).split(/\r?\n/).filter(Boolean).forEach((text) => push('log', { text }));
     child.stdout.on('data', line);
     child.stderr.on('data', line);
-    child.on('close', (code) => { push('task', { state: 'end', task: task.label, code }); running = null; });
+    child.on('close', (code) => { push('task', { state: 'end', task: label, code }); running = null; });
     return { ok: true };
   };
 
@@ -110,7 +140,7 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try { json(res, 200, { generated: new Date().toISOString(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home) }); }
+      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home) }); }
       catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
@@ -129,6 +159,8 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
         req.on('end', () => { try { json(res, 200, fn(JSON.parse(body || '{}'))); } catch (e) { json(res, 400, { ok: false, error: e.message || 'bad request' }); } });
       };
       if (pathname === '/api/run') return withBody((b) => runTask(b.task));
+      if (pathname === '/api/home/check') return withBody((b) => ({ ok: true, ...inspectHome(b.path || '') }));
+      if (pathname === '/api/home/use') return withBody(useHome);
       if (pathname === '/api/agent/select') return withBody((b) => ({ ok: true, agent: saveAgent(paths.home, b.agent) }));
       if (pathname === '/api/agent/launch') return withBody((b) => ({ ok: launchInteractive(b.agent, { home: paths.home }) }));
       if (pathname === '/api/import/preview' || pathname === '/api/import/write') {
