@@ -73,12 +73,19 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 | `eval prompt / score / run` | rubric scoring with hard filters; works with an agent or with DeepSeek, OpenAI, OpenRouter, Ollama, Anthropic |
 | `lint` | flags stock phrases, claims you listed as forbidden (but allows honest "I have not used X"), semicolons, long lists |
 | `docx list / build` | fill a Word template paragraph by paragraph, every other part byte-identical (photo, styles) |
-| `scan portals` | company career sites through their public feeds: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio; title, location and age filters |
+| `scan portals` | company career sites through their public feeds: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio, Greenhouse, Lever, Ashby, Teamtailor, Recruitee, Workable; title, location and age filters; per-company counts so a silent board stands out |
+| `scan boards` | job boards and public employment APIs: JobTech (Sweden) and Euraxess with no key; France Travail, Adzuna, Jooble and Careerjet with free keys in `APPLY_PILOT_HOME/.env` (see `config/env.example`) |
+| `scan websearch` | your multilingual search queries through Brave Search API, Mojeek API or a self-hosted SearXNG |
+| `scan all` | all three, deduplicated against the tracker (`--pipeline` appends new ones to `data/pipeline.md`) |
 | `linkedin login / scan`, `triage` | job and post search with your own logged-in browser profile, then new-only candidates (`--pipeline` appends them to `data/pipeline.md`) |
 | `jd`, `keywords` | fetch a full job description (ATS APIs, page text, optional browser); keyword coverage of your CV against a report |
 | `merge-additions` | merge batch TSV tracker additions from an evaluation run |
 | `export xlsx` | tracker to a fresh spreadsheet |
 | `careerops` | optional: run a [career-ops](https://github.com/career-ops-hq/career-ops) script on the same data |
+
+## Sources and access
+
+apply-pilot only uses official APIs, documented public feeds and plain public pages. Sites that block automated access (bot protection, login walls, sites such as Indeed or Welcome to the Jungle at the time of writing) are not scraped around their protections; open them in your own browser or let your agent do it there. Keys live in `APPLY_PILOT_HOME/.env`, never in `profile.json`.
 
 ## Your profile
 

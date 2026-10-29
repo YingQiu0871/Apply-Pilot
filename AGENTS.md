@@ -5,11 +5,12 @@ Read this before you act on someone's job search with this package. It applies t
 ## Ground rules (not optional)
 
 1. **Never submit or send on your own.** No email send, no "submit application" click, no LinkedIn message and no form submission without the user's explicit approval for that specific item. Show the recipient, subject, body and attachments first. Scheduling a send counts as sending.
-2. **Never invent experience.** Strengths come only from `profile.candidate.facts`. Anything in `profile.writing.forbiddenClaims` may appear only as an honest gap ("I have not used X yet").
-3. **Log every action at once.** After each submit, send, follow-up, reply or rejection, run `apply-pilot status NUM STATUS --note "YYYY-MM-DD: what happened"` or `apply-pilot note NUM "..."`. The dashboard reads the tracker, so an action that isn't logged is invisible.
-4. **The user is the author.** Do not add yourself as author or co-author in commits, trailers, package metadata or documents.
-5. **Credentials stay with the user.** The user logs in to job sites and LinkedIn and creates accounts. You do not type passwords and you do not solve CAPTCHAs.
-6. **Personal data stays in `APPLY_PILOT_HOME`.** Never copy CVs, trackers, emails or browser profiles into this package or any public repository.
+2. **Respect site access controls.** Use official APIs and public pages. Do not spoof app identities, reuse keys scraped from a site's front end, or work around bot protection; open such sites in the user's browser instead.
+3. **Never invent experience.** Strengths come only from `profile.candidate.facts`. Anything in `profile.writing.forbiddenClaims` may appear only as an honest gap ("I have not used X yet").
+4. **Log every action at once.** After each submit, send, follow-up, reply or rejection, run `apply-pilot status NUM STATUS --note "YYYY-MM-DD: what happened"` or `apply-pilot note NUM "..."`. The dashboard reads the tracker, so an action that isn't logged is invisible.
+5. **The user is the author.** Do not add yourself as author or co-author in commits, trailers, package metadata or documents.
+6. **Credentials stay with the user.** The user logs in to job sites and LinkedIn and creates accounts. You do not type passwords and you do not solve CAPTCHAs.
+7. **Personal data stays in `APPLY_PILOT_HOME`.** Never copy CVs, trackers, emails or browser profiles into this package or any public repository.
 
 ## Daily loop
 
@@ -21,7 +22,7 @@ scan ──► triage ──► evaluate ──► (user decides) ──► tail
 
 | Step | Command | Notes |
 |---|---|---|
-| Scan career sites | `apply-pilot scan portals --pipeline` | companies and filters in `profile.sources.portals` |
+| Scan everything | `apply-pilot scan all --pipeline` | career sites (`sources.portals`), boards and public APIs (`sources.boards`), search queries (`sources.websearch`); keys in `.env` |
 | Scan LinkedIn | `apply-pilot linkedin scan` | needs `playwright` and a session from `apply-pilot linkedin login` |
 | Other boards | your harness's browser or web search | add rows with `apply-pilot add` |
 | Triage | `apply-pilot triage inbox/linkedin-*.json` | drops tracked, filtered and job-seeker posts |

@@ -30,6 +30,16 @@ function merge(base, extra) {
   return out;
 }
 
+/** Load KEY=VALUE lines from APPLY_PILOT_HOME/.env without overriding the real environment. */
+export function loadEnv(home = homeDir()) {
+  const file = join(home, '.env');
+  if (!existsSync(file)) return;
+  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+  }
+}
+
 export function loadProfile(home = homeDir()) {
   const file = profilePath(home);
   const raw = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};

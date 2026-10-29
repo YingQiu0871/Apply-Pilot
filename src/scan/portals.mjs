@@ -161,7 +161,11 @@ async function successfactors(c, kw) {
     for (const keywords of kw.length ? kw : ['']) {
       for (let pageNumber = 0; pageNumber < (c.maxPages || 10); pageNumber += 1) {
         let data;
-        try { data = await request(`${origin}/services/recruiting/v1/jobs`, { method: 'POST', body: { keywords, locale, location: '', pageNumber, sortBy: 'recent' } }); } catch { break; }
+        try { data = await request(`${origin}/services/recruiting/v1/jobs`, { method: 'POST', body: { keywords, locale, location: '', pageNumber, sortBy: 'recent' } }); } catch (e) {
+          // A locale the tenant does not publish in fails with 4xx; anything else is a real error worth reporting.
+          if (!/HTTP 4\d\d/.test(e.message)) throw new Error(`SuccessFactors search API: ${e.message}`);
+          break;
+        }
         const rows = data?.jobSearchResult || [];
         for (const { response: j } of rows) {
           if (!j?.id) continue;
@@ -184,7 +188,53 @@ async function personio(c) {
   });
 }
 
-export const PROVIDERS = { workday, smartrecruiters, eightfold, phenom, successfactors, personio };
+const firstPath = (url) => new URL(url).pathname.split('/').filter(Boolean)[0];
+const day = (v) => { if (!v) return ''; const d = new Date(typeof v === 'number' && v < 1e12 ? v * 1000 : v); return Number.isNaN(+d) ? '' : d.toLocaleDateString('sv-SE'); };
+
+// boards.greenhouse.io/<token> or job-boards.greenhouse.io/<token>
+async function greenhouse(c) {
+  const token = c.token || firstPath(c.url);
+  const d = await request(`https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(token)}/jobs`);
+  return (d.jobs || []).map((j) => ({ title: j.title, url: j.absolute_url, location: j.location?.name || '', posted: day(j.first_published || j.updated_at) }));
+}
+
+// jobs.lever.co/<slug> (US) or jobs.eu.lever.co/<slug> (EU)
+async function lever(c) {
+  const u = new URL(c.url);
+  const eu = c.eu ?? u.hostname.includes('.eu.');
+  const d = await request(`https://api.${eu ? 'eu.' : ''}lever.co/v0/postings/${encodeURIComponent(c.slug || firstPath(c.url))}?mode=json`);
+  return (Array.isArray(d) ? d : []).map((j) => ({ title: j.text, url: j.hostedUrl, location: j.categories?.location || (j.categories?.allLocations || []).join('; '), posted: day(j.createdAt) }));
+}
+
+// jobs.ashbyhq.com/<board>
+async function ashby(c) {
+  const d = await request(`https://api.ashbyhq.com/posting-api/job-board/${encodeURIComponent(c.board || firstPath(c.url))}`);
+  return (d.jobs || []).map((j) => ({ title: j.title, url: j.jobUrl, location: [j.location, ...(j.secondaryLocations || []).map((x) => x.location)].filter(Boolean).join('; '), posted: day(j.publishedAt) }));
+}
+
+// <company>.teamtailor.com (or a custom career domain served by Teamtailor): public RSS feed
+async function teamtailor(c) {
+  const xml = await request(`${new URL(c.url).origin}/jobs.rss`, { json: false });
+  return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(([, it]) => {
+    const t = (n) => decode((it.match(new RegExp(`<${n}[^>]*>([\\s\\S]*?)</${n}>`)) || [])[1]?.replace(/<!\[CDATA\[|\]\]>/g, ''));
+    return { title: t('title'), url: t('link'), location: [t('tt:city') || t('city'), t('tt:country') || t('country')].filter(Boolean).join(', ') || t('tt:location'), posted: day(t('pubDate')) };
+  });
+}
+
+// <company>.recruitee.com
+async function recruitee(c) {
+  const d = await request(`${new URL(c.url).origin}/api/offers/`);
+  return (d.offers || []).map((j) => ({ title: j.title, url: j.careers_url, location: [j.city, j.country].filter(Boolean).join(', ') || j.location || '', posted: day(j.published_at || j.created_at) }));
+}
+
+// apply.workable.com/<account>
+async function workable(c) {
+  const account = c.account || firstPath(c.url);
+  const d = await request(`https://apply.workable.com/api/v1/widget/accounts/${encodeURIComponent(account)}`);
+  return (d.jobs || []).map((j) => ({ title: j.title, url: j.url || j.shortlink, location: [j.city, j.state, j.country].filter(Boolean).join(', '), posted: day(j.published_on || j.created_at) }));
+}
+
+export const PROVIDERS = { workday, smartrecruiters, eightfold, phenom, successfactors, personio, greenhouse, lever, ashby, teamtailor, recruitee, workable };
 
 // ---- filters -------------------------------------------------------------
 
@@ -213,11 +263,19 @@ export function passesFilters(job, cfg, today = localDate()) {
 export async function scanPortals(profile, { only, log = console.log } = {}) {
   const cfg = profile.sources.portals || {};
   const kw = cfg.keywords || [];
-  const result = { scannedAt: new Date().toISOString(), jobs: [], skipped: {}, errors: [], websearch: [] };
+  const result = { scannedAt: new Date().toISOString(), jobs: [], skipped: {}, errors: [], websearch: [], perCompany: [] };
   for (const c of cfg.companies || []) {
     if (c.enabled === false || (only && !c.name.toLowerCase().includes(only.toLowerCase()))) continue;
+    if (c.provider === 'websearch') { result.websearch.push({ company: c.name, url: c.url, query: c.query || null }); continue; }
     const fn = PROVIDERS[c.provider];
-    if (!fn) { result.websearch.push({ company: c.name, url: c.url, query: c.query || null }); continue; }
+    if (!fn) {
+      // Say so instead of quietly treating it as a web search: an unsupported provider is never scanned.
+      result.errors.push(`${c.name}: unsupported provider "${c.provider}" (use one of ${Object.keys(PROVIDERS).join(', ')}, or "websearch" with a query)`);
+      result.perCompany.push({ company: c.name, provider: c.provider, found: 0, kept: 0, error: 'unsupported provider' });
+      log(`${c.name} (${c.provider}): UNSUPPORTED provider`);
+      continue;
+    }
+    const t0 = Date.now();
     try {
       const jobs = await fn(c, c.keywords || kw);
       let kept = 0;
@@ -227,9 +285,11 @@ export async function scanPortals(profile, { only, log = console.log } = {}) {
         result.jobs.push({ company: c.name, provider: c.provider, ...j });
         kept += 1;
       }
+      result.perCompany.push({ company: c.name, provider: c.provider, found: jobs.length, kept, ms: Date.now() - t0 });
       log(`${c.name} (${c.provider}): ${jobs.length} found, ${kept} kept`);
     } catch (e) {
       result.errors.push(`${c.name}: ${e.message}`);
+      result.perCompany.push({ company: c.name, provider: c.provider, found: 0, kept: 0, error: e.message, ms: Date.now() - t0 });
       log(`${c.name} (${c.provider}): ERROR ${e.message}`);
     }
   }

@@ -21,7 +21,10 @@ const CLI = resolve(HERE, '..', '..', 'bin', 'apply-pilot.mjs');
 
 const TASKS = {
   doctor: { label: 'doctor', args: () => ['doctor'] },
+  all: { label: 'scan all', args: () => ['scan', 'all', '--pipeline'] },
   portals: { label: 'scan portals', args: () => ['scan', 'portals', '--pipeline'] },
+  boards: { label: 'scan boards', args: () => ['scan', 'boards', '--pipeline'] },
+  websearch: { label: 'scan websearch', args: () => ['scan', 'websearch', '--pipeline'] },
   linkedin: { label: 'linkedin scan', args: () => ['linkedin', 'scan', '--pipeline'] },
   followups: { label: 'followups', args: () => ['followups'] },
   export: { label: 'export xlsx', args: (p) => ['export', 'xlsx', join(p.output, `applications-${localDate()}.xlsx`)] },

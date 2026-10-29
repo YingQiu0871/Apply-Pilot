@@ -15,7 +15,7 @@ const tmp = () => join(mkdtempSync(join(tmpdir(), 'apply-pilot-')), 'application
 test('tracker add, setStatus, save and reload keep the career-ops layout', () => {
   const file = tmp();
   const t = new Tracker(file);
-  const a = t.add({ date: '2026-09-01', company: 'Lab A', role: 'M2 internship | formulation', url: 'https://www.linkedin.com/jobs/view/4484102144/' });
+  const a = t.add({ date: '2026-09-01', company: 'Lab A', role: 'M2 internship | formulation', url: 'https://www.linkedin.com/jobs/view/1000000001/' });
   t.add({ date: '2026-09-02', company: 'Lab B', role: 'Analytics intern' });
   t.setStatus(a.num, 'applied', '2026-09-03: sent from school mailbox');
   t.save();
@@ -38,10 +38,10 @@ test('setStatus rejects unknown states and missing rows', () => {
 
 test('duplicates are found by LinkedIn id and by company + role', () => {
   const rows = [
-    { num: 1, company: 'Sanofi – Vitry', role: 'stage 6 mois purification anticorps', url: 'https://fr.linkedin.com/jobs/view/stage-x-4474739067', notes: '' },
+    { num: 1, company: 'Sanofi – Vitry', role: 'stage 6 mois purification anticorps', url: 'https://fr.linkedin.com/jobs/view/stage-x-1000000002', notes: '' },
   ];
-  assert.equal(normalizeUrl('https://www.linkedin.com/jobs/view/4474739067/?ref=x'), 'linkedin#4474739067');
-  assert.equal(findDuplicates(rows, { url: 'https://www.linkedin.com/jobs/view/4474739067/' }).length, 1);
+  assert.equal(normalizeUrl('https://www.linkedin.com/jobs/view/1000000002/?ref=x'), 'linkedin#1000000002');
+  assert.equal(findDuplicates(rows, { url: 'https://www.linkedin.com/jobs/view/1000000002/' }).length, 1);
   assert.equal(findDuplicates(rows, { company: 'Sanofi', role: 'Stage purification anticorps (6 mois)' }).length, 1);
   assert.equal(findDuplicates(rows, { company: 'Danone', role: 'purification anticorps' }).length, 0);
 });
@@ -113,8 +113,8 @@ test('merge-additions adds new rows and re-notes known ones', async () => {
   const { mkdtempSync, writeFileSync: w, existsSync: ex, readFileSync: r } = await import('node:fs');
   const dir = mkdtempSync(join(tmpdir(), 'ap-add-'));
   const t = new Tracker(join(dir, 'applications.md'));
-  t.add({ company: 'Sanofi', role: 'Old role', url: 'https://www.linkedin.com/jobs/view/4479504584/' });
-  w(join(dir, 'a.tsv'), '#\tDate\tCompany\tRole\tScore\tStatus\tPDF\tReport\tNotes\tvia\tlocation\turl\n517\t2026-10-22\tSanofi\tDrug product\t3.95/5\tEvaluated\t-\t-\tConsider\t-\tLyon\thttps://www.linkedin.com/jobs/view/4479504584/\n518\t2026-10-22\tIpsen\tAnalytical intern\t4.1/5\tEvaluated\t-\t-\tApply\t-\tParis\thttps://ipsen.example/job/1\n');
+  t.add({ company: 'Sanofi', role: 'Old role', url: 'https://www.linkedin.com/jobs/view/1000000003/' });
+  w(join(dir, 'a.tsv'), '#\tDate\tCompany\tRole\tScore\tStatus\tPDF\tReport\tNotes\tvia\tlocation\turl\n517\t2026-10-22\tSanofi\tDrug product\t3.95/5\tEvaluated\t-\t-\tConsider\t-\tLyon\thttps://www.linkedin.com/jobs/view/1000000003/\n518\t2026-10-22\tIpsen\tAnalytical intern\t4.1/5\tEvaluated\t-\t-\tApply\t-\tParis\thttps://ipsen.example/job/1\n');
   const res = mergeAdditions(t, dir);
   assert.deepEqual([res.added.length, res.updated.length], [1, 1]);
   assert.ok(ex(join(dir, 'merged', 'a.tsv')));
@@ -122,4 +122,48 @@ test('merge-additions adds new rows and re-notes known ones', async () => {
   assert.equal(appendPipeline(pipe, [{ url: 'https://x.example/1', company: 'X', role: 'Stage' }]), 1);
   assert.equal(appendPipeline(pipe, [{ url: 'https://x.example/1', company: 'X', role: 'Stage' }]), 0);
   assert.match(r(pipe, 'utf8'), /- \[ \] https:\/\/x\.example\/1 \| X \| Stage/);
+});
+
+test('hard filters match whole words only', () => {
+  const p = { ...DEFAULTS, filters: { excludeCompanies: ['CEA'], excludeKeywords: ['alternance'], requireKeywords: [] } };
+  assert.deepEqual(hardFilter(p, { company: 'Ceapro Inc', text: 'Stage formulation' }), []);
+  assert.deepEqual(hardFilter(p, { company: 'CEA Saclay', text: '' }), ['excluded company: CEA']);
+  assert.deepEqual(hardFilter(p, { company: 'X', text: 'Stage en alternance' }), ['excluded keyword: alternance']);
+});
+
+test('new ATS providers map their public feeds', async () => {
+  const { PROVIDERS } = await import('../src/scan/portals.mjs');
+  const real = globalThis.fetch;
+  const reply = {
+    'boards-api.greenhouse.io': { jobs: [{ title: 'Formulation intern', absolute_url: 'https://x/gh/1', location: { name: 'Paris' }, first_published: '2026-10-20T10:00:00Z' }] },
+    'api.lever.co': [{ text: 'Analytical intern', hostedUrl: 'https://x/lv/1', categories: { location: 'Lyon' }, createdAt: 1792000000000 }],
+    'api.ashbyhq.com': { jobs: [{ title: 'CMC intern', jobUrl: 'https://x/ab/1', location: 'Basel', publishedAt: '2026-10-21T00:00:00Z' }] },
+    'example.recruitee.com': { offers: [{ title: 'Stage R&D', careers_url: 'https://x/rc/1', city: 'Gent', country: 'Belgium', published_at: '2026-10-22' }] },
+    'apply.workable.com': { jobs: [{ title: 'Praktikum Analytik', url: 'https://x/wk/1', city: 'Berlin', country: 'Germany', published_on: '2026-10-23' }] },
+  };
+  globalThis.fetch = async (url) => {
+    const host = new URL(url).hostname;
+    if (host === 'example.teamtailor.com') return new Response('<rss><channel><item><title>ML Internship</title><link>https://x/tt/1</link><pubDate>Mon, 13 Oct 2026 10:00:00 +0200</pubDate><tt:city>Paris</tt:city></item></channel></rss>', { status: 200 });
+    return new Response(JSON.stringify(reply[host]), { status: 200 });
+  };
+  try {
+    const cases = [['greenhouse', 'https://boards.greenhouse.io/acme'], ['lever', 'https://jobs.lever.co/acme'], ['ashby', 'https://jobs.ashbyhq.com/acme'],
+      ['teamtailor', 'https://example.teamtailor.com'], ['recruitee', 'https://example.recruitee.com'], ['workable', 'https://apply.workable.com/acme']];
+    for (const [p, url] of cases) {
+      const jobs = await PROVIDERS[p]({ url }, []);
+      assert.equal(jobs.length, 1, p);
+      assert.ok(jobs[0].title && jobs[0].url.startsWith('https://x/'), p);
+    }
+  } finally { globalThis.fetch = real; }
+});
+
+test('loadEnv reads KEY=VALUE without overriding the environment', async () => {
+  const { loadEnv } = await import('../src/config.mjs');
+  const { mkdtempSync, writeFileSync: w } = await import('node:fs');
+  const dir = mkdtempSync(join(tmpdir(), 'ap-env-'));
+  w(join(dir, '.env'), 'AP_TEST_ONE=hello\nAP_TEST_TWO="quoted"\n# comment\n');
+  process.env.AP_TEST_TWO = 'kept';
+  loadEnv(dir);
+  assert.equal(process.env.AP_TEST_ONE, 'hello');
+  assert.equal(process.env.AP_TEST_TWO, 'kept');
 });

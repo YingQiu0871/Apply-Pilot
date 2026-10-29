@@ -57,7 +57,9 @@ apply-pilot eval prompt jd.txt                # 生成评分提示词，交给 a
 apply-pilot eval score answer.json --jd jd.txt
 DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 apply-pilot lint letter.txt                   # 检查求职信里的套话和不实说法
-apply-pilot scan portals --pipeline           # 扫描企业招聘系统（Workday、SuccessFactors、Phenom、Eightfold、SmartRecruiters、Personio）
+apply-pilot scan all --pipeline               # 一键扫描：企业招聘系统（12 种）+ 招聘网站/公共就业接口 + 搜索引擎
+apply-pilot scan boards                       # JobTech、Euraxess（免 key），France Travail、Adzuna、Jooble、Careerjet（免费 key，写在 .env）
+apply-pilot scan websearch                    # 多语言搜索语句，走 Brave / Mojeek / 自建 SearXNG
 apply-pilot jd URL --out jd.txt               # 抓取完整 JD
 apply-pilot keywords report.md --cv cv.md     # 检查 CV 覆盖了 JD 的哪些关键词
 ```
@@ -65,6 +67,10 @@ apply-pilot keywords report.md --cv cv.md     # 检查 CV 覆盖了 JD 的哪些
 ## AI 助手
 
 控制面板的「AI 助手」页可以选择搭配 Claude Code、Codex 或 DeepSeek：一键在终端中打开它（工作目录就是你的数据目录），或让它代跑「评估新岗位」「起草跟进邮件」两项任务。这些任务只把结果写到 `output/`，不会发送或提交任何东西。命令行：`apply-pilot agent claude|codex|deepseek`。
+
+## 数据来源原则
+
+只用官方接口、公开的数据源和普通公开网页。有反爬保护或要登录的网站（比如目前的 Indeed、Welcome to the Jungle）不绕过它们的保护，交给你自己的浏览器或 agent 在浏览器里查。各平台的 key 放在 `APPLY_PILOT_HOME/.env`（模板见 `config/env.example`），不写进 `profile.json`。
 
 ## 安全原则
 

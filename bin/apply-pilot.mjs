@@ -3,7 +3,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homeDir, loadProfile, paths } from '../src/config.mjs';
+import { homeDir, loadEnv, loadProfile, paths } from '../src/config.mjs';
 import { Tracker, findDuplicates, lastActivity } from '../src/tracker.mjs';
 import { buildPrompt, evaluateText, finishEvaluation, parseModelJson } from '../src/evaluate.mjs';
 import { dueFollowUps } from '../src/followups.mjs';
@@ -49,7 +49,11 @@ Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applic
   lint FILE...                          plain-writing check for letters and emails
   docx list FILE.docx                   show paragraph indices of a template
   docx build TEMPLATE OUT CHANGES.json  fill paragraphs, keep everything else identical
-  scan portals [--only NAME] [--pipeline [FILE]]  company career sites: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio
+  scan portals [--only NAME] [--pipeline [FILE]]  company career sites: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters,
+                                        Personio, Greenhouse, Lever, Ashby, Teamtailor, Recruitee, Workable
+  scan boards [--pipeline]              job boards and public APIs: JobTech, Euraxess, France Travail, Adzuna, Jooble, Careerjet
+  scan websearch [--engine E] [--pipeline]  search queries through Brave, Mojeek or your SearXNG
+  scan all [--pipeline]                 portals + boards + websearch
   linkedin login | linkedin scan [--jobs|--posts] [--pipeline]
   triage SCAN.json [--json OUT] [--pipeline [FILE]]   new candidates, minus tracked and filtered; optionally append to data/pipeline.md
   merge-additions [DIR] [--dry-run]     merge batch TSV tracker additions (default DIR: batch/tracker-additions)
@@ -62,6 +66,7 @@ async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const { pos, opt } = parseArgs(rest);
   const home = homeDir();
+  loadEnv(home);
   const profile = loadProfile(home);
   const p = paths(home, profile);
   const tracker = () => new Tracker(p.tracker);
@@ -238,19 +243,28 @@ async function main() {
       throw new Error('linkedin login|scan');
     }
     case 'scan': {
-      if (pos[0] !== 'portals') throw new Error('scan portals [--only NAME]');
-      const { scanPortals, savePortalScan } = await import('../src/scan/portals.mjs');
-      const res = await scanPortals(profile, { only: opt.only });
-      const file = savePortalScan(res, p.inbox);
-      console.log(`\n${res.jobs.length} kept, ${Object.entries(res.skipped).map(([k, v]) => `${v} ${k}`).join(', ') || 'none filtered'}, ${res.errors.length} errors`);
-      if (res.websearch.length) console.log(`${res.websearch.length} sources need a web search by your agent (listed under "websearch" in the file)`);
-      console.log(`saved ${file}`);
-      if (opt.pipeline) {
-        const { appendPipeline } = await import('../src/additions.mjs');
-        const t = triage(res, tracker().rows(), profile);
-        const target = opt.pipeline === true ? join(home, 'data', 'pipeline.md') : resolve(opt.pipeline);
-        console.log(`triage: ${t.fresh.length} new, ${t.tracked.length} already tracked, ${t.filtered.length} filtered; ${appendPipeline(target, t.fresh)} appended to ${target}`);
-      } else console.log(`next: apply-pilot triage ${file}`);
+      const kinds = pos[0] === 'all' ? ['portals', 'boards', 'websearch'] : [pos[0]];
+      if (!kinds.every((k) => ['portals', 'boards', 'websearch'].includes(k))) throw new Error('scan portals|boards|websearch|all [--only NAME] [--engine brave|mojeek|searxng] [--pipeline]');
+      const portals = await import('../src/scan/portals.mjs');
+      const boards = await import('../src/scan/boards.mjs');
+      for (const kind of kinds) {
+        console.log(`\n== ${kind}`);
+        const res = kind === 'portals' ? await portals.scanPortals(profile, { only: opt.only })
+          : kind === 'boards' ? await boards.scanBoards(profile, { only: opt.only })
+          : await boards.scanWebsearch(profile, { only: opt.only, engine: opt.engine });
+        const file = boards.saveScan(res, p.inbox, kind);
+        console.log(`${res.jobs.length} kept, ${Object.entries(res.skipped).map(([k, v]) => `${v} ${k}`).join(', ') || 'none filtered'}, ${res.errors.length} errors`);
+        const silent = (res.perCompany || []).filter((c) => !c.error && c.found === 0).map((c) => c.company);
+        if (silent.length) console.log(`0 found (check the board is still live): ${silent.join(', ')}`);
+        if (res.websearch?.length) console.log(`${res.websearch.length} queries are for "apply-pilot scan websearch" (or your agent)`);
+        console.log(`saved ${file}`);
+        if (opt.pipeline) {
+          const { appendPipeline } = await import('../src/additions.mjs');
+          const t = triage(res, tracker().rows(), profile);
+          const target = opt.pipeline === true ? join(home, 'data', 'pipeline.md') : resolve(opt.pipeline);
+          console.log(`triage: ${t.fresh.length} new, ${t.tracked.length} already tracked, ${t.filtered.length} filtered; ${appendPipeline(target, t.fresh)} appended to ${target}`);
+        }
+      }
       break;
     }
     case 'jd': {

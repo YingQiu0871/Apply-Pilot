@@ -270,7 +270,10 @@ const I18N = {
     channel: { email: '邮件联系', portal: '招聘系统', unknown: '渠道不明' },
     head: ['#', '公司 / 联系人', '岗位', '评分', '状态', '最近动态'],
     tasks: {
-      portals: ['扫描企业招聘系统', 'Workday、SuccessFactors、Phenom 等，新岗位写入 pipeline.md'],
+      all: ['一键全部扫描', '企业招聘系统 + 招聘网站/公共就业接口 + 搜索引擎，新岗位去重后写入 pipeline.md'],
+      portals: ['扫描企业招聘系统', 'Workday、SuccessFactors、Phenom、Greenhouse、Lever 等 12 种系统'],
+      boards: ['扫描招聘网站与公共接口', 'JobTech、Euraxess、France Travail、Adzuna、Jooble、Careerjet（后四个需要在 .env 填 key）'],
+      websearch: ['搜索引擎扫描', '用 Brave / Mojeek / SearXNG 跑多语言搜索语句（需要 key 或自建实例）'],
       linkedin: ['扫描领英', '用已登录的浏览器配置搜索岗位和动态'],
       followups: ['检查待跟进', '按跟进规则列出到期的申请'],
       doctor: ['自检', '检查环境、配置和申请表'],
@@ -301,7 +304,10 @@ const I18N = {
     channel: { email: 'By email', portal: 'Through a portal', unknown: 'Channel unknown' },
     head: ['#', 'Company / contact', 'Role', 'Score', 'Status', 'Last activity'],
     tasks: {
-      portals: ['Scan career sites', 'Workday, SuccessFactors, Phenom and more; new postings go to pipeline.md'],
+      all: ['Scan everything', 'Career sites + job boards/public APIs + search engines; new postings are deduplicated into pipeline.md'],
+      portals: ['Scan career sites', 'Workday, SuccessFactors, Phenom, Greenhouse, Lever and 7 more systems'],
+      boards: ['Scan job boards and public APIs', 'JobTech, Euraxess, France Travail, Adzuna, Jooble, Careerjet (the last four need keys in .env)'],
+      websearch: ['Search engines', 'Multilingual queries through Brave, Mojeek or SearXNG (key or own instance needed)'],
       linkedin: ['Scan LinkedIn', 'Jobs and posts with your logged-in browser profile'],
       followups: ['Check follow-ups', 'Applications due a follow-up under your rules'],
       doctor: ['Check setup', 'Environment, profile and tracker'],

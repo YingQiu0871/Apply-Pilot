@@ -60,7 +60,8 @@ export async function callModel({ provider = 'deepseek', model, baseUrl, prompt,
 
 /** Combine a model (or agent) answer with hard filters and the weighted rubric. */
 export function finishEvaluation(profile, answer, jdText = '') {
-  const filters = hardFilter(profile, { company: answer.company || '', text: jdText });
+  // Filters look at the title (and the description's first line, usually the title), not the whole description.
+  const filters = hardFilter(profile, { company: answer.company || '', text: `${answer.role || ''}\n${String(jdText).split('\n')[0]}` });
   const scored = scoreEvaluation(profile, answer.ratings || {});
   return { ...answer, filters, ...scored, decision: filters.length ? 'Skip' : scored.decision };
 }

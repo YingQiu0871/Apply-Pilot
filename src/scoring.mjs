@@ -26,13 +26,21 @@ export function scoreEvaluation(profile, ratings) {
   return { score100, score5: Math.round(score100 / 2) / 10, decision, parts };
 }
 
-/** Hard filters run before any scoring: excluded companies/keywords, required keywords. */
+// Whole-word, accent-insensitive match: "CEA" must not hit "Ceapro".
+const fold = (s) => String(s).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const hasWord = (text, term) => new RegExp(`(^|[^\\p{L}\\p{N}])${fold(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^\\p{L}\\p{N}]|$)`, 'u').test(fold(text));
+
+/**
+ * Hard filters run before any scoring: excluded companies and keywords, required keywords.
+ * Pass the posting title (not the full description) as `text`: descriptions mention
+ * excluded words in passing ("stage ou alternance").
+ */
 export function hardFilter(profile, { company = '', text = '' }) {
   const f = profile.filters;
-  const hay = `${company}\n${text}`.toLowerCase();
+  const hay = `${company}\n${text}`;
   const hits = [];
-  for (const c of f.excludeCompanies) if (company.toLowerCase().includes(c.toLowerCase())) hits.push(`excluded company: ${c}`);
-  for (const k of f.excludeKeywords) if (hay.includes(k.toLowerCase())) hits.push(`excluded keyword: ${k}`);
-  if (f.requireKeywords.length && !f.requireKeywords.some((k) => hay.includes(k.toLowerCase()))) hits.push('none of the required keywords');
+  for (const c of f.excludeCompanies) if (hasWord(company, c)) hits.push(`excluded company: ${c}`);
+  for (const k of f.excludeKeywords) if (hasWord(hay, k)) hits.push(`excluded keyword: ${k}`);
+  if (f.requireKeywords.length && !f.requireKeywords.some((k) => hasWord(hay, k))) hits.push('none of the required keywords');
   return hits;
 }
