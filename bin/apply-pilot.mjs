@@ -34,6 +34,8 @@ Data lives in APPLY_PILOT_HOME (default ./apply-data): profile.json, data/applic
   doctor                                check setup (node, profile, tracker, optional tools, API keys)
   ui [--port 4321] [--open]             dashboard + control panel (scans, checks, export) in your browser
   shortcut [--dir DIR]                  put a double-click launcher for the panel on your desktop
+  import PATH [--write] [--json]        read an existing database (file or folder): applications.md, Markdown tables,
+                                        Excel .xlsx, CSV/TSV, JSON, SQLite; preview first, --write appends new rows
   list [--status S] [--q TEXT]          print tracker rows
   add --company C --role R [--url U] [--score N] [--status S] [--notes N] [--force]
   status NUM STATUS [--note TEXT]       change status and append a dated note
@@ -265,6 +267,26 @@ async function main() {
           console.log(`triage: ${t.fresh.length} new, ${t.tracked.length} already tracked, ${t.filtered.length} filtered; ${appendPipeline(target, t.fresh)} appended to ${target}`);
         }
       }
+      break;
+    }
+    case 'import': {
+      if (!pos[0]) throw new Error('import PATH [--write] [--json]  (a file or a folder)');
+      const { previewImport, writeImport } = await import('../src/importer.mjs');
+      const pv = await previewImport(pos[0], p.tracker);
+      if (opt.json) { console.log(JSON.stringify(pv, null, 2)); if (!opt.write) break; }
+      else {
+        console.log(`${pv.input}: ${pv.files} file(s) scanned, ${pv.sources.length} table(s) recognised`);
+        for (const s of pv.sources) console.log(`  - ${s.file}${s.sheet ? ` › ${s.sheet}` : ''}: ${s.rows} rows  ${JSON.stringify(s.mapping)}`);
+        for (const e of pv.errors) console.log(`  ! ${e}`);
+        console.log(`${pv.fresh.length} new, ${pv.duplicates.length} already in the tracker or repeated`);
+        for (const r of pv.fresh.slice(0, 12)) console.log(`  + ${r.status.padEnd(9)} ${r.company} | ${r.role}`.slice(0, 150));
+        if (pv.fresh.length > 12) console.log(`  … ${pv.fresh.length - 12} more`);
+      }
+      if (opt.write) {
+        if (!existsSync(p.tracker)) tracker().save();
+        const nums = writeImport(pv, p.tracker);
+        console.log(`imported ${nums.length} row(s)${nums.length ? ` as #${nums[0]}–#${nums.at(-1)}` : ''} into ${p.tracker}`);
+      } else console.log('Preview only. Add --write to append the new rows to the tracker.');
       break;
     }
     case 'jd': {

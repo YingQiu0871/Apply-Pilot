@@ -26,7 +26,7 @@ cd apply-pilot && npm install && npm link      # puts `apply-pilot` on your PATH
 npm install playwright exceljs
 ```
 
-Node 20 or later. (Recent npm versions refuse `npm i github:...` by default, so cloning is the reliable route.)
+Node 20 or later on Windows, macOS or Linux. (Recent npm versions refuse `npm i github:...` by default, so cloning is the reliable route.)
 
 ## Quick start
 
@@ -68,6 +68,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 | `init`, `doctor` | create and check the data folder |
 | `agent` | choose the AI agent to pair with (Claude Code, Codex CLI, DeepSeek); the panel's AI page opens it in a terminal or runs delegated tasks that only write to `output/` |
 | `ui`, `shortcut` | live dashboard and control panel (KPIs, timeline of replies, rejections and follow-ups, searchable list, buttons for scans/checks/export); `shortcut` puts a double-click launcher on the desktop (Windows .lnk, macOS .command, Linux .desktop) |
+| `import PATH` | read an existing database from a file or folder: applications.md, Markdown tables, Excel, CSV/TSV, JSON, SQLite; English/French/German/Chinese headers; preview first, `--write` appends only new rows |
 | `add`, `status`, `note`, `list` | the tracker (`data/applications.md`), with duplicate detection by URL and by company + role |
 | `followups` | rows due a follow-up (`afterDays`, `maxFollowUps`, `skipAppliedBefore`), split by email vs portal |
 | `eval prompt / score / run` | rubric scoring with hard filters; works with an agent or with DeepSeek, OpenAI, OpenRouter, Ollama, Anthropic |
@@ -82,6 +83,28 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add
 | `merge-additions` | merge batch TSV tracker additions from an evaluation run |
 | `export xlsx` | tracker to a fresh spreadsheet |
 | `careerops` | optional: run a [career-ops](https://github.com/career-ops-hq/career-ops) script on the same data |
+
+## Bring your existing data
+
+```bash
+apply-pilot import ~/Documents/job-search            # macOS / Linux: preview everything in that folder
+apply-pilot import "C:\Users\me\Documents\jobs.xlsx"  # Windows: a single workbook
+apply-pilot import ~/Documents/job-search --write    # append the rows that are not tracked yet
+```
+
+The panel's Tools page has the same import box. Rows that match a tracked posting (same link, or same company and a similar role) are skipped, and the original status is kept in the note when it had to be translated.
+
+## Windows and macOS
+
+Everything runs on Windows 10/11, macOS and Linux with Node 20 or later; CI tests all three.
+
+| | Windows | macOS |
+|---|---|---|
+| Desktop launcher (`apply-pilot shortcut`) | `apply-pilot.lnk`, starts the panel without a console window | `apply-pilot.command` on the Desktop |
+| "Open data folder" | Explorer | Finder |
+| AI agent "Open in terminal" | new `cmd` window | new Terminal window |
+| Paths | `C:\Users\me\...` | `~/...` is expanded |
+| SQLite import | Node 22.5+ | Node 22.5+ |
 
 ## Sources and access
 

@@ -131,6 +131,21 @@ export function serve({ trackerFile, profile, paths, port = 4321, host = '127.0.
       if (pathname === '/api/run') return withBody((b) => runTask(b.task));
       if (pathname === '/api/agent/select') return withBody((b) => ({ ok: true, agent: saveAgent(paths.home, b.agent) }));
       if (pathname === '/api/agent/launch') return withBody((b) => ({ ok: launchInteractive(b.agent, { home: paths.home }) }));
+      if (pathname === '/api/import/preview' || pathname === '/api/import/write') {
+        let body = '';
+        req.on('data', (c) => { body += c; if (body.length > 1e4) req.destroy(); });
+        req.on('end', async () => {
+          try {
+            const { path } = JSON.parse(body || '{}');
+            if (!path) throw new Error('enter a file or folder path');
+            const { previewImport, writeImport } = await import('../importer.mjs');
+            const pv = await previewImport(path, trackerFile);
+            const added = pathname.endsWith('/write') ? writeImport(pv, trackerFile) : null;
+            json(res, 200, { ok: true, input: pv.input, files: pv.files, sources: pv.sources, errors: pv.errors, fresh: pv.fresh.length, duplicates: pv.duplicates.length, sample: pv.fresh.slice(0, 40), added });
+          } catch (e) { json(res, 200, { ok: false, error: e.message }); }
+        });
+        return;
+      }
       if (pathname === '/api/agent/refresh') { agents = detectAgents(); return json(res, 200, { ok: true, agents }); }
       if (pathname === '/api/open-data') { mkdirSync(paths.home, { recursive: true }); openFolder(paths.home); return json(res, 200, { ok: true }); }
       if (pathname === '/api/quit') { json(res, 200, { ok: true }); setTimeout(() => process.exit(0), 200); return; }

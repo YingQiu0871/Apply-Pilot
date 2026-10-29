@@ -68,6 +68,20 @@ apply-pilot keywords report.md --cv cv.md     # 检查 CV 覆盖了 JD 的哪些
 
 控制面板的「AI 助手」页可以选择搭配 Claude Code、Codex 或 DeepSeek：一键在终端中打开它（工作目录就是你的数据目录），或让它代跑「评估新岗位」「起草跟进邮件」两项任务。这些任务只把结果写到 `output/`，不会发送或提交任何东西。命令行：`apply-pilot agent claude|codex|deepseek`。
 
+## 导入已有数据
+
+```bash
+apply-pilot import ~/Documents/求职                    # macOS：预览这个文件夹里能识别的所有数据
+apply-pilot import "C:\Users\我\Documents\申请表.xlsx"   # Windows：单个 Excel 文件
+apply-pilot import ~/Documents/求职 --write            # 确认后，只追加申请表里还没有的行
+```
+
+支持 applications.md、Markdown 表格、Excel（.xlsx）、CSV/TSV、JSON 和 SQLite（.db，需要 Node 22.5+）。列名中英法德常见写法都能识别（比如"公司 / 岗位 / 状态 / 投递日期 / 链接 / 备注"），状态自动换算。已经在申请表里的岗位会跳过，原文件不会被修改。控制面板的「工具」页也有同样的导入框。
+
+## Windows 和 macOS
+
+Windows 10/11、macOS、Linux 都能用（Node 20 以上），GitHub 上的自动测试三个系统都会跑。桌面图标在 Windows 上是不弹命令行窗口的 `apply-pilot.lnk`，在 macOS 上是桌面上的 `apply-pilot.command`；"打开数据文件夹"分别用资源管理器和 Finder；AI 助手的"在终端中打开"分别打开 cmd 和"终端"。
+
 ## 数据来源原则
 
 只用官方接口、公开的数据源和普通公开网页。有反爬保护或要登录的网站（比如目前的 Indeed、Welcome to the Jungle）不绕过它们的保护，交给你自己的浏览器或 agent 在浏览器里查。各平台的 key 放在 `APPLY_PILOT_HOME/.env`（模板见 `config/env.example`），不写进 `profile.json`。

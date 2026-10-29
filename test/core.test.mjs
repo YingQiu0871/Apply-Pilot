@@ -167,3 +167,54 @@ test('loadEnv reads KEY=VALUE without overriding the environment', async () => {
   assert.equal(process.env.AP_TEST_ONE, 'hello');
   assert.equal(process.env.AP_TEST_TWO, 'kept');
 });
+
+test('import reads CSV, JSON, Markdown, Excel and SQLite, maps columns and statuses, skips tracked rows', async () => {
+  const { previewImport, writeImport, mapStatus, mapColumns } = await import('../src/importer.mjs');
+  const fs = await import('node:fs');
+  const dir = fs.mkdtempSync(join(tmpdir(), 'ap-imp-'));
+  const src = join(dir, 'old');
+  fs.mkdirSync(src);
+  fs.writeFileSync(join(src, 'jobs.csv'), '﻿公司;岗位;状态;投递日期;链接;备注\nLab A;Stage formulation;已投递;2026/09/14;https://a.example/1;"via email; reply pending"\nLab B;Stage analytique;未录用;14/09/2026;;\n');
+  fs.writeFileSync(join(src, 'more.json'), JSON.stringify({ applications: [{ Company: 'Lab C', Position: 'Internship CMC', Status: 'Interview', Link: 'https://c.example/9' }] }));
+  fs.writeFileSync(join(src, 'notes.md'), '# Notes\n\n| Entreprise | Poste | Statut |\n|---|---|---|\n| Lab D | Stage galénique | refusé |\n');
+  const ExcelJS = (await import('exceljs')).default;
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Tracker');
+  ws.addRow(['Overview']);
+  ws.addRow(['Firma', 'Stelle', 'Status', 'Datum']);
+  ws.addRow(['Lab E', 'Praktikum Formulierung', 'beworben', new Date('2026-10-01T12:00:00Z')]);
+  await wb.xlsx.writeFile(join(src, 'tracker.xlsx'));
+  let sqlite = false;
+  try {
+    const { DatabaseSync } = await import('node:sqlite');
+    const db = new DatabaseSync(join(src, 'apps.db'));
+    db.exec("CREATE TABLE applications (company TEXT, role TEXT, status TEXT, url TEXT); INSERT INTO applications VALUES ('Lab F', 'M2 internship', 'Applied', 'https://f.example/2');");
+    db.close();
+    sqlite = true;
+  } catch { /* node:sqlite needs Node 22.5+ */ }
+
+  const trackerFile = join(dir, 'applications.md');
+  const t = new Tracker(trackerFile);
+  t.add({ company: 'Lab C', role: 'Internship CMC', url: 'https://c.example/9' });
+  t.save();
+
+  const pv = await previewImport(src, trackerFile);
+  const names = pv.fresh.map((r) => r.company).sort();
+  assert.deepEqual(names, ['Lab A', 'Lab B', 'Lab D', 'Lab E', ...(sqlite ? ['Lab F'] : [])]);
+  assert.equal(pv.duplicates.length, 1);
+  const byName = Object.fromEntries(pv.fresh.map((r) => [r.company, r]));
+  assert.equal(byName['Lab A'].status, 'Applied');
+  assert.equal(byName['Lab A'].date, '2026-09-14');
+  assert.equal(byName['Lab B'].status, 'Rejected');
+  assert.equal(byName['Lab B'].date, '2026-09-14');
+  assert.equal(byName['Lab D'].status, 'Rejected');
+  assert.equal(byName['Lab E'].status, 'Applied');
+  assert.equal(mapStatus('面试已完成'), 'Interview');
+  assert.equal(mapColumns(['Company name', 'Job title', 'State']).role, 1);
+
+  const added = writeImport(pv, trackerFile);
+  assert.equal(added.length, pv.fresh.length);
+  const again = await previewImport(src, trackerFile);
+  assert.equal(again.fresh.length, 0, 'a second import adds nothing');
+  assert.match(new Tracker(trackerFile).rows().at(-1).notes, /imported from/);
+});

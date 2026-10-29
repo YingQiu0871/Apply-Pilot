@@ -1,0 +1,31 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [20, 22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm install --no-audit --no-fund
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      - run: npm test
+      - name: CLI smoke test
+        shell: bash
+        run: |
+          export APPLY_PILOT_HOME="$RUNNER_TEMP/ap-home"
+          node bin/apply-pilot.mjs init --example pharma-m2-europe
+          node bin/apply-pilot.mjs add --company "Demo Lab" --role "M2 internship formulation"
+          node bin/apply-pilot.mjs status 1 Applied --note "submitted via career site"
+          node bin/apply-pilot.mjs followups
+          node bin/apply-pilot.mjs import "$APPLY_PILOT_HOME/data"
+          node bin/apply-pilot.mjs doctor

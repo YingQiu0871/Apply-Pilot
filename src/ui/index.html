@@ -237,6 +237,18 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
     <section class="view" data-view="tools">
       <div class="page-head"><div><h1 data-t="toolsTitle"></h1><p data-t="toolsSub"></p></div>
         <div class="mini" style="gap:8px"><button class="btn" data-act="open-data" data-t="openData"></button><button class="btn" data-act="quit" data-t="quit"></button></div></div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-h"><h2 data-t="impTitle"></h2></div>
+        <div class="card-b">
+          <p class="meta" style="white-space:normal;margin:0 0 10px" data-t="impHelp"></p>
+          <div class="toolbar" style="padding:0;border:0;gap:8px">
+            <label class="search"><input id="impPath" type="text" spellcheck="false"></label>
+            <button class="btn" data-imp="preview" data-t="impPreview"></button>
+            <button class="btn primary" data-imp="write" data-t="impWrite" disabled id="impWriteBtn"></button>
+          </div>
+          <div id="impResult" style="margin-top:12px"></div>
+        </div>
+      </div>
       <div class="grid tasks" id="tasks" style="margin-bottom:16px"></div>
       <div class="card">
         <div class="card-h"><h2 data-t="output"></h2><div class="status-line"><span class="spin" id="spin"></span><span id="runState"></span></div></div>
@@ -262,6 +274,8 @@ const I18N = {
     agTask: { 'agent-evaluate': ['评估新岗位', '读取 pipeline.md 里待处理的岗位（最多 10 个），抓 JD、按你的评分维度打分，结果写到 output/agent-evaluation-日期.md'], 'agent-followups': ['起草跟进邮件', '为到期的邮件类申请起草简短跟进，写到 output/followup-drafts-日期.md，你看过再决定发不发'] },
     overviewTitle: '概览', needAction: '需要你处理', thisWeek: '最近 7 天', seeAll: '查看全部',
     appsTitle: '申请', appsSub: '点任意一行查看详情和完整时间线', fuTitle: '待跟进', actTitle: '动态', actSub: '从申请表备注里提取的带日期事件',
+    impTitle: '导入已有数据', impHelp: '输入文件或文件夹路径（Windows 例：C:\\Users\\你\\Documents\\求职，macOS 例：~/Documents/jobs）。支持 applications.md、Markdown 表格、Excel、CSV/TSV、JSON、SQLite。先预览，确认后再导入；已存在的岗位会跳过，原文件不会被修改。',
+    impPreview: '预览', impWrite: '导入新行', impPh: '文件或文件夹路径', impFiles: (f, t) => `扫描 ${f} 个文件，识别出 ${t} 个表`, impCounts: (n, d) => `${n} 条新记录，${d} 条已存在或重复`, impDone: (n) => `已导入 ${n} 条`, impNone: '没有可导入的新记录',
     toolsTitle: '工具', toolsSub: '只运行本地任务：扫描、检查、导出。不会发送或提交任何东西。', output: '运行输出', openData: '打开数据文件夹', quit: '退出',
     k: { applied: '已投递，等待中', reply: '有回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒' },
     f: { active: '进行中', applied: '已投递', reply: '回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒', all: '全部' },
@@ -296,6 +310,8 @@ const I18N = {
     agTask: { 'agent-evaluate': ['Evaluate new postings', 'Up to 10 pending postings from pipeline.md: fetch the JD, score it against your rubric, write output/agent-evaluation-DATE.md'], 'agent-followups': ['Draft follow-ups', 'Short follow-ups for due email applications, written to output/followup-drafts-DATE.md for you to review'] },
     overviewTitle: 'Overview', needAction: 'Needs your attention', thisWeek: 'Last 7 days', seeAll: 'See all',
     appsTitle: 'Applications', appsSub: 'Click a row for details and the full timeline', fuTitle: 'Follow-ups', actTitle: 'Activity', actSub: 'Dated events taken from the tracker notes',
+    impTitle: 'Import existing data', impHelp: 'Enter a file or folder path (Windows: C:\\Users\\you\\Documents\\jobs, macOS: ~/Documents/jobs). Reads applications.md, Markdown tables, Excel, CSV/TSV, JSON and SQLite. Preview first; rows already tracked are skipped and source files are never changed.',
+    impPreview: 'Preview', impWrite: 'Import new rows', impPh: 'File or folder path', impFiles: (f, t) => `${f} file(s) scanned, ${t} table(s) recognised`, impCounts: (n, d) => `${n} new, ${d} already tracked or repeated`, impDone: (n) => `Imported ${n} row(s)`, impNone: 'Nothing new to import',
     toolsTitle: 'Tools', toolsSub: 'Runs local tasks only: scans, checks, export. Nothing is sent or submitted.', output: 'Output', openData: 'Open data folder', quit: 'Quit',
     k: { applied: 'Applied, waiting', reply: 'Replies / interviews', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
     f: { active: 'Active', applied: 'Applied', reply: 'Replies', follow: 'Follow-up', pending: 'To decide', rejected: 'Rejected', all: 'All' },
@@ -462,6 +478,7 @@ function renderTools() {
 function render() {
   document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = T[el.dataset.t]; });
   $('q').placeholder = T.search;
+  $('impPath').placeholder = T.impPh;
   $('langBtn').textContent = T.lang;
   $('themeBtn').textContent = T.theme;
   ({ overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, tools: renderTools })[S.view]?.();
@@ -507,7 +524,7 @@ async function load() {
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-period],[data-kind],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],#langBtn,#themeBtn,#scrim');
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-period],[data-kind],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],#langBtn,#themeBtn,#scrim');
   if (!t) return;
   if (t.dataset.go) return setView(t.dataset.go);
   if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
@@ -517,6 +534,19 @@ document.addEventListener('click', async (e) => {
   if (t.dataset.open) return openDrawer(t.dataset.open);
   if (t.hasAttribute('data-close') || t.id === 'scrim') return closeDrawer();
   if (t.hasAttribute('data-more')) { S.limit += 100; return render(); }
+  if (t.dataset.imp) {
+    const path = $('impPath').value.trim();
+    store('ap-import-path', path);
+    $('impResult').innerHTML = '<span class="spin on"></span>';
+    const r = await post(`/api/import/${t.dataset.imp}`, { path });
+    if (!r.ok) { $('impResult').innerHTML = `<div class="err" style="display:block">${esc(r.error)}</div>`; return; }
+    const src = r.sources.map((x) => `<div class="meta" style="white-space:normal">${esc(x.file)}${x.sheet ? ` › ${esc(x.sheet)}` : ''}: ${x.rows}</div>`).join('');
+    const rows = r.sample.map((x) => `<div class="item"><div class="grow"><div class="t1">${esc(x.company)}</div><div class="t2">${esc(x.role)}</div></div>${pill(x.status)}</div>`).join('');
+    $('impResult').innerHTML = `<div class="status-line" style="margin-bottom:8px"><b>${T.impFiles(r.files, r.sources.length)}</b> · ${T.impCounts(r.fresh, r.duplicates)}${r.added ? ` · <b>${T.impDone(r.added.length)}</b>` : ''}</div>${src}${r.errors.map((e) => `<div class="meta" style="color:var(--rejected)">${esc(e)}</div>`).join('')}<div style="margin-top:8px">${rows || `<div class="empty">${T.impNone}</div>`}</div>`;
+    $('impWriteBtn').disabled = Boolean(r.added) || !r.fresh;
+    if (r.added) load();
+    return;
+  }
   if (t.dataset.agent) { await post('/api/agent/select', { agent: t.dataset.agent }); return load(); }
   if (t.dataset.launch) { await post('/api/agent/launch', { agent: t.dataset.launch }); return; }
   if (t.dataset.act === 'agent-refresh') { const r = await post('/api/agent/refresh'); if (r.agents) S.agents = r.agents; return render(); }
@@ -536,6 +566,8 @@ window.addEventListener('hashchange', () => { const v = location.hash.slice(1); 
 
 const theme = read('ap-theme'); if (theme) document.documentElement.dataset.theme = theme;
 $('updated').textContent = T.connecting;
+$('impPath').value = read('ap-import-path') || '';
+$('impPath').addEventListener('input', () => { $('impWriteBtn').disabled = true; });
 const es = new EventSource('/events');
 es.onopen = () => $('dot').classList.add('on');
 es.onerror = () => $('dot').classList.remove('on');
