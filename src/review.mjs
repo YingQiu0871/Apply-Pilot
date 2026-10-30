@@ -65,11 +65,18 @@ function recordFollowup(item, edits, { trackerFile, profile, today }) {
   return { num: row.num };
 }
 
-/** action: approve | reject for evaluations, sent | reject for follow-ups. */
+/** action: approve | reject for evaluations, sent | reject for follow-ups, retry | reject for unread pages. */
 export function applyDecision({ queue, id, action, edits = {}, home, profile, trackerFile, today = localDate() }) {
   const item = queue.get(id);
   if (!item) throw new Error(`no review item ${id}`);
   if (item.status !== 'pending') throw new Error(`already ${item.status}`);
+  if (action === 'retry') {
+    if (item.type !== 'unread') throw new Error(`cannot retry a ${item.type}`);
+    // Forgetting the item puts the posting back in line for the next run.
+    queue.items.splice(queue.items.indexOf(item), 1);
+    queue.save();
+    return { ok: true, status: 'retry' };
+  }
   const pipelineFile = join(home, 'data', 'pipeline.md');
   let result = {};
   if (action === 'reject') {

@@ -121,6 +121,8 @@ async function runCli(agent, text, timeoutMs) {
         const raw = err.trim() || out.trim() || `exit code ${code}`;
         const cause = raw.match(/^.*Cannot find .*$/m)?.[0].trim();
         const detail = `${cause ? `${cause}\n` : ''}${raw.slice(cause ? -200 : -400)}`;
+        // Seen when an installer started the app: its protection blocks the junctions dsh depends on.
+        if (agent === 'dsh' && /Cannot find package/.test(raw)) return done(reject, failure('restart', detail));
         return done(reject, failure(classifyFailure(detail), detail));
       }
       let answer = out;

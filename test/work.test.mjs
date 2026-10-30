@@ -9,8 +9,13 @@ import { closePipeline, pendingPipeline } from '../src/additions.mjs';
 import { Tracker } from '../src/tracker.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../src/review.mjs';
 import { runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
+import { asksForHuman, asksForSignIn, assertPublicUrl, clearLogins, findBrowser, loginProfile, openLogin, readSites, removeSite, renderPage, siteAllowed } from '../src/browser.mjs';
 import { buildDocx, plainDocx, readParagraphs } from '../src/docx.mjs';
+import { fetchJd, fromHtml } from '../src/jd.mjs';
 import { letterCandidates, saveLetter, validateLetter } from '../src/letters.mjs';
+import { createServer } from 'node:http';
+import { BOARDS, scanBoards, searchEngines } from '../src/scan/boards.mjs';
+import { serve } from '../src/ui/server.mjs';
 import { SOURCES, sourceState, testSource, updateSource } from '../src/sources.mjs';
 import { askJson, classifyFailure, dshArgs, dshPatch, dshStart, testAgent, workerCommand } from '../src/worker.mjs';
 
@@ -408,4 +413,190 @@ test('a source test sends one request and explains failures', async () => {
     assert.equal((await testSource({}, 'adzuna')).reason, 'key');
   } finally { globalThis.fetch = real; delete process.env.JOOBLE_API_KEY; }
   assert.ok(SOURCES.brave.search);
+});
+
+test('web search falls back to any engine that has its key', () => {
+  for (const k of ['BRAVE_API_KEY', 'MOJEEK_API_KEY', 'SEARXNG_URL']) delete process.env[k];
+  assert.deepEqual(searchEngines({ engine: 'brave', fallback: 'searxng' }), ['brave', 'searxng']);
+  process.env.MOJEEK_API_KEY = 'k';
+  assert.deepEqual(searchEngines({ engine: 'brave' }), ['brave', 'mojeek']);
+  delete process.env.MOJEEK_API_KEY;
+});
+
+const stubFetch = async (bodies, run) => {
+  const real = globalThis.fetch;
+  const urls = [];
+  globalThis.fetch = async (url) => { urls.push(String(url)); const hit = Object.entries(bodies).find(([k]) => String(url).includes(k)); return hit ? { ok: true, text: async () => hit[1] } : { ok: false, status: 404 }; };
+  try { return await run(urls); } finally { globalThis.fetch = real; }
+};
+
+test('academic feeds are parsed into postings', async () => {
+  await stubFetch({
+    'api.daad.de': '<item><title><![CDATA[Doctoral Researcher in Drug Delivery]]></title><description><![CDATA[<p>Lipid work</p>]]></description><link>https://d.example/1</link><company><![CDATA[TU X]]></company><location><![CDATA[Berlin]]></location><pubDate>30. Oct 2026</pubDate></item><item><title><![CDATA[Software PhD]]></title><description>code</description><link>https://d.example/2</link></item>',
+    'jobrxiv.org': '<item><title>R&#038;D PhD</title><link>https://j.example/1</link><pubDate>Thu, 29 Oct 2026 09:51:44 +0000</pubDate><job_listing:company><![CDATA[Lab]]></job_listing:company><job_listing:location><![CDATA[Lyon, France]]></job_listing:location></item>',
+    'phdfinder.com': '<item><title>Germany – PhD Position in Formulation – Part 2</title><link>https://p.example/1</link><pubDate>Fri, 30 Oct 2026 09:37:37 +0000</pubDate><description><![CDATA[University: University of Hamburg Country: Germany Deadline: 2026-11-30 Fields: Chemistry]]></description></item>',
+    'research.pasteur.fr': '<article id="1" class="card job position-phd-student"><a href="https://r.example/1" rel="bookmark"><h3>Viral capsids</h3><span class="lab">Virology Unit</span></a></article><article id="2" class="card job position-postdoc"><a href="https://r.example/2" rel="bookmark"><h3>Postdoc</h3></a></article><article id="3" class="card job position-master-student"><a href="https://r.example/3" rel="bookmark"><h3>Peptides</h3></a></article>',
+  }, async (urls) => {
+    assert.deepEqual(await BOARDS.daad({ keywords: ['drug delivery'] }), [{ title: 'Doctoral Researcher in Drug Delivery', company: 'TU X', url: 'https://d.example/1', location: 'Berlin', posted: '2026-10-30' }]);
+    assert.deepEqual(await BOARDS.jobrxiv({ keywords: ['pharma'] }), [{ title: 'R&D PhD', company: 'Lab', url: 'https://j.example/1', location: 'Lyon, France', posted: '2026-10-29' }]);
+    assert.deepEqual(await BOARDS.phdfinder({ keywords: ['drug delivery'] }), [{ title: 'PhD Position in Formulation – Part 2', company: 'University of Hamburg', url: 'https://p.example/1', location: 'Germany', posted: '2026-10-30' }]);
+    assert.ok(urls.some((u) => u.includes('/search/drug%20delivery/feed/')));
+    const pasteur = await BOARDS.pasteur({});
+    assert.deepEqual(pasteur.map((j) => [j.title, j.company]), [['Viral capsids (PhD)', 'Institut Pasteur - Virology Unit'], ['Peptides (Master)', 'Institut Pasteur']]);
+  });
+});
+
+test('an academic board skips the internship title rule but keeps the location rule', async () => {
+  const body = '<item><title>PhD in formulation</title><link>https://j.example/1</link><job_listing:location>Paris, France</job_listing:location></item><item><title>Postdoctoral Scientist in formulation</title><link>https://j.example/3</link></item><item><title>Sr. Scientist</title><link>https://j.example/4</link></item><item><title>PhD in formulation US</title><link>https://j.example/2</link><job_listing:location>Boston, USA</job_listing:location></item>';
+  const portals = { titleFilter: { positive: ['stage + formulation'] }, locationFilter: { deny: ['USA'] } };
+  await stubFetch({ 'jobrxiv.org': body }, async () => {
+    const academic = await scanBoards({ sources: { portals, boards: [{ name: 'jobRxiv', provider: 'jobrxiv', academic: true, keywords: ['x'] }] } }, { log: () => {} });
+    assert.deepEqual(academic.jobs.map((j) => j.url), ['https://j.example/1']);
+    const plain = await scanBoards({ sources: { portals, boards: [{ name: 'jobRxiv', provider: 'jobrxiv', keywords: ['x'] }] } }, { log: () => {} });
+    assert.equal(plain.jobs.length, 0);
+  });
+});
+
+test('Pasteur turns on without search terms, other sources do not', () => {
+  const home = newHome();
+  updateSource(home, { id: 'pasteur', on: true, keywords: [] });
+  const board = JSON.parse(readFileSync(join(home, 'profile.json'), 'utf8')).sources.boards.find((b) => b.provider === 'pasteur');
+  assert.equal(board.academic, true);
+  assert.throws(() => updateSource(home, { id: 'daad', on: true, keywords: [] }), /search term/);
+});
+
+test('a small article tag does not hide the job description', () => {
+  const body = 'Lipid nanoparticle project for a master student. '.repeat(10);
+  const teaser = `<script type="application/ld+json">{"@type":"JobPosting","title":"T","description":"Short teaser"}</script><div>${body}</div>`;
+  assert.equal(fromHtml(teaser).source, 'html');
+  const page = `<html><body><article>Short header</article><div>${body}</div></body></html>`;
+  assert.ok(fromHtml(page).text.includes('Lipid nanoparticle'));
+  assert.ok(!fromHtml(`<main>${body}</main><div>Footer links</div>`).text.includes('Footer'), 'a full main area is still preferred');
+});
+
+test('the browser opens public web pages only', async () => {
+  assert.equal(assertPublicUrl('https://jobs.example.com/1'), 'https://jobs.example.com/1');
+  for (const bad of ['file:///C:/Windows/win.ini', 'http://localhost:4321/', 'http://127.0.0.1/', 'http://10.0.0.5/', 'http://192.168.1.1/', 'http://172.20.0.1/', 'http://169.254.169.254/latest', 'http://[::1]/', 'http://router.local/', 'javascript:alert(1)', 'nonsense']) {
+    assert.throws(() => assertPublicUrl(bad), /not a (public web page|web address)/, bad);
+  }
+  assert.equal(assertPublicUrl('http://172.32.0.1/'), 'http://172.32.0.1/');
+  await assert.rejects(renderPage('http://localhost:4321/', { browser: 'unused' }), /not a public web page/);
+  await assert.rejects(renderPage('https://jobs.example.com/1', { browser: null }), /no Chrome or Edge/);
+});
+
+test('APPLY_PILOT_BROWSER picks the browser', () => {
+  const real = process.env.APPLY_PILOT_BROWSER;
+  process.env.APPLY_PILOT_BROWSER = join(tmpdir(), 'no-such-browser.exe');
+  assert.equal(findBrowser(), null);
+  if (real === undefined) delete process.env.APPLY_PILOT_BROWSER; else process.env.APPLY_PILOT_BROWSER = real;
+});
+
+test('a job page is read in the browser only when plain fetching fails, and a human check stops it', async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, text: async () => '<html><body><div id="app"></div></body></html>' });
+  try {
+    const url = 'https://jobs.example.com/1';
+    const body = 'Formulation internship on lipid nanoparticles. '.repeat(12);
+    await assert.rejects(fetchJd(url), /try --browser/);
+    await assert.rejects(fetchJd(url, { browser: false, render: async () => { throw new Error('not expected'); } }), /try --browser/);
+    const seen = await fetchJd(url, { browser: true, render: async () => `<main>${body}</main>` });
+    assert.equal(seen.source, 'browser');
+    await assert.rejects(fetchJd(url, { browser: true, render: async () => `<body>Just a moment... ${'x'.repeat(320)}</body>` }), /human check/);
+    await assert.rejects(fetchJd(url, { browser: true, render: async () => '<body>empty</body>' }), /even in a browser/);
+    globalThis.fetch = async () => ({ ok: true, text: async () => `<main>${body}</main>` });
+    assert.equal((await fetchJd(url, { browser: true, render: async () => { throw new Error('no browser here'); } })).source, 'html', 'a short page survives a browser failure');
+    assert.equal((await fetchJd(url, { browser: true, render: async () => `<main>${body.repeat(3)}</main>` })).source, 'browser', 'a short page is checked in the browser');
+    globalThis.fetch = async () => ({ ok: true, text: async () => `<main>${body.repeat(8)}</main>` });
+    assert.equal((await fetchJd(url, { browser: true, render: async () => { throw new Error('not expected'); } })).source, 'html', 'a full page needs no browser');
+  } finally { globalThis.fetch = real; }
+  assert.equal(asksForHuman('Please verify you are human'), true);
+  assert.equal(asksForHuman(`captcha ${'long posting text '.repeat(200)}`), false);
+});
+
+test('an unread page can go back in line', async () => {
+  const home = newHome();
+  const profile = loadProfile(home);
+  const trackerFile = join(home, 'data', 'applications.md');
+  const res = await runToday({ home, profile, agent: 'codex', steps: ['evaluate'], ask: fakeAgent(profile), fetch: async () => ({ text: '' }), log: () => {} });
+  assert.equal(res.unread, 2);
+  const queue = new ReviewQueue(reviewFile(home));
+  const item = queue.pending()[0];
+  assert.deepEqual(applyDecision({ queue, id: item.id, action: 'retry', home, profile, trackerFile }), { ok: true, status: 'retry' });
+  const next = await runToday({ home, profile, agent: 'codex', steps: ['evaluate'], ask: fakeAgent(profile), fetch: async () => ({ text: 'Formulation internship. '.repeat(20) }), log: () => {} });
+  assert.equal(next.evaluated, 1);
+});
+
+test('opening a site for sign-in lists it, once, and keeps cookies out of git', () => {
+  const home = newHome();
+  const opened = [];
+  const start = (file, args) => { opened.push(args); return {}; };
+  writeFileSync(join(home, '.gitignore'), 'inbox/');
+  assert.deepEqual(openLogin(home, 'https://www.emploi.abg.asso.fr/fr/login', { browser: 'chrome', start }), { site: 'emploi.abg.asso.fr' });
+  openLogin(home, 'https://emploi.abg.asso.fr/other', { browser: 'chrome', start });
+  assert.deepEqual(readSites(home), ['emploi.abg.asso.fr']);
+  assert.ok(opened[0].includes(`--user-data-dir=${loginProfile(home)}`), 'never the everyday profile');
+  assert.ok(!opened[0].some((a) => a.startsWith('--headless')), 'the user needs a window');
+  assert.equal(readFileSync(join(home, '.gitignore'), 'utf8'), 'inbox/\nbrowser/\n');
+  assert.equal(readFileSync(join(home, '.gitignore'), 'utf8').match(/browser/g).length, 1);
+  removeSite(home, 'emploi.abg.asso.fr');
+  assert.deepEqual(readSites(home), []);
+});
+
+test('mailboxes and local addresses are refused for sign-in', () => {
+  const home = newHome();
+  const start = () => { throw new Error('nothing may open'); };
+  for (const url of ['https://mail.google.com/mail/u/0', 'https://outlook.live.com/mail', 'https://www.gmail.com/', 'http://localhost:4321/', 'file:///C:/x']) assert.throws(() => openLogin(home, url, { browser: 'chrome', start }), /mailbox|not a public|not a web/, url);
+  assert.deepEqual(readSites(home), []);
+});
+
+test('a listed site includes its subdomains and nothing else', () => {
+  const sites = ['abg.asso.fr'];
+  assert.ok(siteAllowed('https://abg.asso.fr/a', sites));
+  assert.ok(siteAllowed('https://www.abg.asso.fr/a', sites));
+  assert.ok(siteAllowed('https://emploi.abg.asso.fr/a', sites));
+  assert.ok(!siteAllowed('https://notabg.asso.fr/a', sites));
+  assert.ok(!siteAllowed('https://abg.asso.fr.evil.example/a', sites));
+  assert.ok(!siteAllowed('http://localhost/a', sites));
+  assert.ok(!siteAllowed('nonsense', sites));
+});
+
+test('only listed sites are read with the signed-in profile', async () => {
+  const real = globalThis.fetch;
+  const body = 'Formulation internship on lipid nanoparticles. '.repeat(80);
+  globalThis.fetch = async () => ({ ok: true, text: async () => `<main>${body}</main>` });
+  const seen = [];
+  const render = async (url, opts) => { seen.push([url, opts]); return `<main>${body}</main>`; };
+  const session = { profile: 'P', sites: ['portal.example.com'] };
+  try {
+    assert.equal((await fetchJd('https://portal.example.com/1', { browser: true, render, session })).source, 'browser-signed-in');
+    assert.deepEqual(seen[0][1], { profile: 'P' });
+    seen.length = 0;
+    assert.equal((await fetchJd('https://other.example.com/1', { browser: true, render, session })).source, 'html');
+    assert.equal(seen.length, 0);
+    assert.equal((await fetchJd('https://portal.example.com/1', { browser: false, render, session })).source, 'html', 'off means off');
+    await assert.rejects(fetchJd('https://portal.example.com/1', { browser: true, session, render: async () => `<body>Please sign in to continue ${'x'.repeat(320)}</body>` }), /has run out/);
+  } finally { globalThis.fetch = real; }
+  assert.equal(asksForSignIn(`Sign in ${'long posting '.repeat(300)}`), false);
+});
+
+test('clearing sign-ins removes the profile and the list', () => {
+  const home = newHome();
+  openLogin(home, 'https://portal.example.com/', { browser: 'chrome', start: () => ({}) });
+  writeFileSync(join(loginProfile(home), 'Cookies'), 'x');
+  clearLogins(home);
+  assert.ok(!existsSync(loginProfile(home)));
+  assert.deepEqual(readSites(home), []);
+});
+
+test('the desktop panel takes a free port when its usual one is busy', async () => {
+  const busy = createServer();
+  await new Promise((done) => busy.listen(0, '127.0.0.1', done));
+  const taken = busy.address().port;
+  const panel = await new Promise((resolve) => { const server = serve({ home: newHome(), port: taken, anyPort: true, onListen: (p) => resolve({ ...p, server }) }); });
+  assert.notEqual(panel.port, taken);
+  assert.equal(panel.running(), false);
+  assert.equal((await fetch(`http://127.0.0.1:${panel.port}/`)).status, 200);
+  await new Promise((done) => { busy.close(done); });
+  panel.server.closeAllConnections();
+  await new Promise((done) => { panel.server.close(done); });
 });

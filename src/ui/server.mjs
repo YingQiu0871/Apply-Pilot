@@ -18,6 +18,7 @@ import { stageOf } from '../events.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
 import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readAgentState, saveAgent } from '../agents.mjs';
 import { profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
+import { clearLogins, openLogin, readSites, removeSite } from '../browser.mjs';
 import { saveLetter } from '../letters.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../review.mjs';
 import { SOURCES, sourceState, testSource, updateSource } from '../sources.mjs';
@@ -50,7 +51,11 @@ function openFolder(dir) {
   spawn(cmd, [dir], { detached: true, stdio: 'ignore' }).unref();
 }
 
-export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
+// In the desktop window process.execPath is Electron, which runs scripts only with this set.
+const SELF_ENV = process.versions.electron ? { ELECTRON_RUN_AS_NODE: '1' } : {};
+
+/** anyPort takes a free port when this one is busy; onListen gets { port, running() }. */
+export function serve({ home, port = 4321, host = '127.0.0.1', open = false, anyPort = false, onListen }) {
   const token = randomBytes(16).toString('hex');
   // The data folder can change while the panel runs (folder picker), so these are reassigned by use().
   let profile, paths, trackerFile, setup = false, watcher = null;
@@ -112,7 +117,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   let agents = detectAgents();
   const log = (text) => push('log', { text });
   const cli = (args) => new Promise((done) => {
-    const child = spawn(process.execPath, [CLI, ...args], { cwd: paths.home, env: { ...process.env, APPLY_PILOT_HOME: paths.home }, windowsHide: true });
+    const child = spawn(process.execPath, [CLI, ...args], { cwd: paths.home, env: { ...process.env, ...SELF_ENV, APPLY_PILOT_HOME: paths.home }, windowsHide: true });
     child.on('error', (e) => log(`! ${e.message}`));
     const line = (chunk) => String(chunk).split(/\r?\n/).filter(Boolean).forEach(log);
     child.stdout.on('data', line);
@@ -216,7 +221,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), sources: sourceState(profile), lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
+      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), sources: sourceState(profile), sites: readSites(paths.home), lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
       catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
@@ -241,6 +246,9 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
       if (pathname === '/api/agent/launch') return withBody((b) => ({ ok: launchInteractive(b.agent, { home: paths.home }) }));
       if (pathname === '/api/agent/test') return withBody(testConnection);
       if (pathname === '/api/agent/key') return withBody(saveKey);
+      if (pathname === '/api/login/open') return withBody(({ url }) => ({ ok: true, ...openLogin(paths.home, url) }));
+      if (pathname === '/api/login/remove') return withBody(({ site }) => { removeSite(paths.home, site); return { ok: true }; });
+      if (pathname === '/api/login/clear') return withBody(() => { clearLogins(paths.home); return { ok: true }; });
       if (pathname === '/api/source/key') return withBody(saveSourceKey);
       if (pathname === '/api/source/save') return withBody(saveSource);
       if (pathname === '/api/source/test') return withBody(({ id }) => testSource(profile, id));
@@ -279,14 +287,19 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
     }
     res.writeHead(404).end();
   });
+  server.on('close', () => { watcher?.close(); clearTimeout(timer); });
   server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
+    if (err.code === 'EADDRINUSE' && anyPort) server.listen(0, host);
+    else if (err.code === 'EADDRINUSE') {
       console.log(`port ${port} is already in use: Apply-Pilot is probably running, opening it`);
       if (open) openInBrowser(`http://localhost:${port}`);
       setTimeout(() => process.exit(0), 500);
     } else throw err;
   });
-  server.listen(port, host, () => {
+  server.listen(port, host);
+  server.on('listening', () => {
+    port = server.address().port;
+    onListen?.({ port, running: () => Boolean(running) });
     console.log(`apply-pilot panel: http://localhost:${port}  (tracker: ${trackerFile})`);
     if (open) openInBrowser(`http://localhost:${port}`);
   });

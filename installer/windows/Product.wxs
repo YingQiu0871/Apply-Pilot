@@ -33,9 +33,9 @@
       </Component>
       <Component Id="Shortcuts" Guid="e2b84c6d-3f1a-4d9e-b7c5-6a0f8d1e2c93">
         <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="Apply-Pilot" Description="!(loc.ShortcutDesc)"
-                  Target="[System64Folder]wscript.exe" Arguments="&quot;[INSTALLDIR]launcher.vbs&quot;" WorkingDirectory="INSTALLDIR" Icon="ApplyPilot.ico" />
+                  Target="[INSTALLDIR]Apply-Pilot.exe" WorkingDirectory="INSTALLDIR" Icon="ApplyPilot.ico" />
         <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="Apply-Pilot" Description="!(loc.ShortcutDesc)"
-                  Target="[System64Folder]wscript.exe" Arguments="&quot;[INSTALLDIR]launcher.vbs&quot;" WorkingDirectory="INSTALLDIR" Icon="ApplyPilot.ico" />
+                  Target="[INSTALLDIR]Apply-Pilot.exe" WorkingDirectory="INSTALLDIR" Icon="ApplyPilot.ico" />
         <RegistryValue Root="HKCU" Key="Software\Apply-Pilot" Name="Shortcuts" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </DirectoryRef>
@@ -46,7 +46,9 @@
       <ComponentGroupRef Id="AppFiles" />
     </Feature>
 
-    <CustomAction Id="LaunchApp" Directory="INSTALLDIR" ExeCommand="&quot;[System64Folder]wscript.exe&quot; &quot;[INSTALLDIR]launcher.vbs&quot;" Return="asyncNoWait" Impersonate="yes" />
+    <!-- Through Explorer: a child of the installer inherits its Redirection Trust protection, which
+         ignores the junctions that tools such as DeepSeek Harness use to find their modules. -->
+    <CustomAction Id="LaunchApp" Directory="INSTALLDIR" ExeCommand="&quot;[WindowsFolder]explorer.exe&quot; &quot;[INSTALLDIR]Apply-Pilot.exe&quot;" Return="asyncNoWait" Impersonate="yes" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchText)" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <UI>

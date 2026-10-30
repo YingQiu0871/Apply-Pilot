@@ -9,8 +9,12 @@
 //   { name: "France Travail", provider: "francetravail", keywords: ["stage formulation"], francetravail: { natureContrat: "E2", publieeDepuis: 14 } },
 //   { name: "Adzuna", provider: "adzuna", countries: ["fr", "de"], keywords: { fr: ["stage formulation"], de: ["Praktikum Formulierung"] }, maxDays: 14 },
 //   { name: "Jooble", provider: "jooble", locations: ["France", "Deutschland"], keywords: ["internship formulation"] },
-//   { name: "Careerjet", provider: "careerjet", locales: ["fr_FR", "de_DE"], keywords: ["stage formulation"] }
+//   { name: "Careerjet", provider: "careerjet", locales: ["fr_FR", "de_DE"], keywords: ["stage formulation"] },
+//   { name: "jobRxiv", provider: "jobrxiv", academic: true, keywords: ["drug delivery"] }
 // ]
+// A board with academic: true skips the title rule, which is usually written for
+// internships and would drop every PhD position. Its keywords decide instead, and
+// senior, postdoc and faculty positions are dropped.
 // profile.sources.websearch = { engine: "brave" | "mojeek" | "searxng", count: 20, freshness: "pw" }
 //   runs sources.portals.searchQueries and every company with provider "websearch" and a query.
 //
@@ -29,7 +33,7 @@ import { passesFilters } from './portals.mjs';
 
 const UA = 'apply-pilot (+https://github.com/YingQiu0871/apply-pilot)';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const decode = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/\s+/g, ' ').trim();
+const decode = (s) => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/\s+/g, ' ').trim();
 const day = (v) => { if (!v) return ''; const d = new Date(v); return Number.isNaN(+d) ? '' : d.toLocaleDateString('sv-SE'); };
 const need = (...names) => { const miss = names.filter((n) => !process.env[n]); if (miss.length) throw Object.assign(new Error(`missing ${miss.join(', ')} (put it in APPLY_PILOT_HOME/.env)`), { config: true }); };
 const kwList = (b, lang) => (Array.isArray(b.keywords) ? b.keywords : (b.keywords?.[lang] || b.keywords?.en || []));
@@ -79,6 +83,63 @@ async function euraxess(b) {
     }
   }
   return out;
+}
+
+// ---- academic feeds, no key ----------------------------------------------
+
+const feedItems = (xml) => String(xml).split('<item>').slice(1);
+function field(item, name) {
+  const m = item.match(new RegExp(`<${name}(?:\\s[^>]*)?>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${name}>`));
+  return m ? m[1] : '';
+}
+const hasTerm = (text, words) => !words.length || words.some((w) => w.split(/\s+/).every((t) => text.toLowerCase().includes(t)));
+
+// DAAD's feed has no search, so the keywords are checked here.
+async function daad(b) {
+  const words = kwList(b, 'en').map((k) => k.toLowerCase());
+  const xml = await request('https://api.daad.de/api/feeds/rss/en/phd.xml', { json: false });
+  return feedItems(xml).map((it) => ({
+    title: decode(field(it, 'title')), text: decode(field(it, 'description')), company: decode(field(it, 'company')) || 'DAAD PhDGermany', url: decode(field(it, 'link')),
+    location: decode(field(it, 'location')) || 'Germany', posted: day(field(it, 'pubDate').replace('.', '')),
+  })).filter((j) => hasTerm(`${j.title} ${j.text}`, words)).map(({ text, ...j }) => j);
+}
+
+async function jobrxiv(b) {
+  const out = [];
+  for (const q of kwList(b, 'en')) {
+    for (let paged = 1; paged <= (b.maxPages || 3); paged += 1) {
+      const items = feedItems(await request(`https://jobrxiv.org/?${new URLSearchParams({ feed: 'job_feed', search_keywords: q, paged: String(paged) })}`, { json: false }));
+      for (const it of items) out.push({ title: decode(field(it, 'title')), company: decode(field(it, 'job_listing:company')) || 'jobRxiv', url: decode(field(it, 'link')), location: decode(field(it, 'job_listing:location')), posted: day(field(it, 'pubDate')) });
+      if (items.length < 10) break;
+      await sleep(500);
+    }
+  }
+  return out;
+}
+
+// PhDFinder reposts positions, so its pages lead to the original announcement.
+async function phdfinder(b) {
+  const out = [];
+  for (const q of kwList(b, 'en')) {
+    const items = feedItems(await request(`https://phdfinder.com/search/${encodeURIComponent(q)}/feed/`, { json: false }));
+    for (const it of items) {
+      const [country, ...rest] = decode(field(it, 'title')).split(' – ');
+      const about = decode(field(it, 'description'));
+      out.push({ title: rest.join(' – ') || country, company: (about.match(/University:\s*(.+?)\s*Country:/) || [])[1] || 'PhDFinder', url: decode(field(it, 'link')), location: (about.match(/Country:\s*(.+?)\s*Deadline:/) || [])[1] || country, posted: day(field(it, 'pubDate')) });
+    }
+    await sleep(500);
+  }
+  return out;
+}
+
+// One page of cards. Only master and PhD positions are kept.
+async function pasteur() {
+  const html = await request('https://research.pasteur.fr/en/jobs/', { json: false });
+  return String(html).split('<article ').slice(1).filter((a) => /position-(master-student|phd-student)/.test(a.slice(0, 400))).map((a) => ({
+    title: `${decode((a.match(/<h3[^>]*>([\s\S]*?)<\/h3>/) || [])[1])} (${/position-master/.test(a.slice(0, 400)) ? 'Master' : 'PhD'})`,
+    company: `Institut Pasteur${(a.match(/<span class="lab[^"]*">([\s\S]*?)<\/span>/) || [])[1] ? ` - ${decode(a.match(/<span class="lab[^"]*">([\s\S]*?)<\/span>/)[1])}` : ''}`,
+    url: (a.match(/<a href="([^"]+)" rel="bookmark"/) || [])[1], location: 'Paris, France', posted: '',
+  })).filter((j) => j.url);
 }
 
 // ---- official APIs with a free key --------------------------------------
@@ -146,7 +207,7 @@ async function careerjet(b) {
   return out;
 }
 
-export const BOARDS = { jobtech, euraxess, francetravail, adzuna, jooble, careerjet };
+export const BOARDS = { jobtech, euraxess, francetravail, adzuna, jooble, careerjet, daad, jobrxiv, phdfinder, pasteur };
 
 // ---- web search engines --------------------------------------------------
 
@@ -171,6 +232,8 @@ export const ENGINES = {
   },
 };
 
+const SENIOR = /\b(post-?doc\w*|senior|sr\.|manager|director|professor\w*|faculty|lecturer|principal|head of)(?=\W|$)/i;
+
 /** Run every board in profile.sources.boards through the shared title/location/age filters. */
 export async function scanBoards(profile, { only, log = console.log } = {}) {
   const cfg = profile.sources.portals || {};
@@ -184,7 +247,7 @@ export async function scanBoards(profile, { only, log = console.log } = {}) {
       const jobs = await fn(b);
       let kept = 0;
       for (const j of jobs) {
-        const why = b.filters === false ? null : passesFilters(j, { ...cfg, maxAgeDays: b.maxDays || cfg.maxAgeDays });
+        const why = b.academic && SENIOR.test(j.title) ? 'senior' : b.filters === false ? null : passesFilters(j, { ...cfg, maxAgeDays: b.maxDays || cfg.maxAgeDays, ...(b.academic ? { titleFilter: undefined } : {}) });
         if (why) { result.skipped[why] = (result.skipped[why] || 0) + 1; continue; }
         result.jobs.push({ provider: b.provider, source: b.name, ...j });
         kept += 1;
@@ -200,10 +263,18 @@ export async function scanBoards(profile, { only, log = console.log } = {}) {
   return result;
 }
 
+// The configured engine first, then every other engine that has its key.
+const ENGINE_KEYS = { brave: 'BRAVE_API_KEY', mojeek: 'MOJEEK_API_KEY', searxng: 'SEARXNG_URL' };
+export function searchEngines(ws = {}) {
+  const first = ws.engine || 'brave';
+  const others = Object.keys(ENGINE_KEYS).filter((e) => e !== first && (e === ws.fallback || process.env[ENGINE_KEYS[e]]));
+  return [first, ...others];
+}
+
 /** Run search queries (portals.searchQueries + websearch companies) through the configured engine. */
 export async function scanWebsearch(profile, { engine: forced, only, log = console.log } = {}) {
   const ws = profile.sources.websearch || {};
-  const engines = [forced || ws.engine || 'brave', ...(forced ? [] : [ws.fallback].filter(Boolean))];
+  const engines = forced ? [forced] : searchEngines(ws);
   const cfg = profile.sources.portals || {};
   const queries = [
     ...(cfg.searchQueries || []).filter((q) => q.enabled !== false).map((q) => ({ name: q.name, query: q.query, lang: q.locale, country: q.country })),

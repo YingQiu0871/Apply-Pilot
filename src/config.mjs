@@ -15,7 +15,7 @@ export const DEFAULTS = {
   filters: { excludeCompanies: [], excludeKeywords: [], requireKeywords: [] },
   writing: { bannedPhrases: [], forbiddenClaims: [], maxSemicolons: 0 },
   sources: {},
-  daily: { evaluate: 10, followups: 5, letters: 3 },
+  daily: { evaluate: 10, followups: 5, letters: 3, browser: true },
 };
 
 /** Per-user settings (not personal data): which data directory to use. */

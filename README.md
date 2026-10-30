@@ -36,13 +36,25 @@ Apply-Pilot does that bookkeeping. You and your agent do the judgement.
 
 ## Install · 安装
 
-### Windows installer · Windows 安装包
+### Desktop app · 桌面应用
 
-Download `Apply-Pilot-VERSION-x64-zh-CN.msi` (中文界面) or `...-en-US.msi` from the [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) page and double-click it. It needs no administrator rights and no separate Node.js: the runtime is included. It adds Start-menu and desktop icons and the `apply-pilot` command. On first launch the panel asks where to keep your data: create a new folder, or pick one you already use. Uninstalling from Settings → Apps keeps your data folder.
+Apply-Pilot is an app with its own window on Windows, macOS and Linux. It needs no separate Node.js. Download it from the [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) page:
 
-从 [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) 页面下载 `Apply-Pilot-版本号-x64-zh-CN.msi`（中文界面）或 `en-US` 版，双击安装即可。不需要管理员权限，也不需要另装 Node.js（已内置）。安装后会添加开始菜单和桌面图标以及 `apply-pilot` 命令。第一次打开时，面板会让你选择数据目录：新建一个，或者选择已有的目录。在"设置 → 应用"中卸载时会保留数据目录。
+- **Windows:** `Apply-Pilot-VERSION-x64-zh-CN.msi` (中文界面) or `...-en-US.msi`. It needs no administrator rights, and it adds Start-menu and desktop icons and the `apply-pilot` command.
+- **macOS:** `Apply-Pilot-VERSION-arm64.dmg` for Apple silicon, `...-x64.dmg` for Intel. The app is not notarized yet: the first time, right-click it and choose Open, or allow it in System Settings → Privacy & Security.
+- **Linux:** `Apply-Pilot-VERSION-x86_64.AppImage` (`chmod +x`, then run it) or `.deb`.
 
-The installer includes Node.js, JSZip and ExcelJS. LinkedIn scanning needs Playwright and is only available in the source install below. 安装包内置 Node.js、JSZip 和 ExcelJS；领英扫描需要 Playwright，只能用下面的源码安装方式。
+On first launch the app asks where to keep your data: create a new folder, or pick one you already use. Uninstalling keeps your data folder.
+
+Apply-Pilot 是有独立窗口的应用，支持 Windows、macOS 和 Linux，不需要另装 Node.js。请从 [Releases](https://github.com/YingQiu0871/Apply-Pilot/releases) 页面下载：
+
+- **Windows：** `Apply-Pilot-版本号-x64-zh-CN.msi`（中文界面）或 `en-US` 版。不需要管理员权限，安装后会添加开始菜单和桌面图标以及 `apply-pilot` 命令。
+- **macOS：** Apple 芯片用 `Apply-Pilot-版本号-arm64.dmg`，Intel 用 `x64.dmg`。应用还没有经过公证：第一次请右键点击并选择“打开”，或在“系统设置 → 隐私与安全性”中允许。
+- **Linux：** `Apply-Pilot-版本号-x86_64.AppImage`（先 `chmod +x`，再运行）或 `.deb`。
+
+第一次打开时，应用会让你选择数据目录：新建一个，或者选择已有的目录。卸载时会保留数据目录。
+
+The app includes Electron, JSZip and ExcelJS. LinkedIn scanning needs Playwright and is only available in the source install below. 应用内置 Electron、JSZip 和 ExcelJS；领英扫描需要 Playwright，只能用下面的源码安装方式。
 
 ### From source (Windows, macOS, Linux) · 源码安装
 
@@ -128,6 +140,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `lint` | flags stock phrases, forbidden claims, semicolons, long lists | 检查套话、禁止写的经历、分号、过长的列举 |
 | `docx list / build` | fill a Word template paragraph by paragraph, the rest byte-identical | 按段落填 Word 模板，其余部分（照片、样式）不变 |
 | `scan portals` | 12 career-site systems: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio, Greenhouse, Lever, Ashby, Teamtailor, Recruitee, Workable | 扫描 12 种企业招聘系统 |
+| `scan boards` (academic) | DAAD PhDGermany, jobRxiv, PhDFinder, Institut Pasteur: no key, turn on in the panel | 学术来源：无需 Key，在面板中开启 |
 | `scan boards` | JobTech and Euraxess with no key; France Travail, Adzuna, Jooble, Careerjet with free keys | 招聘网站和公共就业接口 |
 | `scan websearch` | your multilingual queries through Brave, Mojeek or a self-hosted SearXNG | 多语言搜索语句，走搜索引擎 API |
 | `scan all` | all three, deduplicated; `--pipeline` appends to `data/pipeline.md` | 三者合一并去重 |
@@ -159,7 +172,7 @@ Windows 10/11、macOS、Linux 都能用（Node 20 以上），CI 在三个系统
 
 | | Windows | macOS |
 |---|---|---|
-| Installer / 安装包 | `.msi`, per user, Node.js included / 按用户安装，内置 Node.js | source install / 源码安装 |
+| Desktop app / 桌面应用 | own window; `.msi`, `.dmg`, `.AppImage`, `.deb` / 独立窗口，提供 `.msi`、`.dmg`、`.AppImage`、`.deb` | source install, `npm run app` / 源码安装，`npm run app` |
 | Desktop launcher / 桌面图标 | `Apply-Pilot.lnk`, no console window / 不弹命令行窗口 | `Apply-Pilot.command` |
 | Open data folder / 打开数据文件夹 | Explorer / 资源管理器 | Finder |
 | Agent "Open in terminal" / 在终端中打开 | new `cmd` window | new Terminal window / 新的"终端"窗口 |

@@ -7,6 +7,7 @@ import { closePipeline, pendingPipeline } from './additions.mjs';
 import { localDate, paths as pathsOf } from './config.mjs';
 import { buildPrompt, finishEvaluation } from './evaluate.mjs';
 import { dueFollowUps } from './followups.mjs';
+import { loginProfile, readSites } from './browser.mjs';
 import { fetchJd } from './jd.mjs';
 import { letterCandidates, letterPrompt, validateLetter } from './letters.mjs';
 import { lintText } from './lint.mjs';
@@ -17,7 +18,7 @@ import { askAgent, askJson, classifyFailure } from './worker.mjs';
 const text = (v, max) => String(v ?? '').trim().slice(0, max);
 const list = (v, count, max) => (Array.isArray(v) ? v.map((x) => text(x, max)).filter(Boolean).slice(0, count) : []);
 
-const STOP = ['login', 'quota', 'missing', 'network'];
+const STOP = ['login', 'quota', 'missing', 'network', 'restart'];
 const PLACEHOLDER = /\breplace (with|this)\b|^these are the only/i;
 
 /** What a new user still has to do before the first run. */
@@ -169,7 +170,7 @@ async function letterStep({ profile, queue, tracker, ask, fetch, log, limit, res
 }
 
 /** steps: any of scan, evaluate, followups, letters. `scan` runs the scanners and returns an exit code. */
-export async function runToday({ home, profile, agent, steps = ['scan', 'evaluate', 'followups', 'letters'], scan, log = console.log, today = localDate(), ask, fetch = fetchJd }) {
+export async function runToday({ home, profile, agent, steps = ['scan', 'evaluate', 'followups', 'letters'], scan, log = console.log, today = localDate(), ask, fetch = (url) => fetchJd(url, { browser: profile.daily.browser, session: { profile: loginProfile(home), sites: readSites(home) } }) }) {
   const res = { evaluated: 0, unread: 0, drafted: 0, letters: 0, errors: [], stopped: null };
   const p = pathsOf(home, profile);
   const useAi = ['evaluate', 'followups', 'letters'].some((s) => steps.includes(s));

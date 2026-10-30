@@ -9,11 +9,17 @@ import { classifyFailure } from './worker.mjs';
 export const SOURCES = {
   euraxess: { label: 'Euraxess', keys: [], site: 'https://euraxess.ec.europa.eu' },
   jobtech: { label: 'JobTech (Sweden)', keys: [], site: 'https://jobtechdev.se' },
+  daad: { label: 'DAAD PhDGermany', keys: [], site: 'https://www2.daad.de/deutschland/promotion/phd/en/', extra: { academic: true } },
+  jobrxiv: { label: 'jobRxiv', keys: [], site: 'https://jobrxiv.org', extra: { academic: true } },
+  phdfinder: { label: 'PhDFinder', keys: [], site: 'https://phdfinder.com', extra: { academic: true } },
+  pasteur: { label: 'Institut Pasteur', keys: [], site: 'https://research.pasteur.fr/en/jobs/', noTerms: true, extra: { academic: true } },
   francetravail: { label: 'France Travail', keys: ['FRANCE_TRAVAIL_CLIENT_ID', 'FRANCE_TRAVAIL_CLIENT_SECRET'], site: 'https://francetravail.io' },
   adzuna: { label: 'Adzuna', keys: ['ADZUNA_APP_ID', 'ADZUNA_APP_KEY'], site: 'https://developer.adzuna.com', extra: { countries: ['fr'] } },
   jooble: { label: 'Jooble', keys: ['JOOBLE_API_KEY'], site: 'https://jooble.org/api/about', extra: { locations: ['France'] } },
   careerjet: { label: 'Careerjet', keys: ['CAREERJET_AFFID'], site: 'https://www.careerjet.com/partners', extra: { locales: ['fr_FR'] } },
   brave: { label: 'Brave Search', keys: ['BRAVE_API_KEY'], site: 'https://api.search.brave.com', search: true },
+  mojeek: { label: 'Mojeek', keys: ['MOJEEK_API_KEY'], site: 'https://www.mojeek.com/services/search/web-search-api/', search: true },
+  searxng: { label: 'SearXNG', keys: ['SEARXNG_URL'], site: 'https://docs.searxng.org', search: true },
 };
 
 const boardOf = (profile, id) => (profile.sources?.boards || []).find((b) => b.provider === id) || null;
@@ -26,6 +32,7 @@ export function sourceState(profile) {
     const queries = (profile.sources?.portals?.searchQueries || []).filter((q) => q.enabled !== false).length;
     return {
       id, label: s.label, site: s.site, keys, search: Boolean(s.search), queries: s.search ? queries : undefined,
+      academic: Boolean(s.extra?.academic), noTerms: Boolean(s.noTerms),
       ready: keys.every((k) => k.set),
       on: s.search ? keys.every((k) => k.set) && queries > 0 : Boolean(board) && board.enabled !== false,
       keywords: Array.isArray(board?.keywords) ? board.keywords : [],
@@ -45,7 +52,7 @@ export function updateSource(home, { id, on, keywords }) {
   const words = (keywords || []).map((k) => String(k).trim()).filter(Boolean).slice(0, 12);
   let board = raw.sources.boards.find((b) => b.provider === id);
   if (!board) {
-    if (on && !words.length) throw new Error('enter at least one search term');
+    if (on && !words.length && !s.noTerms) throw new Error('enter at least one search term');
     if (!on) return;
     board = { name: s.label, provider: id, ...s.extra };
     raw.sources.boards.push(board);
@@ -69,7 +76,7 @@ export async function testSource(profile, id) {
   const s = SOURCES[id];
   if (!s) throw new Error(`unknown source "${id}"`);
   try {
-    if (s.search) return { ok: true, found: (await ENGINES.brave('internship', { count: 1 })).length };
+    if (s.search) return { ok: true, found: (await ENGINES[id]('internship', { count: 1 })).length };
     const board = boardOf(profile, id) || { name: s.label, provider: id, keywords: ['internship'], ...s.extra };
     return { ok: true, found: (await BOARDS[id](firstOnly(board))).length };
   } catch (e) {

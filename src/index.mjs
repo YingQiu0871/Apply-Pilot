@@ -7,6 +7,7 @@ export { followUpStatus, dueFollowUps, channelOf } from './followups.mjs';
 export { lintText, STOCK_PHRASES } from './lint.mjs';
 export { buildDocx, plainDocx, readParagraphs, listParagraphs } from './docx.mjs';
 export { exportPdf, letterCandidates, saveLetter } from './letters.mjs';
+export { asksForHuman, asksForSignIn, assertPublicUrl, clearLogins, findBrowser, loginProfile, openLogin, readSites, removeSite, renderPage, siteAllowed } from './browser.mjs';
 export { triage } from './triage.mjs';
 export { askAgent, askJson, testAgent, classifyFailure } from './worker.mjs';
 export { ReviewQueue, applyDecision } from './review.mjs';

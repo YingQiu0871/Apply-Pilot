@@ -50,6 +50,7 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
   eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
   agent [claude|codex|deepseek|dsh] [--test]   show or choose the AI agent; --test sends one short request
+  login URL | login list | login remove SITE | login clear   sign in to a site in a separate browser profile
   sources [test ID]                     show job sources, or send one small test request
   today [--no-scan] [--only evaluate,followups,letters]   scan, evaluate and draft; results wait in the review queue
   review [approve|reject ID]            list the review queue, or decide one item
@@ -117,6 +118,9 @@ async function main() {
         ok(has, `${mod} ${has ? 'installed' : 'not installed (optional)'}`);
       }
       if (findCareerOps()) ok(true, `career-ops ${findCareerOps()} (optional companion)`);
+      const { findBrowser } = await import('../src/browser.mjs');
+      const browserFile = findBrowser();
+      ok(Boolean(browserFile), browserFile ? `browser for JavaScript pages: ${browserFile}` : 'no Chrome or Edge found: pages that need JavaScript will be listed for you to open');
       for (const k of ['DEEPSEEK_API_KEY', 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'OPENROUTER_API_KEY']) if (process.env[k]) ok(true, `${k} set`);
       break;
     }
@@ -177,6 +181,14 @@ async function main() {
       const { sourceState, testSource } = await import('../src/sources.mjs');
       if (pos[0] === 'test') { console.log(JSON.stringify(await testSource(profile, pos[1]))); break; }
       for (const s of sourceState(profile)) console.log(`${s.on ? '●' : '○'} ${s.label.padEnd(18)} ${s.ready ? 'ready' : `needs ${s.keys.filter((k) => !k.set).map((k) => k.name).join(', ')}`}`);
+      break;
+    }
+    case 'login': {
+      const { clearLogins, openLogin, readSites, removeSite } = await import('../src/browser.mjs');
+      if (!pos[0] || pos[0] === 'list') { for (const s of readSites(home)) console.log(s); break; }
+      if (pos[0] === 'remove') { removeSite(home, pos[1]); break; }
+      if (pos[0] === 'clear') { clearLogins(home); console.log('all sign-ins deleted'); break; }
+      console.log(`signing in to ${openLogin(home, pos[0]).site}: finish in the window, then close it`);
       break;
     }
     case 'shortcut': {
@@ -352,7 +364,8 @@ async function main() {
     }
     case 'jd': {
       const { fetchJd } = await import('../src/jd.mjs');
-      const r = await fetchJd(pos[0], { browser: Boolean(opt.browser) });
+      const { loginProfile, readSites } = await import('../src/browser.mjs');
+      const r = await fetchJd(pos[0], { browser: Boolean(opt.browser), session: { profile: loginProfile(home), sites: readSites(home) } });
       if (opt.out) { writeFileSync(opt.out, `${r.url}\n\n${r.text}\n`); console.log(`${r.source}: ${r.text.length} chars → ${opt.out}`); }
       else console.log(opt.json ? JSON.stringify(r, null, 2) : r.text);
       break;

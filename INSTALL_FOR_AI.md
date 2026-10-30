@@ -31,9 +31,9 @@ Ask only what you cannot find out yourself:
 
 Do not ask for passwords. Do not ask for API keys in chat: the user pastes keys into `.env` themselves (step 5).
 
-## Windows shortcut: the MSI
+## Shortcut: the desktop app
 
-If the user is on Windows and only wants to use Apply-Pilot (not develop it or scan LinkedIn), the installer is simpler than steps 1 to 3. Point them to the latest `Apply-Pilot-VERSION-x64-zh-CN.msi` or `-en-US.msi` on https://github.com/YingQiu0871/Apply-Pilot/releases and let them run it themselves, since installing software is their decision. It needs no administrator rights and includes Node.js. Then:
+If the user only wants to use Apply-Pilot (not develop it or scan LinkedIn), the desktop app is simpler than steps 1 to 3. Point them to the latest release on https://github.com/YingQiu0871/Apply-Pilot/releases and let them run it themselves, since installing software is their decision: `.msi` for Windows (no administrator rights needed), `.dmg` for macOS (not notarized yet: right-click, Open), `.AppImage` or `.deb` for Linux. Node.js is not needed. On Windows:
 
 - The command is `%LOCALAPPDATA%\Programs\Apply-Pilot\apply-pilot.cmd`, on `PATH` for new terminals.
 - The installer does not set `APPLY_PILOT_HOME`. On first launch from the Start-menu or desktop icon, the panel asks the user for a data folder: a new one (it runs the same setup as `apply-pilot init`) or an existing one. The choice is saved in `%APPDATA%\Apply-Pilot\settings.json`.

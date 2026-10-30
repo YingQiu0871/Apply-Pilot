@@ -29,9 +29,12 @@ jobs:
         shell: bash
         run: |
           export APPLY_PILOT_HOME="$RUNNER_TEMP/ap-home"
-          dist/msi/stage/node.exe dist/msi/stage/app/bin/apply-pilot.mjs init
-          dist/msi/stage/node.exe dist/msi/stage/app/bin/apply-pilot.mjs add --company "Demo Lab" --role "M2 internship"
-          dist/msi/stage/node.exe dist/msi/stage/app/bin/apply-pilot.mjs export xlsx "$RUNNER_TEMP/t.xlsx"
+          APPLY_PILOT_SMOKE=1 dist/msi/stage/Apply-Pilot.exe | tee smoke.txt
+          grep -q 'smoke: title=Apply-Pilot' smoke.txt
+          export ELECTRON_RUN_AS_NODE=1
+          dist/msi/stage/Apply-Pilot.exe dist/msi/stage/resources/app.asar/bin/apply-pilot.mjs init
+          dist/msi/stage/Apply-Pilot.exe dist/msi/stage/resources/app.asar/bin/apply-pilot.mjs add --company "Demo Lab" --role "M2 internship"
+          dist/msi/stage/Apply-Pilot.exe dist/msi/stage/resources/app.asar/bin/apply-pilot.mjs export xlsx "$RUNNER_TEMP/t.xlsx"
       - name: Install and uninstall test
         shell: pwsh
         run: |
@@ -40,10 +43,10 @@ jobs:
           if ($p.ExitCode -ne 0) { Get-Content install.log -Tail 60; exit $p.ExitCode }
           $dir = Join-Path $env:LOCALAPPDATA 'Programs\Apply-Pilot'
           & "$dir\apply-pilot.cmd" help | Select-Object -First 1
-          if (-not (Test-Path "$dir\launcher.vbs")) { throw 'launcher missing' }
+          if (-not (Test-Path "$dir\Apply-Pilot.exe")) { throw 'app missing' }
           $p = Start-Process msiexec -ArgumentList "/x `"$($msi.FullName)`" /qn" -Wait -PassThru
           if ($p.ExitCode -ne 0) { exit $p.ExitCode }
-          if (Test-Path "$dir\node.exe") { throw 'files left after uninstall' }
+          if (Test-Path "$dir\Apply-Pilot.exe") { throw 'files left after uninstall' }
       - uses: actions/upload-artifact@v4
         with:
           name: Apply-Pilot-msi
@@ -56,3 +59,63 @@ jobs:
         run: |
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Apply-Pilot ${GITHUB_REF_NAME#v}" --notes "See CHANGELOG.md."
           gh release upload "$GITHUB_REF_NAME" dist/*.msi --clobber
+  mac:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      - run: npm test
+      - run: npm run build:app
+      - name: Open the window once
+        run: |
+          export APPLY_PILOT_HOME="$RUNNER_TEMP/ap-home"
+          APPLY_PILOT_SMOKE=1 dist/mac-arm64/Apply-Pilot.app/Contents/MacOS/Apply-Pilot | tee smoke.txt
+          grep -q 'smoke: title=Apply-Pilot' smoke.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Apply-Pilot-mac
+          path: dist/*.dmg
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Apply-Pilot ${GITHUB_REF_NAME#v}" --notes ""
+          gh release upload "$GITHUB_REF_NAME" dist/*.dmg --clobber
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      - run: npm test
+      - run: npm run build:app
+      - name: Open the window once
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libnss3 libgbm1 libasound2
+          export APPLY_PILOT_HOME="$RUNNER_TEMP/ap-home"
+          APPLY_PILOT_SMOKE=1 xvfb-run -a dist/linux-unpacked/apply-pilot --no-sandbox | tee smoke.txt
+          grep -q 'smoke: title=Apply-Pilot' smoke.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Apply-Pilot-linux
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Apply-Pilot ${GITHUB_REF_NAME#v}" --notes ""
+          gh release upload "$GITHUB_REF_NAME" dist/*.AppImage dist/*.deb --clobber

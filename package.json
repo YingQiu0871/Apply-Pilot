@@ -1,6 +1,6 @@
 {
   "name": "apply-pilot",
-  "version": "0.5.1",
+  "version": "0.5.5",
   "description": "A local, agent-agnostic job and internship application pipeline: scan, deduplicate, score, track, follow up, draft and review letters. Works with Claude Code, Codex, DeepSeek and any OpenAI-compatible model.",
   "type": "module",
   "bin": {
@@ -11,6 +11,8 @@
   },
   "files": [
     "bin",
+    "electron",
+    "assets/png/icon-512.png",
     "assets/icon.svg",
     "assets/apply-pilot.ico",
     "src",
@@ -29,7 +31,9 @@
     "test": "node --test test/core.test.mjs test/work.test.mjs",
     "ui": "node bin/apply-pilot.mjs ui",
     "build:icons": "node scripts/build-icons.mjs && python scripts/make-installer-bitmaps.py",
-    "build:msi": "node scripts/build-msi.mjs"
+    "build:msi": "node scripts/build-msi.mjs",
+    "app": "electron .",
+    "build:app": "electron-builder --publish never"
   },
   "engines": {
     "node": ">=20"
@@ -55,5 +59,71 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/YingQiu0871/Apply-Pilot.git"
+  },
+  "devDependencies": {
+    "electron": "^45.2.0",
+    "electron-builder": "^26.18.0"
+  },
+  "main": "electron/main.mjs",
+  "build": {
+    "appId": "io.github.yingqiu0871.applypilot",
+    "productName": "Apply-Pilot",
+    "copyright": "Copyright Yuning Gu",
+    "directories": {
+      "output": "dist"
+    },
+    "asar": true,
+    "files": [
+      "bin/**",
+      "electron/**",
+      "src/**",
+      "config/**",
+      "examples/**",
+      "skills/**",
+      "docs/**",
+      "assets/icon.svg",
+      "assets/apply-pilot.ico",
+      "assets/png/icon-512.png",
+      "*.md",
+      "LICENSE",
+      "!node_modules/playwright/**",
+      "!node_modules/playwright-core/**",
+      "!node_modules/exceljs/dist/**"
+    ],
+    "electronLanguages": [
+      "en-US",
+      "zh-CN",
+      "fr",
+      "de"
+    ],
+    "artifactName": "Apply-Pilot-${version}-${arch}.${ext}",
+    "win": {
+      "target": "dir",
+      "icon": "assets/apply-pilot.ico"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/png/icon-512.png",
+      "category": "public.app-category.productivity",
+      "identity": "-"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/png/icon-512.png",
+      "category": "Office",
+      "maintainer": "Yuning Gu <YingQiu0871@users.noreply.github.com>",
+      "synopsis": "Local job and internship application pipeline"
+    }
   }
 }

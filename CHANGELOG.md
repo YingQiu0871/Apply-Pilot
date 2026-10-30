@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.5.5 — 2026-10-30
+
+- Apply-Pilot is now a desktop app with its own window on Windows, macOS and Linux, built with Electron. The panel is the same, without a browser tab or address bar. Packages: `.msi` (upgrades earlier versions), `.dmg` for Apple silicon and Intel, `.AppImage` and `.deb`.
+- The window page has no Node access, links open in your normal browser, and only one copy runs at a time. It uses port 4321, or a free port if that is taken. Quitting asks first while a task runs.
+- On macOS and Linux the app reads your login shell's `PATH`, so it finds agents installed from a terminal.
+- The Windows installer no longer includes a separate Node.js: `apply-pilot.cmd` runs through the app. `apply-pilot ui` still works in a browser.
+- DeepSeek Harness no longer fails with "Cannot find package" after installing: the installer now starts the app through Explorer, because Windows passes the installer's Redirection Trust protection to programs it starts, and that protection blocks the junctions dsh uses. If it still happens, the AI page says to reopen the app.
+- The installer grows to about 100 MB. macOS packages are ad-hoc signed and not notarized.
+
+## 0.5.4 — 2026-10-30
+
+- Sign in to a site: on the Job sources page, open a site in a separate browser profile and sign in once. Opening a site adds it to the list, and Apply-Pilot then reads that site signed in. Other sites still use an empty throwaway profile.
+- The profile is in `browser/` in your data folder and is added to `.gitignore`. Known mail sites and local addresses are refused. Remove a site, or delete all sign-ins, on the same page.
+- New command: `login URL`, `login list`, `login remove SITE`, `login clear`.
+
+## 0.5.3 — 2026-10-30
+
+- Pages that need JavaScript are now read in the Chrome or Edge on your computer, without extra downloads. It runs headless with an empty throwaway profile, so it has none of your sign-ins, and it only reads: no clicks, no typing. Turn it off with `profile.daily.browser: false`.
+- It opens public web pages only, never local addresses. A page asking for a human check is left for you to open.
+- "Try again next run" on postings Apply-Pilot could not read. `doctor` shows which browser it found. Set `APPLY_PILOT_BROWSER` to choose one.
+- `jd --browser` no longer needs Playwright. LinkedIn scanning still does.
+
+## 0.5.2 — 2026-10-30
+
+- Academic sources on the Job sources page: DAAD PhDGermany, jobRxiv, PhDFinder and Institut Pasteur. None needs a key. They are off until you turn them on.
+- Academic sources skip the internship title rule, which would drop PhD positions. Their search terms decide instead, and the location rule still applies.
+- Mojeek and SearXNG are on the Job sources page. Web search now uses any engine that has its key.
+- Overview: the follow-up card lines up with the other cards.
+- Job descriptions: Apply-Pilot now identifies itself instead of posing as a browser, reads the page when structured data holds only a teaser, and no longer stops at a small `<article>` or `<main>`.
+
 ## 0.5.1 — 2026-10-30
 
 - New Job sources page: enter keys for France Travail, Adzuna, Jooble, Careerjet and Brave Search, turn sources on or off, edit search terms and send one small test request. No more editing `.env` or `profile.json` by hand for this. The old `profile.json` is kept as a backup.

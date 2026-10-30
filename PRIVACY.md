@@ -1,6 +1,6 @@
 # Privacy Policy · 隐私策略
 
-Last updated / 最后更新：2026-10-30 (0.5.1)
+Last updated / 最后更新：2026-10-30 (0.5.5)
 
 Apply-Pilot is free, open-source software that runs on your own computer. It has no server, no account system, no analytics and no telemetry. The author receives no data from you.
 
@@ -18,6 +18,7 @@ Everything Apply-Pilot reads or writes stays in your data folder (`APPLY_PILOT_H
 - `agent.json`: which AI agent you chose and when its connection test passed;
 - `data/review.json`: AI evaluations, draft follow-ups and cover letters waiting for your decision, and your past decisions;
 - `output/letters/`: the cover letters you save;
+- `browser/`: the separate browser profile with the sign-ins you made, and the list of those sites. It holds login cookies, is added to `.gitignore`, and should not be synced or shared;
 - `cv.md`: the CV text you paste during setup, if the file does not exist yet.
 
 One more small file sits outside the data folder: the per-user settings file (`%APPDATA%\Apply-Pilot\settings.json` on Windows, `~/Library/Application Support/Apply-Pilot/settings.json` on macOS, `~/.config/apply-pilot/settings.json` on Linux). It stores only the path of your data folder.
@@ -34,6 +35,7 @@ Apply-Pilot 读写的所有数据都放在你自己硬盘上的数据目录（`A
 - `agent.json`：你选择搭配的 AI 助手，以及连接测试通过的时间；
 - `data/review.json`：等待你确认的 AI 评估、跟进草稿和求职信，以及你做过的决定；
 - `output/letters/`：你保存的求职信；
+- `browser/`：专用浏览器配置，含你登录过的网站及其列表。里面有登录 Cookie，已加入 `.gitignore`，不要同步或分享；
 - `cv.md`：设置时粘贴的 CV 全文（文件不存在时才写入）。
 
 数据目录之外只有一个小文件：用户设置文件（Windows 是 `%APPDATA%\Apply-Pilot\settings.json`，macOS 是 `~/Library/Application Support/Apply-Pilot/settings.json`，Linux 是 `~/.config/apply-pilot/settings.json`），里面只记录数据目录的路径。
@@ -51,6 +53,8 @@ Only when you run a command or click a button that needs the network:
 | `scan websearch` | Brave Search, Mojeek or your SearXNG / 或你自建的 SearXNG | your search queries and API key / 搜索语句和 key |
 | `linkedin scan` | LinkedIn, through your own logged-in browser / 通过你自己登录的浏览器 | the same as browsing LinkedIn yourself / 与你手动浏览领英相同 |
 | `eval run`, `eval pipeline` | the model provider you choose: DeepSeek, OpenAI, OpenRouter, Anthropic; Ollama stays local / 你选择的模型服务商；Ollama 在本机运行 | the job description, plus the summary, facts, gaps and rubric from your `profile.json` / 岗位描述，以及 `profile.json` 中的目标概述、经历、短板和评分标准 |
+| Reading a site you signed in to / 读取你登录过的网站 | that site, then the AI you chose / 该网站，然后是你选择的 AI 服务 | your sign-in cookies go to that site only; the text of the page, which can include your name and applications, goes to the AI / 登录 Cookie 只发给该网站；页面文字（可能含姓名和申请记录）会发给 AI |
+| Reading a posting in the local browser / 用本机浏览器读取岗位 | that posting's website / 该岗位所在网站 | a normal page visit from an empty temporary browser profile, with none of your sign-ins or cookies; the profile is deleted afterwards / 一次普通网页访问，使用空白临时配置，不含你的登录状态和 Cookie，用完即删 |
 | Today page, `today`: evaluate, draft follow-ups and letters / 今日工作页、`today`：评估、起草跟进和求职信 | the AI you chose / 你选择的 AI 服务 | each job description, your profile summary, facts, gaps and rubric, and for a follow-up that application's tracker notes / 每个岗位描述，`profile.json` 中的目标概述、经历、短板和评分标准；起草跟进时还有该申请的备注 |
 | First-run CV step / 首次设置的 CV 步骤 | the AI you chose / 你选择的 AI 服务 | the full CV text you paste / 你粘贴的 CV 全文 |
 | Job sources page: test / 岗位来源页：测试 | that source's official API / 对应来源的官方接口 | your key for that source and one search term / 该来源的 Key 和一个搜索词 |
@@ -79,11 +83,15 @@ The panel (`apply-pilot ui`) listens only on `127.0.0.1`, so other computers on 
 
 控制面板（`apply-pilot ui`）只监听本机地址 `127.0.0.1`，局域网内其他电脑无法访问。每次启动都会生成一次性令牌，没有令牌的请求一律拒绝。面板不加载任何外部脚本、字体或追踪代码。
 
-## 5. The Windows installer · Windows 安装包
+## 5. The desktop app · 桌面应用
 
-The MSI installs program files into your user profile (`%LOCALAPPDATA%\Programs\Apply-Pilot`) and adds Start-menu and desktop shortcuts. It does not change environment variables other than adding its folder to your `PATH`. It collects nothing and does not check for updates. Uninstalling removes the program files but keeps your data folder and the settings file, so your records are not lost. Delete them yourself if you want everything gone.
+The app shows the same panel in its own window. It listens on `127.0.0.1` as described above, using port 4321 or a free port if that is taken. The page has no access to your files or to Node.js, and links to other sites open in your normal browser. The window keeps its own small browser data (panel settings such as language and theme, and cache) in the app-data folder of your system. It collects nothing and does not check for updates.
 
-MSI 安装包把程序文件装在你的用户目录（`%LOCALAPPDATA%\Programs\Apply-Pilot`），并添加开始菜单和桌面快捷方式。除了把程序目录加入 `PATH`，它不修改任何环境变量。它不收集任何信息，也不检查更新。卸载时会删除程序文件，但保留你的数据目录和设置文件，以免记录丢失。如需彻底清除，请自行删除它们。
+应用在独立窗口中显示同一个面板。它按上文所述只监听 `127.0.0.1`，使用 4321 端口；端口被占用时改用空闲端口。页面无法访问你的文件和 Node.js，指向其他网站的链接会在你平时的浏览器中打开。窗口的少量浏览器数据（语言、主题等面板设置和缓存）保存在系统的应用数据目录中。它不收集任何信息，也不检查更新。
+
+The Windows MSI installs program files into your user profile (`%LOCALAPPDATA%\Programs\Apply-Pilot`) and adds Start-menu and desktop shortcuts. It does not change environment variables other than adding its folder to your `PATH`. It collects nothing and does not check for updates. Uninstalling removes the program files but keeps your data folder and the settings file, so your records are not lost. Delete them yourself if you want everything gone.
+
+Windows 的 MSI 安装包把程序文件装在你的用户目录（`%LOCALAPPDATA%\Programs\Apply-Pilot`），并添加开始菜单和桌面快捷方式。除了把程序目录加入 `PATH`，它不修改任何环境变量。它不收集任何信息，也不检查更新。卸载时会删除程序文件，但保留你的数据目录和设置文件，以免记录丢失。如需彻底清除，请自行删除它们。
 
 ## 6. Your data, your responsibility · 你的数据由你掌控
 
