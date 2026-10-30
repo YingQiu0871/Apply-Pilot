@@ -7,7 +7,7 @@ import { BOARDS, ENGINES } from './scan/boards.mjs';
 import { classifyFailure } from './worker.mjs';
 
 export const SOURCES = {
-  euraxess: { label: 'Euraxess', keys: [], site: 'https://euraxess.ec.europa.eu' },
+  euraxess: { label: 'Euraxess', keys: [], site: 'https://euraxess.ec.europa.eu', caution: true },
   jobtech: { label: 'JobTech (Sweden)', keys: [], site: 'https://jobtechdev.se' },
   daad: { label: 'DAAD PhDGermany', keys: [], site: 'https://www2.daad.de/deutschland/promotion/phd/en/', extra: { academic: true } },
   jobrxiv: { label: 'jobRxiv', keys: [], site: 'https://jobrxiv.org', extra: { academic: true } },
@@ -32,7 +32,7 @@ export function sourceState(profile) {
     const queries = (profile.sources?.portals?.searchQueries || []).filter((q) => q.enabled !== false).length;
     return {
       id, label: s.label, site: s.site, keys, search: Boolean(s.search), queries: s.search ? queries : undefined,
-      academic: Boolean(s.extra?.academic), noTerms: Boolean(s.noTerms),
+      academic: Boolean(s.extra?.academic), noTerms: Boolean(s.noTerms), caution: Boolean(s.caution),
       ready: keys.every((k) => k.set),
       on: s.search ? keys.every((k) => k.set) && queries > 0 : Boolean(board) && board.enabled !== false,
       keywords: Array.isArray(board?.keywords) ? board.keywords : [],

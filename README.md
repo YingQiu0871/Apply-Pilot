@@ -141,7 +141,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `docx list / build` | fill a Word template paragraph by paragraph, the rest byte-identical | 按段落填 Word 模板，其余部分（照片、样式）不变 |
 | `scan portals` | 12 career-site systems: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio, Greenhouse, Lever, Ashby, Teamtailor, Recruitee, Workable | 扫描 12 种企业招聘系统 |
 | `scan boards` (academic) | DAAD PhDGermany, jobRxiv, PhDFinder, Institut Pasteur: no key, turn on in the panel | 学术来源：无需 Key，在面板中开启 |
-| `scan boards` | JobTech and Euraxess with no key; France Travail, Adzuna, Jooble, Careerjet with free keys | 招聘网站和公共就业接口 |
+| `scan boards` | JobTech and Euraxess with no key (Euraxess disallows automated reading in robots.txt, so it is off by default); France Travail, Adzuna, Jooble, Careerjet with free keys | 招聘网站和公共就业接口 |
 | `scan websearch` | your multilingual queries through Brave, Mojeek or a self-hosted SearXNG | 多语言搜索语句，走搜索引擎 API |
 | `scan all` | all three, deduplicated; `--pipeline` appends to `data/pipeline.md` | 三者合一并去重 |
 | `linkedin login / scan`, `triage` | LinkedIn jobs and posts with your own logged-in browser profile | 用你自己登录的浏览器扫描领英 |

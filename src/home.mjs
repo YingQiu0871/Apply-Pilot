@@ -37,8 +37,9 @@ export function updateProfile(home, { summary, facts, languages, keywords = [], 
   raw.candidate = { ...raw.candidate, summary, facts, languages };
   const s = raw.sources || {};
   if (keywords.length && !s.boards?.length && !s.portals?.companies?.length && !s.portals?.searchQueries?.length) {
-    // Euraxess needs no key and matches on titles. Other boards need a key or return too much noise.
-    raw.sources = { ...s, boards: [{ name: 'Euraxess', provider: 'euraxess', keywords }] };
+    // jobRxiv needs no key, searches by keyword and allows feed readers. Other boards need a key,
+    // return too much noise, or, like Euraxess, disallow automated reading in robots.txt.
+    raw.sources = { ...s, boards: [{ name: 'jobRxiv', provider: 'jobrxiv', academic: true, keywords }] };
   }
   writeFileSync(p.profile, `${JSON.stringify(raw, null, 2)}\n`);
   const cvFile = join(home, 'cv.md');

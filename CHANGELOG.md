@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.6 — 2026-10-30
+
+- New users no longer get Euraxess by default, because its robots.txt disallows automated reading of its search pages. Their search terms now become a jobRxiv source. Euraxess stays available on the Job sources page with a note, and existing setups are not changed.
+
 ## 0.5.5 — 2026-10-30
 
 - Apply-Pilot is now a desktop app with its own window on Windows, macOS and Linux, built with Electron. The panel is the same, without a browser tab or address bar. Packages: `.msi` (upgrades earlier versions), `.dmg` for Apple silicon and Intel, `.AppImage` and `.deb`.

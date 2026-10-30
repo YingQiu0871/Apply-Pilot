@@ -114,7 +114,7 @@ test('setup needs a tested agent, real facts and a source', () => {
   updateProfile(home, { summary: 'Pharmacy student.', facts: ['6-month QC internship: HPLC'], languages: ['English (C1)'], keywords: ['formulation internship'] });
   const next = loadProfile(home);
   assert.equal(setupState(next, { agent: 'codex', verified: '2026-10-30' }).ready, true);
-  assert.equal(next.sources.boards[0].provider, 'euraxess');
+  assert.deepEqual([next.sources.boards[0].provider, next.sources.boards[0].academic], ['jobrxiv', true], 'never a source whose robots.txt disallows reading');
   assert.ok(readdirSync(home).some((f) => f.startsWith('profile.backup-')), 'the old profile is kept');
 });
 

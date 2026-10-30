@@ -1,6 +1,6 @@
 # Privacy Policy · 隐私策略
 
-Last updated / 最后更新：2026-10-30 (0.5.5)
+Last updated / 最后更新：2026-10-30 (0.5.6)
 
 Apply-Pilot is free, open-source software that runs on your own computer. It has no server, no account system, no analytics and no telemetry. The author receives no data from you.
 
@@ -49,7 +49,7 @@ Only when you run a command or click a button that needs the network:
 | Action / 操作 | Sent to / 发往 | What is sent / 发送内容 |
 |---|---|---|
 | `scan portals`, `jd` | the career sites you list in `profile.json` (Workday, Greenhouse, SmartRecruiters…) / 你在 `profile.json` 里列出的企业招聘网站 | search keywords and page requests, as a browser would send / 搜索关键词和普通页面请求 |
-| `scan boards` | JobTech, Euraxess, France Travail, Adzuna, Jooble, Careerjet | search keywords, location, and your API key for that service / 搜索关键词、地区和该平台的 key |
+| `scan boards` | the sources you turn on: JobTech, Euraxess, DAAD, jobRxiv, PhDFinder, Institut Pasteur, France Travail, Adzuna, Jooble, Careerjet / 你开启的来源 | search keywords, location, and your API key for that service / 搜索关键词、地区和该平台的 key |
 | `scan websearch` | Brave Search, Mojeek or your SearXNG / 或你自建的 SearXNG | your search queries and API key / 搜索语句和 key |
 | `linkedin scan` | LinkedIn, through your own logged-in browser / 通过你自己登录的浏览器 | the same as browsing LinkedIn yourself / 与你手动浏览领英相同 |
 | `eval run`, `eval pipeline` | the model provider you choose: DeepSeek, OpenAI, OpenRouter, Anthropic; Ollama stays local / 你选择的模型服务商；Ollama 在本机运行 | the job description, plus the summary, facts, gaps and rubric from your `profile.json` / 岗位描述，以及 `profile.json` 中的目标概述、经历、短板和评分标准 |

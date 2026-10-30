@@ -61,6 +61,7 @@ async function jobtech(b) {
 
 // The search form posts back to Drupal, so GET parameters do not filter: read the
 // newest pages and let the shared title rules (or b.keywords) pick the relevant ones.
+// Its robots.txt disallows these search pages, so it is never turned on by default.
 async function euraxess(b) {
   const out = [];
   const words = kwList(b, 'en').map((k) => k.toLowerCase());
