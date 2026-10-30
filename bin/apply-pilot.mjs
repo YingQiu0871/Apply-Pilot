@@ -49,7 +49,7 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval score ANSWER.json [--jd JD.txt]  weighted score from the agent's JSON answer
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
   eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
-  agent [claude|codex|deepseek] [--test]   show or choose the AI agent; --test sends one short request
+  agent [claude|codex|deepseek|dsh] [--test]   show or choose the AI agent; --test sends one short request
   today [--no-scan] [--only evaluate,followups]   scan, evaluate and draft; results wait in the review queue
   review [approve|reject ID]            list the review queue, or decide one item
   jd URL [--out FILE] [--browser] [--json]   fetch a job description (ATS APIs, page text, optional browser)

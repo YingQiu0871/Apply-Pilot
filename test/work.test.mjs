@@ -9,7 +9,7 @@ import { closePipeline, pendingPipeline } from '../src/additions.mjs';
 import { Tracker } from '../src/tracker.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../src/review.mjs';
 import { runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
-import { askJson, classifyFailure, testAgent, workerCommand } from '../src/worker.mjs';
+import { askJson, classifyFailure, dshArgs, dshPatch, dshStart, testAgent, workerCommand } from '../src/worker.mjs';
 
 const JD = 'Formulation intern for a six month project on lipid nanoparticles. '.repeat(8);
 const today = '2026-10-30';
@@ -36,6 +36,36 @@ function dueRow(home, notes = '2026-10-01: sent to pat@example.com') {
   t.save();
   return row;
 }
+
+test('the dsh patch disables every tool plugin and keeps sessions in the temporary folder', () => {
+  const config = '# == base\n- id: tools\n  name: x\n- id: tool-bash\r\n  name: y\n- id: sandbox\n- id: tool-new-thing\n- id: tool-bash\n';
+  const patch = dshPatch(config, "C:/temp/o'k/sessions");
+  assert.match(patch, /- id: tool-bash\n {2}disabled: true/);
+  assert.match(patch, /- id: tool-new-thing\n {2}disabled: true/, 'a tool added later is disabled too');
+  assert.equal(patch.match(/id: tool-bash/g).length, 1);
+  assert.ok(!/- id: tools\b/.test(patch), 'the tool registry stays');
+  assert.ok(!patch.includes('id: sandbox'));
+  assert.match(patch, /- id: session-projection-cache\n {2}disabled: true/, 'no copy of the prompt in the dsh cache');
+  assert.match(patch, /root: 'C:\/temp\/o''k\/sessions'/);
+  assert.throws(() => dshPatch('- id: llm\n', 'x'), /tool list/);
+});
+
+test('dsh gets the prompt as one argument, and too long a prompt is refused', () => {
+  const prompt = 'a "quoted" & | > text\nsecond line';
+  assert.equal(dshArgs('p.yml', prompt).at(-1), prompt);
+  assert.throws(() => dshArgs('p.yml', 'x'.repeat(28001)), /too long/);
+});
+
+test('dsh starts through its own node on Windows, never through the launcher', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ap-dsh-'));
+  const [node, script, shim] = ['node.exe', 'bin.js', 'dsh.cmd'].map((f) => join(dir, f));
+  writeFileSync(node, ''); writeFileSync(script, '');
+  writeFileSync(shim, `@echo off\r\nset "NODE_BIN=${node}"\r\nset "DSH_BIN=${script}"\r\nset "DSH_HOME=${dir}"\r\n`);
+  assert.deepEqual(dshStart(shim), { file: node, pre: [script], env: { DSH_HOME: dir } });
+  assert.deepEqual(dshStart('/usr/bin/dsh'), { file: '/usr/bin/dsh', pre: [], env: {} });
+  writeFileSync(shim, '@echo off\r\n');
+  assert.throws(() => dshStart(shim), (e) => e.reason === 'missing');
+});
 
 test('worker commands never pass the prompt as an argument and switch tools off', () => {
   const claude = workerCommand('claude', 'x');

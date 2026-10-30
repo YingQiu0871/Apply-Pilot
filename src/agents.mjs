@@ -1,5 +1,5 @@
-// Which AI agent the user pairs with apply-pilot: Claude Code, Codex CLI or
-// DeepSeek. The choice is stored in APPLY_PILOT_HOME/agent.json. Background work
+// Which AI agent the user pairs with apply-pilot: Claude Code, Codex CLI,
+// DeepSeek or DeepSeek Harness. The choice is stored in APPLY_PILOT_HOME/agent.json. Background work
 // goes through src/worker.mjs; this file only knows what is installed and chosen.
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -10,6 +10,7 @@ export const AGENTS = {
   codex: { label: 'Codex CLI', bin: 'codex', site: 'https://github.com/openai/codex' },
   // Background work calls the API; opencode is only the optional terminal session.
   deepseek: { label: 'DeepSeek', bin: 'opencode', keyEnv: 'DEEPSEEK_API_KEY', site: 'https://platform.deepseek.com' },
+  dsh: { label: 'DeepSeek Harness', bin: 'dsh', open: 'dsh web', site: 'https://deepseek-harness.github.io/deepseek-harness/' },
 };
 
 export function which(bin) {
@@ -51,7 +52,7 @@ export function markVerified(home, agent) {
 
 /** Open an interactive session with the agent in a new terminal window, inside the data directory. */
 export function launchInteractive(agent, { home }) {
-  const bin = agent === 'deepseek' ? 'opencode' : AGENTS[agent]?.bin;
+  const bin = AGENTS[agent]?.open || AGENTS[agent]?.bin;
   if (!bin) throw new Error(`unknown agent "${agent}"`);
   const dir = resolve(home);
   if (process.platform === 'win32') {

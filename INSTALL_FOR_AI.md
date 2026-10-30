@@ -26,7 +26,7 @@ Ask only what you cannot find out yourself:
 
 1. Where should the data folder live? Suggest `~/job-search` on macOS/Linux or `%USERPROFILE%\job-search` on Windows.
 2. Do they already have a tracker (Excel, CSV, Markdown, JSON, SQLite) to import? Get the path.
-3. Which agent do they want to pair the panel with: Claude Code, Codex or DeepSeek?
+3. Which agent do they want to pair the panel with: Claude Code, Codex, DeepSeek or DeepSeek Harness?
 4. Do they want a desktop icon?
 
 Do not ask for passwords. Do not ask for API keys in chat: the user pastes keys into `.env` themselves (step 5).
@@ -153,7 +153,7 @@ Supported: `applications.md`, Markdown tables, `.xlsx`, CSV/TSV, JSON, SQLite `.
 ## Step 7: panel, desktop icon, agent
 
 ```bash
-apply-pilot agent claude --test   # or: codex, deepseek (put DEEPSEEK_API_KEY in .env first)
+apply-pilot agent claude --test   # or: codex, dsh, deepseek (put DEEPSEEK_API_KEY in .env first)
 apply-pilot ui --open             # opens http://127.0.0.1:4321
 apply-pilot shortcut              # optional desktop launcher
 ```

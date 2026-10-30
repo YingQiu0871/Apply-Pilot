@@ -390,7 +390,7 @@ const I18N = {
   zh: {
     nav: { today: '今日工作', overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', tools: '工具' },
     agentsTitle: 'AI 助手', agentsSub: '选择和哪个 AI 搭配，测试通过后，它就能替你评估岗位、起草跟进。',
-    ag: { claude: '用你已登录的 Claude Code。需要先安装并登录', codex: '用你已登录的 Codex CLI。需要先安装并登录', deepseek: '直接调用 DeepSeek API，不用安装其他软件，只需要一个 API key' },
+    ag: { claude: '用你已登录的 Claude Code。需要先安装并登录', codex: '用你已登录的 Codex CLI。需要先安装并登录', deepseek: '直接调用 DeepSeek API，不用安装其他软件，只需要一个 API key', dsh: '用你已登录的 DeepSeek Harness，不需要单独填 API key。需要先安装并登录' },
     agSelected: '当前搭配', agChoose: '选用', agTerminal: '在终端中打开', agReady: '已就绪', agMissing: '未安装或未配置', agCli: '命令行', agKey: 'API key', agSet: '已设置', agUnset: '未设置', agGet: '获取 / 安装', agRefresh: '重新检测',
     agSafe: '后台工作时，AI 只收到提示词并返回文字，不能操作你的文件，也不能发送或提交任何东西。Key 明文保存在数据目录的 .env 里，不要把这个文件发给别人。',
     agTest: '测试连接', agTesting: '测试中…', agOk: (n) => `连接正常（${n} 秒）`, agFail: { login: '未登录或 key 无效。请先在终端登录，或重新填写 key', quota: '额度不足或请求太频繁', network: '网络连接失败', missing: '没有找到这个 AI，请先安装', timeout: '等待超时', invalid: '收到了回答，但格式不对', busy: '有任务正在运行，稍后再试', other: '调用失败' },
@@ -437,7 +437,7 @@ const I18N = {
   en: {
     nav: { today: 'Today', overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', tools: 'Tools' },
     agentsTitle: 'AI agent', agentsSub: 'Choose which AI to pair with. Once the test passes, it can evaluate postings and draft follow-ups for you.',
-    ag: { claude: 'Uses your signed-in Claude Code. Install and sign in first', codex: 'Uses your signed-in Codex CLI. Install and sign in first', deepseek: 'Calls the DeepSeek API directly. Nothing else to install, you only need an API key' },
+    ag: { claude: 'Uses your signed-in Claude Code. Install and sign in first', codex: 'Uses your signed-in Codex CLI. Install and sign in first', deepseek: 'Calls the DeepSeek API directly. Nothing else to install, you only need an API key', dsh: 'Uses your signed-in DeepSeek Harness, with no separate API key. Install and sign in first' },
     agSelected: 'Paired', agChoose: 'Use this', agTerminal: 'Open in terminal', agReady: 'Ready', agMissing: 'Not installed or not configured', agCli: 'CLI', agKey: 'API key', agSet: 'set', agUnset: 'missing', agGet: 'Get / install', agRefresh: 'Re-detect',
     agSafe: 'During background work the AI only receives a prompt and returns text. It cannot touch your files, send or submit anything. Keys are stored as plain text in .env in your data folder, so do not share that file.',
     agTest: 'Test connection', agTesting: 'Testing…', agOk: (n) => `Connected (${n} s)`, agFail: { login: 'Not signed in or the key is invalid. Sign in from a terminal, or enter the key again', quota: 'Out of quota or too many requests', network: 'Network error', missing: 'This AI was not found. Install it first', timeout: 'Timed out', invalid: 'It answered, but not in the expected format', busy: 'A task is running. Try again shortly', other: 'The call failed' },

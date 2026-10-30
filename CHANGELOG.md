@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-10-30
+
+- DeepSeek Harness (`dsh`) is a new AI choice. It uses your signed-in Harness, so no separate API key is needed.
+- It runs like the other workers, without tools, in an empty temporary folder. Apply-Pilot reads the plugin list of your dsh at run time and disables every tool plugin, also ones a later dsh adds. Sessions stay in the temporary folder and are removed after each answer.
+- dsh 0.1.5 takes its task only as a command-line argument, so a request is limited to 28,000 characters. It is started through its own Node, without a shell.
+
 ## 0.4.0 — 2026-10-30
 
 Apply-Pilot now runs the daily work itself. You choose an AI once, then press one button and decide what comes back.
