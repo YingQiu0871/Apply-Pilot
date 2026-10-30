@@ -242,6 +242,29 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .err { display: none; padding: 10px 14px; border-radius: 9px; background: var(--rejected-bg); color: var(--rejected); margin-bottom: 14px; }
 
 /* mobile */
+.work { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.field { display: block; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
+.field input, .field textarea { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; line-height: 1.5; box-sizing: border-box; }
+.field textarea { min-height: 96px; resize: vertical; }
+.field input:focus, .field textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.su-step { display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.su-step:first-child { border-top: 0; padding-top: 0; }
+.su-step:last-child { padding-bottom: 0; }
+.su-n { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--surface-2); color: var(--muted); }
+.su-step.done .su-n { background: var(--responded-bg); color: var(--responded); }
+.su-body { flex: 1; min-width: 0; }
+.su-body h3 { margin: 2px 0 4px; font-size: 14px; }
+.su-body p { margin: 0 0 10px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.rv { margin-bottom: 12px; padding: 16px; }
+.rv-head { display: flex; gap: 12px; align-items: flex-start; }
+.rv-head .grow { flex: 1; min-width: 0; }
+.rv-score { font-size: 24px; font-weight: 650; line-height: 1; text-align: right; }
+.rv p { margin: 10px 0 0; font-size: 13px; line-height: 1.55; }
+.rv ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.55; }
+.rv details { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.rv .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.rv .warn-line { margin-top: 8px; font-size: 12px; color: var(--warn); }
+.rv .bad-line { margin-top: 8px; font-size: 12px; color: var(--rejected); }
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }
   .side { position: sticky; top: 0; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 8px 12px; z-index: 10; border-right: 0; border-bottom: 1px solid var(--line); gap: 2px; }
@@ -270,6 +293,15 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
   </aside>
   <main>
     <div class="err" id="err"></div>
+
+    <section class="view" data-view="today">
+      <div class="page-head"><div><h1 data-t="todayTitle"></h1><p id="todaySub"></p></div>
+        <div class="work"><button class="btn primary" data-task="today" id="todayBtn" data-t="todayStart"></button><button class="btn" data-task="evaluate" data-t="todayEval"></button><button class="btn" data-task="drafts" data-t="todayDraft"></button></div></div>
+      <div class="card" id="setupCard" style="margin-bottom:16px"><div class="card-h"><h2 data-t="suTitle"></h2></div><div class="card-b" id="setupSteps"></div></div>
+      <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-t="runTitle"></h2><div class="status-line"><span class="spin" id="todaySpin"></span><span id="todayState"></span></div></div>
+        <div class="card-b"><pre class="console" id="todayConsole"></pre></div></div>
+      <div id="reviewList"></div>
+    </section>
 
     <section class="view" data-view="overview">
       <div class="page-head"><div><h1 data-t="overviewTitle"></h1><p id="overviewSub"></p></div></div>
@@ -310,8 +342,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
     <section class="view" data-view="agents">
       <div class="page-head"><div><h1 data-t="agentsTitle"></h1><p data-t="agentsSub"></p></div><button class="btn" data-act="agent-refresh" data-t="agRefresh"></button></div>
       <div class="grid tasks" id="agentCards" style="margin-bottom:16px"></div>
-      <div class="card"><div class="card-h"><h2 data-t="agTasks"></h2><div class="status-line"><span class="spin" id="agSpin"></span><span id="agState"></span></div></div>
-        <div class="card-b"><div class="grid tasks" id="agentTasks" style="margin-bottom:14px"></div><pre class="console" id="agConsole"></pre></div></div>
+      <p class="meta" style="white-space:normal" data-t="agSafe"></p>
     </section>
 
     <section class="view" data-view="tools">
@@ -357,12 +388,20 @@ const TOKEN = '__TOKEN__';
 let LANG = (() => { try { return localStorage.getItem('ap-lang'); } catch { return null; } })() || new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
 const I18N = {
   zh: {
-    nav: { overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', tools: '工具' },
-    agentsTitle: 'AI 助手', agentsSub: '选择和哪个 AI 搭配。它可以在终端里陪你工作，也可以替你跑下面的任务；任务只写文件到 output/，不会发送或提交任何东西。',
-    ag: { claude: 'Anthropic 的命令行 agent，读 CLAUDE.md / AGENTS.md，自己完成评估和起草', codex: 'OpenAI 的命令行 agent，读 AGENTS.md，用非交互模式 codex exec 执行', deepseek: '直接调用 DeepSeek API 评估岗位（需要 DEEPSEEK_API_KEY）；装了 opencode 也可以当 agent 用' },
+    nav: { today: '今日工作', overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', tools: '工具' },
+    agentsTitle: 'AI 助手', agentsSub: '选择和哪个 AI 搭配，测试通过后，它就能替你评估岗位、起草跟进。',
+    ag: { claude: '用你已登录的 Claude Code。需要先安装并登录', codex: '用你已登录的 Codex CLI。需要先安装并登录', deepseek: '直接调用 DeepSeek API，不用安装其他软件，只需要一个 API key' },
     agSelected: '当前搭配', agChoose: '选用', agTerminal: '在终端中打开', agReady: '已就绪', agMissing: '未安装或未配置', agCli: '命令行', agKey: 'API key', agSet: '已设置', agUnset: '未设置', agGet: '获取 / 安装', agRefresh: '重新检测',
-    agTasks: '交给 AI 的任务', agNone: '先选一个 AI 助手',
-    agTask: { 'agent-evaluate': ['评估新岗位', '读取 pipeline.md 里待处理的岗位（最多 10 个），抓 JD、按你的评分维度打分，结果写到 output/agent-evaluation-日期.md'], 'agent-followups': ['起草跟进邮件', '为到期的邮件类申请起草简短跟进，写到 output/followup-drafts-日期.md，你看过再决定发不发'] },
+    agSafe: '后台工作时，AI 只收到提示词并返回文字，不能操作你的文件，也不能发送或提交任何东西。Key 明文保存在数据目录的 .env 里，不要把这个文件发给别人。',
+    agTest: '测试连接', agTesting: '测试中…', agOk: (n) => `连接正常（${n} 秒）`, agFail: { login: '未登录或 key 无效。请先在终端登录，或重新填写 key', quota: '额度不足或请求太频繁', network: '网络连接失败', missing: '没有找到这个 AI，请先安装', timeout: '等待超时', invalid: '收到了回答，但格式不对', busy: '有任务正在运行，稍后再试', other: '调用失败' },
+    agKeyPh: '粘贴 DeepSeek API key', agKeySave: '保存', agKeySaved: 'Key 已保存',
+    todayTitle: '今日工作', todayStart: '开始今天的工作', todayEval: '只评估岗位', todayDraft: '只起草跟进',
+    todaySub: (n) => (n ? `有 ${n} 项等你确认。AI 不会发送或提交任何东西。` : '扫描新岗位、评估匹配度、起草跟进，结果都会先交给你确认。'),
+    suTitle: '开始之前', suAgent: '选择搭配的 AI', suAgentDo: '选一个 AI 并通过连接测试', suGo: '去选择', suProfile: '整理你的经历', suProfileDo: '粘贴 CV 全文，AI 会整理出经历和搜索词。这份 CV 会发给你选的 AI 服务。之后的评估和跟进只使用你确认过的内容，请逐条核对。',
+    suCv: 'CV 全文', suRead: '让 AI 读取', suReading: '读取中…', suSummary: '目标（两三句话）', suFacts: '可以证明的经历（每行一条）', suLangs: '语言（每行一条）', suKeywords: '搜索词（每行一条）', suSave: '确认并保存', suSaved: '已保存',
+    runTitle: '运行情况', runSum: (e, d, n, u) => `上次运行：评估 ${e} 个岗位，起草 ${d} 封跟进，${u} 个页面读不到，${n} 个问题`, runStopped: { login: 'AI 未登录或 key 无效，已停止', quota: 'AI 额度不足，已停止', network: '网络失败，已停止', missing: '没有找到 AI，已停止', other: '运行失败' },
+    rvUnread: '需要你打开的岗位', rvUnreadWhy: '软件读不到这个页面的岗位描述。打开看一下，合适就手动记录。', rvEmpty: '没有等待确认的内容', rvEval: '待确认的岗位评估', rvFollow: '待确认的跟进邮件', rvAdd: '加入申请表', rvSkip: '忽略', rvOpen: '打开岗位', rvDims: '评分明细', rvGaps: '短板', rvFilter: '命中过滤条件：',
+    rvTo: '收件人', rvToNone: '备注里没有找到邮箱，请手动填写', rvSubject: '主题', rvBody: '正文', rvCopy: '复制正文', rvCopied: '已复制', rvMail: '在邮件中打开', rvSent: '我已发送，记入时间线', rvDrop: '不发', rvIssues: '写作检查：',
     overviewTitle: '概览', needAction: '需要你处理', thisWeek: '最近 7 天', seeAll: '查看全部',
     appsTitle: '申请', appsSub: '点任意一行查看详情和完整时间线', fuTitle: '待跟进', actTitle: '动态', actSub: '从申请表备注里提取的带日期事件',
     impTitle: '导入已有数据', impHelp: '输入文件或文件夹路径（Windows 例：C:\\Users\\你\\Documents\\求职，macOS 例：~/Documents/jobs）。支持 applications.md、Markdown 表格、Excel、CSV/TSV、JSON、SQLite。先预览，确认后再导入；已存在的岗位会跳过，原文件不会被修改。',
@@ -386,6 +425,7 @@ const I18N = {
       doctor: ['自检', '检查环境、配置和申请表'],
       export: ['导出 Excel', '生成一份新的申请表 Excel'],
     },
+    work: { today: '今天的工作', evaluate: '评估岗位', drafts: '起草跟进', 'read CV': '读取 CV', 'connection test': '连接测试' },
     run: '运行', running: (t) => `正在运行：${t}`, done: (t, c) => `${t} 已结束（退出码 ${c}）`, idle: '空闲',
     inbox: '最近的扫描文件：', bye: '已退出，可以关闭这个页面。',
     days: (n) => `近 ${n} 天`, ago: (n) => (n <= 0 ? '今天' : `${n} 天前`), quiet: (n) => `${n} 天没动静`, count: (n) => `${n} 条`, all: '全部',
@@ -395,12 +435,20 @@ const I18N = {
     overviewSub: (n, a) => `共 ${n} 条记录，其中 ${a} 条正在进行`, open: '打开岗位页面', timeline: '时间线', notes: '完整备注', score: '评分', added: '记录日期', theme: '主题', lang: 'EN', expand: '展开', collapse: '收起', scheduled: '定时', chartEmpty: '这段时间没有对外动态',
   },
   en: {
-    nav: { overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', tools: 'Tools' },
-    agentsTitle: 'AI agent', agentsSub: 'Choose which AI to pair with. It can work with you in a terminal or run the tasks below for you; tasks only write files to output/ and never send or submit anything.',
-    ag: { claude: 'Anthropic command-line agent; reads CLAUDE.md / AGENTS.md and does the evaluation and drafting itself', codex: 'OpenAI command-line agent; reads AGENTS.md and runs non-interactively with codex exec', deepseek: 'Calls the DeepSeek API directly to score postings (needs DEEPSEEK_API_KEY); with opencode installed it can act as an agent too' },
+    nav: { today: 'Today', overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', tools: 'Tools' },
+    agentsTitle: 'AI agent', agentsSub: 'Choose which AI to pair with. Once the test passes, it can evaluate postings and draft follow-ups for you.',
+    ag: { claude: 'Uses your signed-in Claude Code. Install and sign in first', codex: 'Uses your signed-in Codex CLI. Install and sign in first', deepseek: 'Calls the DeepSeek API directly. Nothing else to install, you only need an API key' },
     agSelected: 'Paired', agChoose: 'Use this', agTerminal: 'Open in terminal', agReady: 'Ready', agMissing: 'Not installed or not configured', agCli: 'CLI', agKey: 'API key', agSet: 'set', agUnset: 'missing', agGet: 'Get / install', agRefresh: 'Re-detect',
-    agTasks: 'Tasks for the AI', agNone: 'Choose an AI agent first',
-    agTask: { 'agent-evaluate': ['Evaluate new postings', 'Up to 10 pending postings from pipeline.md: fetch the JD, score it against your rubric, write output/agent-evaluation-DATE.md'], 'agent-followups': ['Draft follow-ups', 'Short follow-ups for due email applications, written to output/followup-drafts-DATE.md for you to review'] },
+    agSafe: 'During background work the AI only receives a prompt and returns text. It cannot touch your files, send or submit anything. Keys are stored as plain text in .env in your data folder, so do not share that file.',
+    agTest: 'Test connection', agTesting: 'Testing…', agOk: (n) => `Connected (${n} s)`, agFail: { login: 'Not signed in or the key is invalid. Sign in from a terminal, or enter the key again', quota: 'Out of quota or too many requests', network: 'Network error', missing: 'This AI was not found. Install it first', timeout: 'Timed out', invalid: 'It answered, but not in the expected format', busy: 'A task is running. Try again shortly', other: 'The call failed' },
+    agKeyPh: 'Paste your DeepSeek API key', agKeySave: 'Save', agKeySaved: 'Key saved',
+    todayTitle: 'Today', todayStart: "Start today's work", todayEval: 'Evaluate only', todayDraft: 'Draft follow-ups only',
+    todaySub: (n) => (n ? `${n} item(s) wait for your decision. The AI never sends or submits anything.` : 'Scan new postings, evaluate them and draft follow-ups. Everything waits for your decision.'),
+    suTitle: 'Before you start', suAgent: 'Choose your AI', suAgentDo: 'Pick an AI and pass the connection test', suGo: 'Choose', suProfile: 'Set out your experience', suProfileDo: 'Paste your full CV and the AI will list your experience and search terms. The CV goes to the AI service you chose. Evaluations and follow-ups only use what you confirm here, so check every line.',
+    suCv: 'Full CV text', suRead: 'Let the AI read it', suReading: 'Reading…', suSummary: 'Your target (two or three sentences)', suFacts: 'Experience you can prove (one per line)', suLangs: 'Languages (one per line)', suKeywords: 'Search terms (one per line)', suSave: 'Confirm and save', suSaved: 'Saved',
+    runTitle: 'Run', runSum: (e, d, n, u) => `Last run: ${e} evaluated, ${d} drafted, ${u} unreadable, ${n} problem(s)`, runStopped: { login: 'Stopped: AI not signed in or the key is invalid', quota: 'Stopped: AI quota used up', network: 'Stopped: network error', missing: 'Stopped: AI not found', other: 'The run failed' },
+    rvUnread: 'Postings to open yourself', rvUnreadWhy: 'Apply-Pilot could not read this page. Open it, and log it by hand if it fits.', rvEmpty: 'Nothing waits for your decision', rvEval: 'Evaluations to review', rvFollow: 'Follow-ups to review', rvAdd: 'Add to tracker', rvSkip: 'Ignore', rvOpen: 'Open posting', rvDims: 'Score details', rvGaps: 'Gaps', rvFilter: 'Hit a filter: ',
+    rvTo: 'To', rvToNone: 'No address in the notes. Enter it yourself', rvSubject: 'Subject', rvBody: 'Body', rvCopy: 'Copy body', rvCopied: 'Copied', rvMail: 'Open in mail app', rvSent: 'I sent it, log it', rvDrop: 'Do not send', rvIssues: 'Writing check: ',
     overviewTitle: 'Overview', needAction: 'Needs your attention', thisWeek: 'Last 7 days', seeAll: 'See all',
     appsTitle: 'Applications', appsSub: 'Click a row for details and the full timeline', fuTitle: 'Follow-ups', actTitle: 'Activity', actSub: 'Dated events taken from the tracker notes',
     impTitle: 'Import existing data', impHelp: 'Enter a file or folder path (Windows: C:\\Users\\you\\Documents\\jobs, macOS: ~/Documents/jobs). Reads applications.md, Markdown tables, Excel, CSV/TSV, JSON and SQLite. Preview first; rows already tracked are skipped and source files are never changed.',
@@ -424,6 +472,7 @@ const I18N = {
       doctor: ['Check setup', 'Environment, profile and tracker'],
       export: ['Export Excel', 'A fresh spreadsheet of the tracker'],
     },
+    work: { today: "today's work", evaluate: 'evaluation', drafts: 'drafting', 'read CV': 'reading CV', 'connection test': 'connection test' },
     run: 'Run', running: (t) => `Running: ${t}`, done: (t, c) => `${t} finished (exit ${c})`, idle: 'Idle',
     inbox: 'Latest scan files:', bye: 'Stopped. You can close this page.',
     days: (n) => `${n} days`, ago: (n) => (n <= 0 ? 'today' : `${n} d ago`), quiet: (n) => `${n} days quiet`, count: (n) => `${n}`, all: 'All',
@@ -454,6 +503,7 @@ const BI = {
     interviewupcoming: ['待面试', 'Upcoming'], interviewdone: ['已面试', 'Done'],
     afterinterview: ['面试后被拒', 'After interview'], filled: ['名额已满', 'Position filled'], closed: ['其他拒绝', 'Other rejection'],
   },
+  decision: { Apply: ['建议投递', 'Apply'], Consider: ['可考虑', 'Consider'], Skip: ['建议跳过', 'Skip'] },
   step: [['评估', 'Evaluated'], ['投递', 'Applied'], ['回复', 'Reply'], ['面试', 'Interview'], ['结果', 'Outcome']],
   ui: { timeline: ['时间线', 'Timeline'], chart: ['每日动态', 'Daily activity'], allStages: ['全部', 'All'] },
 };
@@ -462,6 +512,7 @@ const bi = (pair) => { const [a, b] = LANG === 'zh' ? pair : [pair[1], pair[0]];
 const both = (key, id) => [I18N.zh[key][id], I18N.en[key][id]];
 
 const ICONS = {
+  today: '<path d="M5 12.5 10 17l9-10"/><path d="M4 21h16"/>',
   overview: '<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v8h8V3zM3 21h8v-6H3z"/>',
   applications: '<path d="M4 6h16M4 12h16M4 18h10"/>',
   followups: '<path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/>',
@@ -534,7 +585,7 @@ function stepsOf(r) {
   return `<div class="steps">${steps.map((s, i) => `<div class="step ${s.on ? 'on' : ''} ${s.cls || ''}"><i></i>${pick(BI.step[i])}<small>${pick([...BI.step[i]].reverse())}</small>${s.on && s.date ? `<span class="date">${s.date.slice(5)}</span>` : ''}</div>`).join('')}</div>`;
 }
 
-const S = { rows: [], view: read('ap-view') || 'overview', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
+const S = { review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: read('ap-view') || 'today', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
 
 function setView(v) {
   S.view = v; store('ap-view', v);
@@ -544,7 +595,7 @@ function setView(v) {
 }
 
 function renderNav() {
-  const badge = { followups: S.rows.filter(FILTERS.follow).length, applications: S.rows.filter(FILTERS.active).length };
+  const badge = { today: S.review.length, followups: S.rows.filter(FILTERS.follow).length, applications: S.rows.filter(FILTERS.active).length };
   $('navs').innerHTML = Object.keys(T.nav).map((v) => `<button class="nav ${S.view === v ? 'on' : ''}" data-go="${v}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[v]}</svg>${T.nav[v]}
     ${badge[v] ? `<span class="badge ${v === 'followups' ? 'warn' : ''}">${badge[v]}</span>` : ''}
@@ -663,15 +714,85 @@ function renderAgents() {
       <span class="pill ${a.ready ? 's-Responded' : 's-SKIP'}" style="margin-left:auto">${a.ready ? T.agReady : T.agMissing}</span></div>
     <p>${T.ag[a.id]}</p>
     <div class="meta" style="white-space:normal">${T.agCli}: ${a.cli ? esc(base(a.cli)) : '—'}${a.apiKey === null ? '' : ` · ${T.agKey}: ${a.apiKey ? T.agSet : T.agUnset}`}</div>
+    ${a.apiKey === null ? '' : `<div class="toolbar" style="padding:0;border:0;gap:8px"><label class="search"><input id="key-${a.id}" type="password" placeholder="${T.agKeyPh}" autocomplete="off" spellcheck="false"></label><button class="btn" data-key="${a.id}">${T.agKeySave}</button></div>`}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn ${sel ? '' : 'primary'}" data-agent="${a.id}" ${sel ? 'disabled' : ''}>${T.agChoose}</button>
+      <button class="btn ${sel ? 'primary' : ''}" data-test="${a.id}" ${!sel || !a.ready || S.running ? 'disabled' : ''}>${T.agTest}</button>
       ${a.cli ? `<button class="btn" data-launch="${a.id}">${T.agTerminal}</button>` : `<a class="btn" href="${esc(a.site)}" target="_blank" rel="noopener">${T.agGet} ↗</a>`}
-    </div></div>`;
+    </div><div class="meta" style="white-space:normal">${agentNote(a.id)}</div></div>`;
   }).join('');
-  $('agentTasks').innerHTML = Object.entries(T.agTask).map(([id, [name, desc]]) => `<div class="card task"><h3>${name}</h3><p>${desc}</p>
-    <div><button class="btn primary" data-task="${id}" ${S.running || !S.agent ? 'disabled' : ''}>${T.run}</button></div></div>`).join('');
-  $('agSpin').classList.toggle('on', Boolean(S.running));
-  $('agState').textContent = !S.agent ? T.agNone : S.running ? T.running(S.running) : ($('agState').dataset.done || T.idle);
+}
+
+const agentNote = (id) => {
+  if (S.testing === id) return `<span class="spin on"></span> ${T.agTesting}`;
+  const r = S.tests[id];
+  if (!r) return '';
+  return r.ok ? `<span style="color:var(--responded)">${T.agOk(Math.max(1, Math.round(r.ms / 1000)))}</span>`
+    : `<span style="color:var(--rejected)">${esc(T.agFail[r.reason] || T.agFail.other)}</span><div class="meta" style="white-space:normal">${esc(r.detail || '')}</div>`;
+};
+
+const decisionPill = (d) => `<span class="pill s-${d === 'Apply' ? 'Responded' : d === 'Consider' ? 'Evaluated' : 'SKIP'}">${bi(BI.decision[d])}</span>`;
+const rvErr = (id) => (S.rvErr[id] ? `<div class="bad-line">${esc(S.rvErr[id])}</div>` : '');
+
+function evalCard(i) {
+  const e = i.payload;
+  const facts = [e.location, e.start, e.duration, e.language].filter(Boolean).map(esc).join(' · ');
+  return `<div class="card rv"><div class="rv-head"><div class="grow"><div class="t1">${esc(e.company)}</div><div class="t2">${esc(e.role)}</div>${facts ? `<div class="meta" style="white-space:normal">${facts}</div>` : ''}</div>
+    <div><div class="rv-score">${e.score100}</div>${decisionPill(e.decision)}</div></div>
+    ${e.summary ? `<p>${esc(e.summary)}</p>` : ''}
+    ${e.filters?.length ? `<div class="warn-line">${T.rvFilter}${esc(e.filters.join(' · '))}</div>` : ''}
+    ${e.gaps?.length ? `<ul>${e.gaps.map((g) => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
+    <details><summary>${T.rvDims}</summary>${(e.parts || []).map((p) => `<div>${esc(p.label)}: ${p.rating}/5 (${p.weight}%) ${esc(p.reason)}</div>`).join('')}</details>
+    ${rvErr(i.id)}
+    <div class="acts"><button class="btn primary" data-review="approve" data-id="${i.id}">${T.rvAdd}</button><a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">${T.rvOpen} ↗</a><button class="btn" data-review="reject" data-id="${i.id}">${T.rvSkip}</button></div></div>`;
+}
+
+function unreadCard(i) {
+  const e = i.payload;
+  return `<div class="card rv"><div class="t1">${esc(e.company)}</div><div class="t2">${esc(e.role)}</div><p>${T.rvUnreadWhy}</p>${rvErr(i.id)}
+    <div class="acts"><a class="btn primary" href="${esc(e.url)}" target="_blank" rel="noopener">${T.rvOpen} ↗</a><button class="btn" data-review="reject" data-id="${i.id}">${T.rvSkip}</button></div></div>`;
+}
+
+function followCard(i) {
+  const d = { ...i.payload, ...S.edits[i.id] };
+  const issues = (i.payload.issues || []).map((x) => x.detail || x.rule);
+  const input = (k, label, ph = '') => `<label class="field">${label}<input data-edit="${i.id}" data-k="${k}" value="${esc(d[k])}" placeholder="${esc(ph)}" spellcheck="false"></label>`;
+  return `<div class="card rv"><div class="rv-head"><div class="grow"><div class="t1">#${d.num} ${esc(d.company)}</div><div class="t2">${esc(d.role)}</div></div></div>
+    <div style="margin-top:12px">${input('to', T.rvTo, T.rvToNone)}${input('subject', T.rvSubject)}
+    <label class="field">${T.rvBody}<textarea data-edit="${i.id}" data-k="body" style="min-height:150px">${esc(d.body)}</textarea></label></div>
+    ${issues.length ? `<div class="warn-line">${T.rvIssues}${esc(issues.join(' · '))}</div>` : ''}
+    ${rvErr(i.id)}
+    <div class="acts"><button class="btn" data-rvcopy="${i.id}">${T.rvCopy}</button><button class="btn" data-rvmail="${i.id}">${T.rvMail}</button><button class="btn primary" data-review="sent" data-id="${i.id}">${T.rvSent}</button><button class="btn" data-review="reject" data-id="${i.id}">${T.rvDrop}</button></div></div>`;
+}
+
+function renderSetup() {
+  const r = S.ready;
+  $('setupCard').style.display = !r || r.ready ? 'none' : 'block';
+  if (!r || r.ready || document.activeElement?.closest?.('#setupSteps')) return;
+  const profileDone = r.profile && r.sources;
+  const d = S.draft;
+  const field = (k, label, area = true) => `<label class="field">${label}${area ? `<textarea data-draft="${k}">${esc(d[k] || '')}</textarea>` : `<input data-draft="${k}" value="${esc(d[k] || '')}">`}</label>`;
+  $('setupSteps').innerHTML = `<div class="su-step ${r.agent ? 'done' : ''}"><span class="su-n">${r.agent ? '✓' : '1'}</span><div class="su-body"><h3>${T.suAgent}</h3>${r.agent ? '' : `<p>${T.suAgentDo}</p><button class="btn primary" data-go="agents">${T.suGo}</button>`}</div></div>
+    <div class="su-step ${profileDone ? 'done' : ''}"><span class="su-n">${profileDone ? '✓' : '2'}</span><div class="su-body"><h3>${T.suProfile}</h3>${profileDone ? '' : `<p>${T.suProfileDo}</p>
+      ${field('cv', T.suCv)}<div class="acts" style="margin-bottom:12px"><button class="btn" data-suread ${r.agent && !S.running ? '' : 'disabled'}>${S.reading ? T.suReading : T.suRead}</button></div>
+      ${field('summary', T.suSummary)}${field('facts', T.suFacts)}${field('languages', T.suLangs)}${field('keywords', T.suKeywords)}
+      <div class="acts"><button class="btn primary" data-susave>${T.suSave}</button></div><div class="bad-line" id="suErr" style="margin-top:8px;color:var(--rejected);font-size:12px"></div>`}</div></div>`;
+}
+
+function renderToday() {
+  $('todaySub').textContent = T.todaySub(S.review.length);
+  const blocked = !S.ready?.ready || Boolean(S.running);
+  document.querySelectorAll('.work [data-task]').forEach((b) => { b.disabled = blocked; });
+  $('todaySpin').classList.toggle('on', Boolean(S.running));
+  const last = S.lastRun;
+  $('todayState').textContent = S.running ? T.running(T.work[S.running] || S.running) : last ? (last.stopped ? T.runStopped[last.stopped] || T.runStopped.other : T.runSum(last.evaluated, last.drafted, last.errors.length, last.unread || 0)) : T.idle;
+  renderSetup();
+  if (document.activeElement?.closest?.('#reviewList')) return;
+  const evals = S.review.filter((i) => i.type === 'evaluation').sort((a, b) => b.payload.score100 - a.payload.score100);
+  const fus = S.review.filter((i) => i.type === 'followup');
+  const unread = S.review.filter((i) => i.type === 'unread');
+  const group = (title, list, card) => (list.length ? `<h2 style="font-size:14px;margin:18px 0 10px">${title} · ${list.length}</h2>${list.map(card).join('')}` : '');
+  $('reviewList').innerHTML = S.review.length ? group(T.rvEval, evals, evalCard) + group(T.rvFollow, fus, followCard) + group(T.rvUnread, unread, unreadCard) : `<div class="card"><div class="empty">${T.rvEmpty}</div></div>`;
 }
 
 function renderTools() {
@@ -689,7 +810,7 @@ function render() {
   $('impPath').placeholder = T.impPh;
   $('langBtn').textContent = T.lang;
   $('themeBtn').textContent = T.theme;
-  ({ overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, tools: renderTools })[S.view]?.();
+  ({ today: renderToday, overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, tools: renderTools })[S.view]?.();
 }
 
 function openDrawer(num) {
@@ -716,7 +837,7 @@ const closeDrawer = () => { $('drawer').classList.remove('on'); $('scrim').class
 const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-token': TOKEN }, body: JSON.stringify(body || {}) })
   .then((r) => { if (r.status === 403) { location.reload(); return { ok: false, error: 'reloading' }; } return r.json(); });
 function log(text) {
-  for (const id of ['console', 'agConsole']) logTo($(id), text);
+  for (const id of ['console', 'todayConsole']) logTo($(id), text);
 }
 function logTo(c, text) {
   c.textContent += `${text}\n`;
@@ -758,12 +879,27 @@ function renderHome() {
   homeForm('homeTools', S.home.path);
 }
 
+// Prefill the setup form once, leaving out the template's placeholder lines.
+function fillDraft(c) {
+  if (S.draftFilled || !c) return;
+  S.draftFilled = true;
+  const real = (s) => !/\breplace (with|this)\b|^these are the only/i.test(String(s).trim());
+  Object.assign(S.draft, { summary: real(c.summary) ? c.summary : '', facts: c.facts.filter(real).join('\n'), languages: c.languages.join('\n') });
+}
+
+const draftRe = () => Object.fromEntries(['summary', 'facts', 'languages', 'keywords', 'cv'].map((k) => [k, S.draft[k] || '']));
+
+function mailUrl(d) {
+  return `mailto:${encodeURIComponent(d.to || '').replace(/%40/g, '@')}?subject=${encodeURIComponent(d.subject)}&body=${encodeURIComponent(d.body)}`;
+}
+
 async function load() {
   try {
     const res = await fetch('/api/data', { cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
-    Object.assign(S, { home: d.home, rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent });
+    Object.assign(S, { home: d.home, rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent, review: d.review || [], ready: d.ready, lastRun: d.lastRun });
+    fillDraft(d.candidate);
     $('updated').textContent = `${d.rows.length} ${T.rows} · ${new Date(d.generated).toLocaleTimeString()}`;
     $('err').style.display = 'none';
     renderNav(); render(); renderHome();
@@ -771,7 +907,7 @@ async function load() {
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],#langBtn,#themeBtn,#scrim');
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],[data-review],[data-rvcopy],[data-rvmail],[data-test],[data-key],[data-suread],[data-susave],#langBtn,#themeBtn,#scrim');
   if (!t) return;
   if (t.dataset.go) return setView(t.dataset.go);
   if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.stage = null; S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
@@ -799,10 +935,53 @@ document.addEventListener('click', async (e) => {
     return;
   }
   if (t.dataset.home) return useHome(t.dataset.home);
+  if (t.dataset.review) {
+    const id = t.dataset.id;
+    const r = await post('/api/review/decide', { id, action: t.dataset.review, edits: S.edits[id] });
+    if (!r.ok) { S.rvErr[id] = r.error; renderToday(); return; }
+    delete S.edits[id]; delete S.rvErr[id];
+    return load();
+  }
+  if (t.dataset.rvcopy) {
+    const it = S.review.find((i) => i.id === t.dataset.rvcopy);
+    await navigator.clipboard.writeText({ ...it.payload, ...S.edits[it.id] }.body);
+    t.textContent = T.rvCopied;
+    return;
+  }
+  if (t.dataset.rvmail) { const it = S.review.find((i) => i.id === t.dataset.rvmail); location.href = mailUrl({ ...it.payload, ...S.edits[it.id] }); return; }
+  if (t.dataset.test) {
+    S.testing = t.dataset.test; render();
+    S.tests[t.dataset.test] = await post('/api/agent/test', { agent: t.dataset.test });
+    S.testing = null;
+    return load();
+  }
+  if (t.dataset.key) {
+    const box = $(`key-${t.dataset.key}`);
+    const r = await post('/api/agent/key', { agent: t.dataset.key, key: box.value });
+    S.tests[t.dataset.key] = r.ok ? null : { ok: false, reason: 'other', detail: r.error };
+    box.value = '';
+    await post('/api/agent/refresh');
+    return load();
+  }
+  if (t.hasAttribute('data-suread')) {
+    S.reading = true; document.activeElement?.blur(); renderSetup();
+    const r = await post('/api/profile/draft', { text: S.draft.cv });
+    S.reading = false;
+    if (r.ok) Object.assign(S.draft, { summary: r.draft.summary, facts: r.draft.facts.join('\n'), languages: r.draft.languages.join('\n'), keywords: r.draft.keywords.join('\n') });
+    renderSetup();
+    if (!r.ok && $('suErr')) $('suErr').textContent = r.error;
+    return;
+  }
+  if (t.hasAttribute('data-susave')) {
+    document.activeElement?.blur();
+    const r = await post('/api/profile/save', draftRe());
+    if (!r.ok && $('suErr')) { $('suErr').textContent = r.error; return; }
+    return load();
+  }
   if (t.dataset.agent) { await post('/api/agent/select', { agent: t.dataset.agent }); return load(); }
   if (t.dataset.launch) { await post('/api/agent/launch', { agent: t.dataset.launch }); return; }
   if (t.dataset.act === 'agent-refresh') { const r = await post('/api/agent/refresh'); if (r.agents) S.agents = r.agents; return render(); }
-  if (t.dataset.task) { $('console').textContent = ''; $('agConsole').textContent = ''; const r = await post('/api/run', { task: t.dataset.task }); if (!r.ok) log(`! ${r.error}`); return; }
+  if (t.dataset.task) { $('console').textContent = ''; $('todayConsole').textContent = ''; const r = await post('/api/run', { task: t.dataset.task }); if (!r.ok) log(`! ${r.error}`); return; }
   if (t.dataset.act === 'quit') { await post('/api/quit'); $('runState').textContent = T.bye; $('dot').classList.remove('on'); es.close(); return; }
   if (t.dataset.act) return post(`/api/${t.dataset.act}`);
   if (t.id === 'langBtn') { LANG = LANG === 'zh' ? 'en' : 'zh'; store('ap-lang', LANG); T = I18N[LANG]; renderNav(); return render(); }
@@ -814,6 +993,8 @@ document.addEventListener('click', async (e) => {
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
 $('q').addEventListener('input', (e) => { S.q = e.target.value; S.limit = 60; renderApps(); });
+$('reviewList').addEventListener('input', (e) => { const { edit, k } = e.target.dataset; if (edit) (S.edits[edit] ||= {})[k] = e.target.value; });
+$('setupSteps').addEventListener('input', (e) => { const { draft } = e.target.dataset; if (draft) S.draft[draft] = e.target.value; });
 window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (v && v !== S.view && T.nav[v]) setView(v); });
 
 const theme = read('ap-theme'); if (theme) document.documentElement.dataset.theme = theme;
@@ -828,8 +1009,8 @@ es.addEventListener('log', (m) => log(JSON.parse(m.data).text));
 es.addEventListener('task', (m) => {
   const d = JSON.parse(m.data);
   if (d.state === 'start') { S.running = d.task; log(`$ ${d.task}`); }
-  else { S.running = null; $('runState').textContent = T.done(d.task, d.code); $('agState').dataset.done = T.done(d.task, d.code); load(); }
-  renderNav(); if (S.view === 'tools') renderTools(); if (S.view === 'agents') renderAgents();
+  else { S.running = null; $('runState').textContent = T.done(d.task, d.code); load(); }
+  renderNav(); if (S.view === 'tools') renderTools(); if (S.view === 'agents') renderAgents(); if (S.view === 'today') renderToday();
 });
 setInterval(load, 60000);
 const initial = location.hash.slice(1);

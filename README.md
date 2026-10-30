@@ -96,9 +96,9 @@ apply-pilot home                                 # show the folder and where it 
 apply-pilot home ~/job-search --init             # save it as the default, create it if empty / 设为默认，空目录则新建
 ```
 
-The control panel runs scans, the follow-up check, the setup check, imports and the Excel export, with live output. It only runs local tasks: nothing in it sends email or submits applications. It listens on 127.0.0.1 and accepts requests only with a per-run token from its own page.
+The control panel runs today's work, scans, the follow-up check, the setup check, imports and the Excel export, with live output. Nothing in it sends email or submits applications. It listens on 127.0.0.1 and accepts requests only with a per-run token from its own page.
 
-控制面板可以一键运行扫描、待跟进检查、自检、导入和 Excel 导出，并实时显示输出。它只跑本地任务，不会发邮件，也不会提交申请；只监听本机，并且只接受带有本次运行令牌的请求。
+控制面板可以一键运行今日工作、扫描、待跟进检查、自检、导入和 Excel 导出，并实时显示输出。它不会发邮件，也不会提交申请；只监听本机，并且只接受带有本次运行令牌的请求。
 
 ### Track and score · 记录与打分
 
@@ -118,7 +118,8 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 |---|---|---|
 | `init`, `doctor` | create and check the data folder | 创建、检查数据目录 |
 | `ui`, `shortcut` | live dashboard and control panel; desktop launcher (Windows `.lnk`, macOS `.command`, Linux `.desktop`) | 实时看板和控制面板；桌面双击图标 |
-| `agent` | choose the AI agent to pair with: Claude Code, Codex CLI, DeepSeek | 选择搭配的 AI 助手 |
+| `agent` | choose and test the AI agent: Claude Code, Codex CLI, DeepSeek | 选择并测试搭配的 AI 助手 |
+| `today`, `review` | scan, evaluate and draft in one run; decide what comes back | 一次完成扫描、评估和起草；审核结果 |
 | `import PATH` | read an existing database from a file or folder; preview first, `--write` appends new rows only | 从文件或文件夹读取已有数据；先预览，`--write` 只追加新行 |
 | `add`, `status`, `note`, `list` | the tracker `data/applications.md`, with duplicate detection | 申请表，自动查重 |
 | `followups` | rows due a follow-up, split by email and portal | 该跟进的申请，按邮件 / 招聘系统分组 |
@@ -166,9 +167,9 @@ Windows 10/11、macOS、Linux 都能用（Node 20 以上），CI 在三个系统
 
 ## AI agents · AI 助手
 
-The panel's AI page pairs Apply-Pilot with Claude Code, Codex or DeepSeek. It can open the agent in a terminal on your data folder, or run two delegated tasks (evaluate new postings, draft follow-ups) that only write to `output/`. From the command line: `apply-pilot agent claude|codex|deepseek`.
+Choose Claude Code, Codex or DeepSeek once on the panel's AI page and pass the connection test. No prompts are needed after that: the Today page scans, evaluates postings and drafts follow-ups, and every result waits in a review queue for your decision. The AI runs without tools and only returns text, so Apply-Pilot does all reading and writing. Follow-ups are never sent for you: copy one or open it in your mail app, then log it. From the command line: `apply-pilot agent claude|codex|deepseek --test`, `apply-pilot today`, `apply-pilot review`.
 
-控制面板的「AI 助手」页可以选择搭配 Claude Code、Codex 或 DeepSeek：在终端中打开它（工作目录就是数据目录），或代跑「评估新岗位」「起草跟进邮件」两项任务，结果只写到 `output/`。命令行：`apply-pilot agent claude|codex|deepseek`。
+在控制面板的「AI 助手」页选好 Claude Code、Codex 或 DeepSeek，并通过连接测试，之后就不用再写提示词：「今日工作」页会扫描岗位、评估匹配度、起草跟进，所有结果都先进入审核队列，由你决定。AI 没有任何工具，只返回文字，读写文件都由 Apply-Pilot 完成。跟进邮件不会替你发送：你可以复制或在邮件软件中打开，发完再记录。命令行：`apply-pilot agent claude|codex|deepseek --test`、`apply-pilot today`、`apply-pilot review`。
 
 - [INSTALL_FOR_AI.md](INSTALL_FOR_AI.md): step-by-step setup for an agent / 给 agent 的分步安装指引
 - [AGENTS.md](AGENTS.md): rules for every agent / 所有 agent 必须遵守的规则

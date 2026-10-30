@@ -7,3 +7,6 @@ export { followUpStatus, dueFollowUps, channelOf } from './followups.mjs';
 export { lintText, STOCK_PHRASES } from './lint.mjs';
 export { buildDocx, readParagraphs, listParagraphs } from './docx.mjs';
 export { triage } from './triage.mjs';
+export { askAgent, askJson, testAgent, classifyFailure } from './worker.mjs';
+export { ReviewQueue, applyDecision } from './review.mjs';
+export { runToday, setupState } from './daily.mjs';

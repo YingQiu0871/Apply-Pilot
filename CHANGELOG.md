@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.0 — 2026-10-30
+
+Apply-Pilot now runs the daily work itself. You choose an AI once, then press one button and decide what comes back.
+
+**Today page**
+- New first page with "Start today's work": scan, evaluate pending postings, draft due email follow-ups. Limits are in `profile.daily` (default 10 evaluations and 5 drafts per run).
+- First-run steps on the same page: choose an AI and pass a connection test, paste your CV, then check and confirm the experience, languages and search terms the AI lists. Search terms become a keyless Euraxess source if you have no sources yet. The old `profile.json` is kept as a backup.
+- Review queue (`data/review.json`): nothing reaches the tracker until you decide. Add an evaluation to the tracker or ignore it. Edit a follow-up, copy it or open it in your mail app, then log it as sent. Pages Apply-Pilot cannot read are listed once for you to open.
+- New commands: `today`, `review`, `agent --test`.
+
+**AI connection**
+- Test connection on the AI page, with a clear message for sign-in, quota and network problems.
+- Enter the DeepSeek key on the AI page. It is stored in `.env` in the data folder.
+
+**Safety**
+- Background AI work now runs without tools. It starts in an empty temporary folder and gets one prompt through stdin. Claude Code runs with its tools off, Codex in its read-only sandbox, and DeepSeek is a plain API call. Apply-Pilot does the reading, fetching and writing itself.
+- Answers are checked before they enter the queue. Forbidden claims are refused, also after you edit a draft. Companies and links come from the scan, and a recipient is kept only if it appears in your own notes.
+
+**Changed**
+- The old agent tasks that wrote to `output/` are gone. opencode is no longer used for background work; the DeepSeek agent now needs `DEEPSEEK_API_KEY`. Opening an agent in a terminal works as before.
+
 ## 0.3.3 — 2026-10-30
 
 - Follow-ups: audit notes and bracketed tags such as `[mailbox audit 2026-10-29]` no longer reset the days of silence, so these applications are not hidden from the follow-up list.

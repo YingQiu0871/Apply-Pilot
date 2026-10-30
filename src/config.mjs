@@ -15,6 +15,7 @@ export const DEFAULTS = {
   filters: { excludeCompanies: [], excludeKeywords: [], requireKeywords: [] },
   writing: { bannedPhrases: [], forbiddenClaims: [], maxSemicolons: 0 },
   sources: {},
+  daily: { evaluate: 10, followups: 5 },
 };
 
 /** Per-user settings (not personal data): which data directory to use. */
@@ -70,6 +71,17 @@ export function loadEnv(home = homeDir()) {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
     if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
   }
+}
+
+/** Save one KEY=VALUE line in APPLY_PILOT_HOME/.env and use it from now on. */
+export function saveEnv(home, name, value) {
+  const file = join(home, '.env');
+  const lines = existsSync(file) ? readFileSync(file, 'utf8').split(/\r?\n/).filter((l, i, all) => l || i < all.length - 1) : [];
+  const at = lines.findIndex((l) => l.match(/^\s*([A-Z0-9_]+)\s*=/)?.[1] === name);
+  if (at >= 0) lines[at] = `${name}=${value}`; else lines.push(`${name}=${value}`);
+  mkdirSync(home, { recursive: true });
+  writeFileSync(file, `${lines.join('\n')}\n`);
+  process.env[name] = value;
 }
 
 export function loadProfile(home = homeDir()) {

@@ -2,24 +2,30 @@
 // pushes a reload event (server-sent events) when the tracker file changes, and
 // runs a fixed list of local tasks (scans, checks, exports) on request.
 //
-// The panel can only start the tasks in TASKS below. None of them sends email,
-// submits a form or writes to an external site. Requests must carry the
-// per-run token and come from this host, so other web pages cannot trigger them.
+// The panel can only start the tasks in TASKS below and today's work. None of them
+// sends email, submits a form or writes to an external site. Requests must carry
+// the per-run token and come from this host, so other web pages cannot trigger them.
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, watch } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homeSource, loadProfile, localDate, paths as pathsOf, saveHome } from '../config.mjs';
-import { initHome, inspectHome, suggestedHome } from '../home.mjs';
+import { homeSource, loadEnv, loadProfile, localDate, paths as pathsOf, saveEnv, saveHome } from '../config.mjs';
+import { initHome, inspectHome, suggestedHome, updateProfile } from '../home.mjs';
 import { channelOf, followUpStatus } from '../followups.mjs';
 import { stageOf } from '../events.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
-import { AGENT_TASKS, detectAgents, launchInteractive, readAgent, saveAgent, taskCommand } from '../agents.mjs';
+import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readAgentState, saveAgent } from '../agents.mjs';
+import { profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
+import { ReviewQueue, applyDecision, reviewFile } from '../review.mjs';
+import { askAgent, askJson, testAgent } from '../worker.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI = resolve(HERE, '..', '..', 'bin', 'apply-pilot.mjs');
+
+// Steps of "today's work" the panel can start.
+const WORK = { today: ['scan', 'evaluate', 'followups'], evaluate: ['evaluate'], drafts: ['followups'] };
 
 const TASKS = {
   doctor: { label: 'doctor', args: () => ['doctor'] },
@@ -67,6 +73,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   const push = (event, payload) => { for (const res of clients) res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`); };
   let timer = null;
   const use = (dir) => {
+    loadEnv(dir);
     profile = loadProfile(dir);
     paths = pathsOf(dir, profile);
     trackerFile = paths.tracker;
@@ -75,7 +82,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
     watcher = null;
     if (existsSync(dirname(trackerFile))) {
       watcher = watch(dirname(trackerFile), (_e, name) => {
-        if (name && String(name) !== basename(trackerFile)) return;
+        if (name && ![basename(trackerFile), 'review.json'].includes(String(name))) return;
         clearTimeout(timer);
         timer = setTimeout(() => push('changed', {}), 300);
       });
@@ -99,30 +106,78 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   };
 
   let running = null;
+  let lastRun = null;
   let agents = detectAgents();
-  const runTask = (id) => {
-    if (running) return { ok: false, error: `"${running}" is still running` };
-    let label, cmd, args, shell = false;
-    if (TASKS[id]) {
-      ({ label } = TASKS[id]);
-      cmd = process.execPath; args = [CLI, ...TASKS[id].args(paths)];
-    } else if (AGENT_TASKS[id]) {
-      const agent = readAgent(paths.home);
-      if (!agent) return { ok: false, error: 'choose an AI agent first' };
-      const c = taskCommand(agent, id, { home: paths.home, cli: CLI });
-      if (!c) return { ok: false, error: `${agent} cannot run this task here (install opencode or use Claude/Codex)` };
-      label = `${AGENT_TASKS[id].label} · ${agent}`;
-      ({ cmd, args, shell } = c);
-      if (shell) args = args.map((a) => (/\s/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a));
-    } else return { ok: false, error: 'unknown task' };
-    running = label;
-    push('task', { state: 'start', task: label, at: new Date().toISOString() });
-    const child = spawn(cmd, args, { cwd: paths.home, shell, env: { ...process.env, APPLY_PILOT_HOME: paths.home }, windowsHide: true });
-    child.on('error', (e) => { push('log', { text: `! ${e.message}` }); });
-    const line = (chunk) => String(chunk).split(/\r?\n/).filter(Boolean).forEach((text) => push('log', { text }));
+  const log = (text) => push('log', { text });
+  const cli = (args) => new Promise((done) => {
+    const child = spawn(process.execPath, [CLI, ...args], { cwd: paths.home, env: { ...process.env, APPLY_PILOT_HOME: paths.home }, windowsHide: true });
+    child.on('error', (e) => log(`! ${e.message}`));
+    const line = (chunk) => String(chunk).split(/\r?\n/).filter(Boolean).forEach(log);
     child.stdout.on('data', line);
     child.stderr.on('data', line);
-    child.on('close', (code) => { push('task', { state: 'end', task: label, code }); running = null; });
+    child.on('close', done);
+  });
+  const begin = (label) => { running = label; push('task', { state: 'start', task: label, at: new Date().toISOString() }); };
+  const finish = (label, code) => { running = null; push('task', { state: 'end', task: label, code }); };
+  const runTask = (id) => {
+    if (running) return { ok: false, error: `"${running}" is still running` };
+    if (WORK[id]) {
+      const agent = readAgent(paths.home);
+      if (!agent) return { ok: false, error: 'choose an AI agent first' };
+      begin(id);
+      profile = loadProfile(paths.home);
+      runToday({ home: paths.home, profile, agent, steps: WORK[id], scan: () => cli(['scan', 'all', '--pipeline']), log })
+        .then((res) => { lastRun = { ...res, at: new Date().toISOString() }; finish(id, res.stopped ? 1 : 0); })
+        .catch((e) => { log(`! ${e.message}`); lastRun = { evaluated: 0, drafted: 0, errors: [e.message], stopped: 'other', at: new Date().toISOString() }; finish(id, 1); });
+      return { ok: true };
+    }
+    if (!TASKS[id]) return { ok: false, error: 'unknown task' };
+    const { label } = TASKS[id];
+    begin(label);
+    cli(TASKS[id].args(paths)).then((code) => finish(label, code));
+    return { ok: true };
+  };
+
+  const queue = () => new ReviewQueue(reviewFile(paths.home));
+  const decide = ({ id, action, edits }) => {
+    const res = applyDecision({ queue: queue(), id, action, edits, home: paths.home, profile, trackerFile });
+    push('changed', {});
+    return res;
+  };
+  const testConnection = async ({ agent }) => {
+    if (running) return { ok: false, reason: 'busy', detail: `"${running}" is still running` };
+    begin('connection test');
+    const res = await testAgent(agent);
+    if (res.ok) markVerified(paths.home, agent);
+    finish('connection test', res.ok ? 0 : 1);
+    return res;
+  };
+  const saveKey = ({ agent, key }) => {
+    const name = AGENTS[agent]?.keyEnv;
+    if (!name) throw new Error('this agent has no API key');
+    const value = String(key || '').trim();
+    if (!/^[\x21-\x7e]{8,300}$/.test(value)) throw new Error('that does not look like an API key');
+    saveEnv(paths.home, name, value);
+    agents = detectAgents();
+    return { ok: true };
+  };
+  const draftProfile = async ({ text }) => {
+    const cv = String(text || '').trim();
+    if (cv.length < 200) throw new Error('paste the full text of your CV');
+    const agent = readAgent(paths.home);
+    if (!agent) throw new Error('choose an AI agent first');
+    if (running) throw new Error(`"${running}" is still running`);
+    begin('read CV');
+    try { return { ok: true, draft: await askJson((p) => askAgent(agent, p), profilePrompt(cv), validateProfileDraft) }; }
+    finally { finish('read CV', 0); }
+  };
+  const saveProfile = (body) => {
+    const lines = (v) => (Array.isArray(v) ? v : String(v || '').split(/\r?\n/)).map((s) => String(s).trim()).filter(Boolean);
+    const facts = lines(body.facts);
+    if (!String(body.summary || '').trim() || !facts.length) throw new Error('summary and facts are required');
+    updateProfile(paths.home, { summary: String(body.summary).trim(), facts, languages: lines(body.languages), keywords: lines(body.keywords), cv: body.cv });
+    use(paths.home);
+    push('changed', {});
     return { ok: true };
   };
 
@@ -145,7 +200,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home) }); }
+      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
       catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
@@ -158,16 +213,21 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
     }
     if (pathname.startsWith('/api/') && req.method === 'POST') {
       if (!allowed(req)) return json(res, 403, { ok: false, error: 'forbidden' });
-      const withBody = (fn) => {
+      const withBody = (fn, limit = 1e4) => {
         let body = '';
-        req.on('data', (c) => { body += c; if (body.length > 1e4) req.destroy(); });
-        req.on('end', () => { try { json(res, 200, fn(JSON.parse(body || '{}'))); } catch (e) { json(res, 400, { ok: false, error: e.message || 'bad request' }); } });
+        req.on('data', (c) => { body += c; if (body.length > limit) req.destroy(); });
+        req.on('end', async () => { try { json(res, 200, await fn(JSON.parse(body || '{}'))); } catch (e) { json(res, 400, { ok: false, error: e.message || 'bad request' }); } });
       };
       if (pathname === '/api/run') return withBody((b) => runTask(b.task));
       if (pathname === '/api/home/check') return withBody((b) => ({ ok: true, ...inspectHome(b.path || '') }));
       if (pathname === '/api/home/use') return withBody(useHome);
       if (pathname === '/api/agent/select') return withBody((b) => ({ ok: true, agent: saveAgent(paths.home, b.agent) }));
       if (pathname === '/api/agent/launch') return withBody((b) => ({ ok: launchInteractive(b.agent, { home: paths.home }) }));
+      if (pathname === '/api/agent/test') return withBody(testConnection);
+      if (pathname === '/api/agent/key') return withBody(saveKey);
+      if (pathname === '/api/review/decide') return withBody(decide);
+      if (pathname === '/api/profile/draft') return withBody(draftProfile, 2e5);
+      if (pathname === '/api/profile/save') return withBody(saveProfile, 2e5);
       if (pathname === '/api/import/preview' || pathname === '/api/import/write') {
         let body = '';
         req.on('data', (c) => { body += c; if (body.length > 1e4) req.destroy(); });

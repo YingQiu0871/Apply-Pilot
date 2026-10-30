@@ -37,6 +37,24 @@ export function mergeAdditions(tracker, dir, { dryRun = false } = {}) {
   return res;
 }
 
+/** Unchecked "- [ ] url | company | role | location" lines of data/pipeline.md, oldest first. */
+export function pendingPipeline(file) {
+  if (!existsSync(file)) return [];
+  return readFileSync(file, 'utf8').split(/\r?\n/).filter((l) => /^- \[ \] https?:\/\//.test(l)).map((l) => {
+    const [url, company = '', role = '', location = ''] = l.replace(/^- \[ \] /, '').split(' | ').map((s) => s.trim());
+    return { url, company, role, location };
+  });
+}
+
+/** Tick a posting off, so it is not evaluated again. */
+export function closePipeline(file, url) {
+  if (!existsSync(file)) return false;
+  const text = readFileSync(file, 'utf8');
+  const next = text.split('\n').map((l) => (l.startsWith(`- [ ] ${url} `) || l.trimEnd() === `- [ ] ${url}` ? l.replace('- [ ]', '- [x]') : l)).join('\n');
+  if (next !== text) writeFileSync(file, next);
+  return next !== text;
+}
+
 /** Append scan candidates to data/pipeline.md, skipping URLs already listed there. */
 export function appendPipeline(file, candidates) {
   const existing = existsSync(file) ? readFileSync(file, 'utf8') : '# Pipeline\n\n## Pending\n';

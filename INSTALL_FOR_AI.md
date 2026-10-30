@@ -153,14 +153,14 @@ Supported: `applications.md`, Markdown tables, `.xlsx`, CSV/TSV, JSON, SQLite `.
 ## Step 7: panel, desktop icon, agent
 
 ```bash
-apply-pilot agent claude          # or: codex, deepseek
+apply-pilot agent claude --test   # or: codex, deepseek (put DEEPSEEK_API_KEY in .env first)
 apply-pilot ui --open             # opens http://127.0.0.1:4321
 apply-pilot shortcut              # optional desktop launcher
 ```
 
 The launcher is `Apply-Pilot.lnk` on Windows (starts the panel without a console window), `Apply-Pilot.command` on macOS and `Apply-Pilot.desktop` on Linux.
 
-**Check:** the panel loads and the overview shows the tracker count. `apply-pilot agent` marks the chosen agent with `●`.
+**Check:** the panel loads and the Today page shows no setup steps. `apply-pilot agent` marks the chosen agent with `●`, and the test reports an answer. If it reports a sign-in problem, ask the user to sign in to that agent in a terminal.
 
 If port 4321 is taken, use `apply-pilot ui --port 4322 --open`.
 
@@ -170,7 +170,7 @@ Tell the user, briefly:
 
 - where the data folder is and that it stays private;
 - how to open the panel (icon or `apply-pilot ui --open`);
-- the daily loop: `apply-pilot scan all --pipeline`, review, evaluate, apply, log, `apply-pilot followups`;
+- the daily loop: press "Start today's work" on the Today page (or run `apply-pilot today`), decide what comes back, apply, log;
 - that nothing is ever sent or submitted without their approval.
 
 For Claude Code, also install the skill: copy `skills/apply-pilot/` to `~/.claude/skills/apply-pilot/`. See [docs/harnesses.md](docs/harnesses.md) for Codex and DeepSeek/opencode.

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // apply-pilot command line. Run `apply-pilot help` for the command list.
+import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,7 +49,9 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval score ANSWER.json [--jd JD.txt]  weighted score from the agent's JSON answer
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
   eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
-  agent [claude|codex|deepseek]         show or choose the AI agent the panel pairs with
+  agent [claude|codex|deepseek] [--test]   show or choose the AI agent; --test sends one short request
+  today [--no-scan] [--only evaluate,followups]   scan, evaluate and draft; results wait in the review queue
+  review [approve|reject ID]            list the review queue, or decide one item
   jd URL [--out FILE] [--browser] [--json]   fetch a job description (ATS APIs, page text, optional browser)
   keywords REPORT.md [--cv cv.md] [--json]   which "## Keywords extracted" items your CV covers
   lint FILE...                          plain-writing check for letters and emails
@@ -122,12 +125,46 @@ async function main() {
       break;
     }
     case 'agent': {
-      const { detectAgents, readAgent, saveAgent } = await import('../src/agents.mjs');
+      const { detectAgents, markVerified, readAgent, saveAgent } = await import('../src/agents.mjs');
       if (pos[0]) console.log(`selected ${saveAgent(home, pos[0])}`);
       const sel = readAgent(home);
+      if (opt.test) {
+        if (!sel) throw new Error('choose an agent first');
+        const { testAgent } = await import('../src/worker.mjs');
+        const r = await testAgent(sel);
+        if (r.ok) markVerified(home, sel);
+        console.log(r.ok ? `${sel} answered in ${Math.round(r.ms / 1000)} s` : `${sel} failed (${r.reason}): ${r.detail}`);
+        process.exitCode = r.ok ? 0 : 1;
+      }
       for (const a of Object.values(detectAgents())) {
         console.log(`${a.id === sel ? '●' : '○'} ${a.label.padEnd(12)} ${a.ready ? 'ready' : 'not set up'}${a.cli ? `  cli: ${a.cli}` : ''}${a.apiKey === null ? '' : `  api key: ${a.apiKey ? 'set' : 'missing'}`}`);
       }
+      break;
+    }
+    case 'today': {
+      const { readAgent } = await import('../src/agents.mjs');
+      const { runToday } = await import('../src/daily.mjs');
+      const steps = opt.only ? String(opt.only).split(',') : [...(opt['no-scan'] ? [] : ['scan']), 'evaluate', 'followups'];
+      const scan = () => new Promise((done) => { spawn(process.execPath, [join(PKG, 'bin', 'apply-pilot.mjs'), 'scan', 'all', '--pipeline'], { stdio: 'inherit' }).on('close', done); });
+      const res = await runToday({ home, profile, agent: readAgent(home), steps, scan });
+      console.log(`${res.evaluated} evaluated, ${res.unread} unreadable, ${res.drafted} drafted, ${res.errors.length} problem(s). Review them in the panel or with "apply-pilot review".`);
+      process.exitCode = res.stopped ? 1 : 0;
+      break;
+    }
+    case 'review': {
+      const { ReviewQueue, applyDecision, reviewFile } = await import('../src/review.mjs');
+      const queue = new ReviewQueue(reviewFile(home));
+      if (!pos[0] || pos[0] === 'list') {
+        const open = queue.pending();
+        for (const i of open) console.log(`${i.id}\t${i.type}\t${i.title}`);
+        console.log(`${open.length} waiting`);
+        break;
+      }
+      if (!['approve', 'reject'].includes(pos[0]) || !pos[1]) throw new Error('review [list] | review approve ID | review reject ID');
+      const item = queue.get(pos[1]);
+      if (!item) throw new Error(`no review item ${pos[1]}`);
+      const action = pos[0] === 'reject' ? 'reject' : item.type === 'followup' ? 'sent' : 'approve';
+      console.log(JSON.stringify(applyDecision({ queue, id: pos[1], action, home, profile, trackerFile: p.tracker })));
       break;
     }
     case 'shortcut': {
@@ -200,12 +237,8 @@ async function main() {
       if (sub === 'pipeline') {
         // Evaluate pending "- [ ] url | company | role" lines of data/pipeline.md through a model API.
         const { fetchJd } = await import('../src/jd.mjs');
-        const pipe = join(home, 'data', 'pipeline.md');
-        const pending = existsSync(pipe) ? readFileSync(pipe, 'utf8').split(/\r?\n/).filter((l) => /^- \[ \] https?:\/\//.test(l)) : [];
-        const items = pending.slice(-Number(opt.limit || 10)).reverse().map((l) => {
-          const [url, company = '', role = ''] = l.replace(/^- \[ \] /, '').split(' | ').map((s) => s.trim());
-          return { url, company, role };
-        });
+        const { pendingPipeline } = await import('../src/additions.mjs');
+        const items = pendingPipeline(join(home, 'data', 'pipeline.md')).slice(-Number(opt.limit || 10)).reverse();
         const results = [];
         for (const it of items) {
           try {
