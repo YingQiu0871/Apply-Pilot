@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2 — 2026-10-30
+
+- AI page: cards keep their layout when you choose an AI or run a test. Status labels have their own row, the result has a reserved place, and a long error is folded under "Details".
+- A failed dsh start now shows the missing module first.
+
 ## 0.4.1 — 2026-10-30
 
 - DeepSeek Harness (`dsh`) is a new AI choice. It uses your signed-in Harness, so no separate API key is needed.

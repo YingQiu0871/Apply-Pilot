@@ -115,8 +115,14 @@ async function runCli(agent, text, timeoutMs) {
     child.on('error', (e) => done(reject, failure('missing', e.message)));
     child.on('close', (code) => {
       if (late) return done(reject, failure('timeout', `no answer after ${Math.round(timeoutMs / 1000)} s`));
-      // dsh streams its reasoning to stderr, so the error is at the end.
-      if (code !== 0) { const detail = (err.trim() || out.trim() || `exit code ${code}`).slice(-400); return done(reject, failure(classifyFailure(detail), detail)); }
+      // dsh streams its reasoning to stderr, so the error is at the end. A Node
+      // module error names the module near the start and a stack after it.
+      if (code !== 0) {
+        const raw = err.trim() || out.trim() || `exit code ${code}`;
+        const cause = raw.match(/^.*Cannot find .*$/m)?.[0].trim();
+        const detail = `${cause ? `${cause}\n` : ''}${raw.slice(cause ? -200 : -400)}`;
+        return done(reject, failure(classifyFailure(detail), detail));
+      }
       let answer = out;
       if (agent === 'codex') { try { answer = readFileSync(outFile, 'utf8'); } catch { /* fall back to stdout */ } }
       done(resolve, answer);
