@@ -301,7 +301,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 
     <section class="view" data-view="today">
       <div class="page-head"><div><h1 data-t="todayTitle"></h1><p id="todaySub"></p></div>
-        <div class="work"><button class="btn primary" data-task="today" id="todayBtn" data-t="todayStart"></button><button class="btn" data-task="evaluate" data-t="todayEval"></button><button class="btn" data-task="drafts" data-t="todayDraft"></button></div></div>
+        <div class="work"><button class="btn primary" data-task="today" id="todayBtn" data-t="todayStart"></button><button class="btn" data-task="evaluate" data-t="todayEval"></button><button class="btn" data-task="drafts" data-t="todayDraft"></button><button class="btn" data-task="letters" data-t="todayLetters"></button></div></div>
       <div class="card" id="setupCard" style="margin-bottom:16px"><div class="card-h"><h2 data-t="suTitle"></h2></div><div class="card-b" id="setupSteps"></div></div>
       <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-t="runTitle"></h2><div class="status-line"><span class="spin" id="todaySpin"></span><span id="todayState"></span></div></div>
         <div class="card-b"><pre class="console" id="todayConsole"></pre></div></div>
@@ -400,12 +400,12 @@ const I18N = {
     agSafe: '后台工作时，AI 只收到提示词并返回文字，不能操作你的文件，也不能发送或提交任何东西。Key 明文保存在数据目录的 .env 里，不要把这个文件发给别人。',
     agTest: '测试连接', agDetail: '查看详情', agTesting: '测试中…', agOk: (n) => `连接正常（${n} 秒）`, agFail: { login: '未登录或 key 无效。请先在终端登录，或重新填写 key', quota: '额度不足或请求太频繁', network: '网络连接失败', missing: '没有找到这个 AI，请先安装', timeout: '等待超时', invalid: '收到了回答，但格式不对', busy: '有任务正在运行，稍后再试', other: '调用失败' },
     agKeyPh: '粘贴 DeepSeek API key', agKeySave: '保存', agKeySaved: 'Key 已保存',
-    todayTitle: '今日工作', todayStart: '开始今天的工作', todayEval: '只评估岗位', todayDraft: '只起草跟进',
+    todayTitle: '今日工作', todayStart: '开始今天的工作', todayEval: '只评估岗位', todayDraft: '只起草跟进', todayLetters: '只起草求职信',
     todaySub: (n) => (n ? `有 ${n} 项等你确认。AI 不会发送或提交任何东西。` : '扫描新岗位、评估匹配度、起草跟进，结果都会先交给你确认。'),
     suTitle: '开始之前', suAgent: '选择搭配的 AI', suAgentDo: '选一个 AI 并通过连接测试', suGo: '去选择', suProfile: '整理你的经历', suProfileDo: '粘贴 CV 全文，AI 会整理出经历和搜索词。这份 CV 会发给你选的 AI 服务。之后的评估和跟进只使用你确认过的内容，请逐条核对。',
     suCv: 'CV 全文', suRead: '让 AI 读取', suReading: '读取中…', suSummary: '目标（两三句话）', suFacts: '可以证明的经历（每行一条）', suLangs: '语言（每行一条）', suKeywords: '搜索词（每行一条）', suSave: '确认并保存', suSaved: '已保存',
     runTitle: '运行情况', runSum: (e, d, n, u) => `上次运行：评估 ${e} 个岗位，起草 ${d} 封跟进，${u} 个页面读不到，${n} 个问题`, runStopped: { login: 'AI 未登录或 key 无效，已停止', quota: 'AI 额度不足，已停止', network: '网络失败，已停止', missing: '没有找到 AI，已停止', other: '运行失败' },
-    rvUnread: '需要你打开的岗位', rvUnreadWhy: '软件读不到这个页面的岗位描述。打开看一下，合适就手动记录。', rvEmpty: '没有等待确认的内容', rvEval: '待确认的岗位评估', rvFollow: '待确认的跟进邮件', rvAdd: '加入申请表', rvSkip: '忽略', rvOpen: '打开岗位', rvDims: '评分明细', rvGaps: '短板', rvFilter: '命中过滤条件：',
+    rvUnread: '需要你打开的岗位', rvUnreadWhy: '软件读不到这个页面的岗位描述。打开看一下，合适就手动记录。', rvEmpty: '没有等待确认的内容', rvEval: '待确认的岗位评估', rvFollow: '待确认的跟进邮件', rvLetters: '待确认的求职信', rvLetterSave: '保存为文档', rvLetterSaved: (f, pdf) => `求职信已保存到 ${f}${pdf ? '' : '（没有生成 PDF：需要 Word 或 LibreOffice）'}`, rvAdd: '加入申请表', rvSkip: '忽略', rvOpen: '打开岗位', rvDims: '评分明细', rvGaps: '短板', rvFilter: '命中过滤条件：',
     rvTo: '收件人', rvToNone: '备注里没有找到邮箱，请手动填写', rvSubject: '主题', rvBody: '正文', rvCopy: '复制正文', rvCopied: '已复制', rvMail: '在邮件中打开', rvSent: '我已发送，记入时间线', rvDrop: '不发', rvIssues: '写作检查：',
     overviewTitle: '概览', needAction: '需要你处理', thisWeek: '最近 7 天', seeAll: '查看全部',
     appsTitle: '申请', appsSub: '点任意一行查看详情和完整时间线', fuTitle: '待跟进', actTitle: '动态', actSub: '从申请表备注里提取的带日期事件',
@@ -430,7 +430,7 @@ const I18N = {
       doctor: ['自检', '检查环境、配置和申请表'],
       export: ['导出 Excel', '生成一份新的申请表 Excel'],
     },
-    work: { today: '今天的工作', evaluate: '评估岗位', drafts: '起草跟进', 'read CV': '读取 CV', 'connection test': '连接测试' },
+    work: { today: '今天的工作', evaluate: '评估岗位', drafts: '起草跟进', letters: '起草求职信', 'read CV': '读取 CV', 'connection test': '连接测试' },
     run: '运行', running: (t) => `正在运行：${t}`, done: (t, c) => `${t} 已结束（退出码 ${c}）`, idle: '空闲',
     inbox: '最近的扫描文件：', bye: '已退出，可以关闭这个页面。',
     days: (n) => `近 ${n} 天`, ago: (n) => (n <= 0 ? '今天' : `${n} 天前`), quiet: (n) => `${n} 天没动静`, count: (n) => `${n} 条`, all: '全部',
@@ -447,12 +447,12 @@ const I18N = {
     agSafe: 'During background work the AI only receives a prompt and returns text. It cannot touch your files, send or submit anything. Keys are stored as plain text in .env in your data folder, so do not share that file.',
     agTest: 'Test connection', agDetail: 'Details', agTesting: 'Testing…', agOk: (n) => `Connected (${n} s)`, agFail: { login: 'Not signed in or the key is invalid. Sign in from a terminal, or enter the key again', quota: 'Out of quota or too many requests', network: 'Network error', missing: 'This AI was not found. Install it first', timeout: 'Timed out', invalid: 'It answered, but not in the expected format', busy: 'A task is running. Try again shortly', other: 'The call failed' },
     agKeyPh: 'Paste your DeepSeek API key', agKeySave: 'Save', agKeySaved: 'Key saved',
-    todayTitle: 'Today', todayStart: "Start today's work", todayEval: 'Evaluate only', todayDraft: 'Draft follow-ups only',
+    todayTitle: 'Today', todayStart: "Start today's work", todayEval: 'Evaluate only', todayDraft: 'Draft follow-ups only', todayLetters: 'Draft letters only',
     todaySub: (n) => (n ? `${n} item(s) wait for your decision. The AI never sends or submits anything.` : 'Scan new postings, evaluate them and draft follow-ups. Everything waits for your decision.'),
     suTitle: 'Before you start', suAgent: 'Choose your AI', suAgentDo: 'Pick an AI and pass the connection test', suGo: 'Choose', suProfile: 'Set out your experience', suProfileDo: 'Paste your full CV and the AI will list your experience and search terms. The CV goes to the AI service you chose. Evaluations and follow-ups only use what you confirm here, so check every line.',
     suCv: 'Full CV text', suRead: 'Let the AI read it', suReading: 'Reading…', suSummary: 'Your target (two or three sentences)', suFacts: 'Experience you can prove (one per line)', suLangs: 'Languages (one per line)', suKeywords: 'Search terms (one per line)', suSave: 'Confirm and save', suSaved: 'Saved',
     runTitle: 'Run', runSum: (e, d, n, u) => `Last run: ${e} evaluated, ${d} drafted, ${u} unreadable, ${n} problem(s)`, runStopped: { login: 'Stopped: AI not signed in or the key is invalid', quota: 'Stopped: AI quota used up', network: 'Stopped: network error', missing: 'Stopped: AI not found', other: 'The run failed' },
-    rvUnread: 'Postings to open yourself', rvUnreadWhy: 'Apply-Pilot could not read this page. Open it, and log it by hand if it fits.', rvEmpty: 'Nothing waits for your decision', rvEval: 'Evaluations to review', rvFollow: 'Follow-ups to review', rvAdd: 'Add to tracker', rvSkip: 'Ignore', rvOpen: 'Open posting', rvDims: 'Score details', rvGaps: 'Gaps', rvFilter: 'Hit a filter: ',
+    rvUnread: 'Postings to open yourself', rvUnreadWhy: 'Apply-Pilot could not read this page. Open it, and log it by hand if it fits.', rvEmpty: 'Nothing waits for your decision', rvEval: 'Evaluations to review', rvLetters: 'Cover letters to review', rvLetterSave: 'Save as documents', rvLetterSaved: (f, pdf) => `Letter saved in ${f}${pdf ? '' : ' (no PDF: this needs Word or LibreOffice)'}`, rvFollow: 'Follow-ups to review', rvAdd: 'Add to tracker', rvSkip: 'Ignore', rvOpen: 'Open posting', rvDims: 'Score details', rvGaps: 'Gaps', rvFilter: 'Hit a filter: ',
     rvTo: 'To', rvToNone: 'No address in the notes. Enter it yourself', rvSubject: 'Subject', rvBody: 'Body', rvCopy: 'Copy body', rvCopied: 'Copied', rvMail: 'Open in mail app', rvSent: 'I sent it, log it', rvDrop: 'Do not send', rvIssues: 'Writing check: ',
     overviewTitle: 'Overview', needAction: 'Needs your attention', thisWeek: 'Last 7 days', seeAll: 'See all',
     appsTitle: 'Applications', appsSub: 'Click a row for details and the full timeline', fuTitle: 'Follow-ups', actTitle: 'Activity', actSub: 'Dated events taken from the tracker notes',
@@ -477,7 +477,7 @@ const I18N = {
       doctor: ['Check setup', 'Environment, profile and tracker'],
       export: ['Export Excel', 'A fresh spreadsheet of the tracker'],
     },
-    work: { today: "today's work", evaluate: 'evaluation', drafts: 'drafting', 'read CV': 'reading CV', 'connection test': 'connection test' },
+    work: { today: "today's work", evaluate: 'evaluation', drafts: 'drafting', letters: 'drafting letters', 'read CV': 'reading CV', 'connection test': 'connection test' },
     run: 'Run', running: (t) => `Running: ${t}`, done: (t, c) => `${t} finished (exit ${c})`, idle: 'Idle',
     inbox: 'Latest scan files:', bye: 'Stopped. You can close this page.',
     days: (n) => `${n} days`, ago: (n) => (n <= 0 ? 'today' : `${n} d ago`), quiet: (n) => `${n} days quiet`, count: (n) => `${n}`, all: 'All',
@@ -758,6 +758,16 @@ function unreadCard(i) {
     <div class="acts"><a class="btn primary" href="${esc(e.url)}" target="_blank" rel="noopener">${T.rvOpen} ↗</a><button class="btn" data-review="reject" data-id="${i.id}">${T.rvSkip}</button></div></div>`;
 }
 
+function letterCard(i) {
+  const d = { ...i.payload, ...S.edits[i.id] };
+  const issues = (i.payload.issues || []).map((x) => x.detail || x.rule);
+  return `<div class="card rv"><div class="rv-head"><div class="grow"><div class="t1">#${d.num} ${esc(d.company)}</div><div class="t2">${esc(d.role)}</div></div></div>
+    <div style="margin-top:12px"><label class="field">${T.rvBody}<textarea data-edit="${i.id}" data-k="body" style="min-height:300px">${esc(d.body)}</textarea></label></div>
+    ${issues.length ? `<div class="warn-line">${T.rvIssues}${esc(issues.join(' · '))}</div>` : ''}
+    ${rvErr(i.id)}
+    <div class="acts"><button class="btn primary" data-review="save" data-id="${i.id}">${T.rvLetterSave}</button><button class="btn" data-rvcopy="${i.id}">${T.rvCopy}</button><a class="btn" href="${esc(d.url)}" target="_blank" rel="noopener">${T.rvOpen} ↗</a><button class="btn" data-review="reject" data-id="${i.id}">${T.rvSkip}</button></div></div>`;
+}
+
 function followCard(i) {
   const d = { ...i.payload, ...S.edits[i.id] };
   const issues = (i.payload.issues || []).map((x) => x.detail || x.rule);
@@ -790,14 +800,15 @@ function renderToday() {
   document.querySelectorAll('.work [data-task]').forEach((b) => { b.disabled = blocked; });
   $('todaySpin').classList.toggle('on', Boolean(S.running));
   const last = S.lastRun;
-  $('todayState').textContent = S.running ? T.running(T.work[S.running] || S.running) : last ? (last.stopped ? T.runStopped[last.stopped] || T.runStopped.other : T.runSum(last.evaluated, last.drafted, last.errors.length, last.unread || 0)) : T.idle;
+  $('todayState').textContent = S.running ? T.running(T.work[S.running] || S.running) : last ? (last.stopped ? T.runStopped[last.stopped] || T.runStopped.other : T.runSum(last.evaluated, last.drafted + (last.letters || 0), last.errors.length, last.unread || 0)) : T.idle;
   renderSetup();
   if (document.activeElement?.closest?.('#reviewList')) return;
   const evals = S.review.filter((i) => i.type === 'evaluation').sort((a, b) => b.payload.score100 - a.payload.score100);
   const fus = S.review.filter((i) => i.type === 'followup');
+  const letters = S.review.filter((i) => i.type === 'letter');
   const unread = S.review.filter((i) => i.type === 'unread');
   const group = (title, list, card) => (list.length ? `<h2 style="font-size:14px;margin:18px 0 10px">${title} · ${list.length}</h2>${list.map(card).join('')}` : '');
-  $('reviewList').innerHTML = S.review.length ? group(T.rvEval, evals, evalCard) + group(T.rvFollow, fus, followCard) + group(T.rvUnread, unread, unreadCard) : `<div class="card"><div class="empty">${T.rvEmpty}</div></div>`;
+  $('reviewList').innerHTML = S.review.length ? group(T.rvEval, evals, evalCard) + group(T.rvFollow, fus, followCard) + group(T.rvLetters, letters, letterCard) + group(T.rvUnread, unread, unreadCard) : `<div class="card"><div class="empty">${T.rvEmpty}</div></div>`;
 }
 
 function renderTools() {
@@ -945,6 +956,7 @@ document.addEventListener('click', async (e) => {
     const r = await post('/api/review/decide', { id, action: t.dataset.review, edits: S.edits[id] });
     if (!r.ok) { S.rvErr[id] = r.error; renderToday(); return; }
     delete S.edits[id]; delete S.rvErr[id];
+    if (r.folder) log(T.rvLetterSaved(r.folder, r.pdf));
     return load();
   }
   if (t.dataset.rvcopy) {

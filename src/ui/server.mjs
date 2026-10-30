@@ -18,6 +18,7 @@ import { stageOf } from '../events.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
 import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readAgentState, saveAgent } from '../agents.mjs';
 import { profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
+import { saveLetter } from '../letters.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../review.mjs';
 import { askAgent, askJson, testAgent } from '../worker.mjs';
 
@@ -25,7 +26,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI = resolve(HERE, '..', '..', 'bin', 'apply-pilot.mjs');
 
 // Steps of "today's work" the panel can start.
-const WORK = { today: ['scan', 'evaluate', 'followups'], evaluate: ['evaluate'], drafts: ['followups'] };
+const WORK = { today: ['scan', 'evaluate', 'followups', 'letters'], evaluate: ['evaluate'], drafts: ['followups'], letters: ['letters'] };
 
 const TASKS = {
   doctor: { label: 'doctor', args: () => ['doctor'] },
@@ -139,8 +140,10 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   };
 
   const queue = () => new ReviewQueue(reviewFile(paths.home));
-  const decide = ({ id, action, edits }) => {
-    const res = applyDecision({ queue: queue(), id, action, edits, home: paths.home, profile, trackerFile });
+  const decide = async ({ id, action, edits }) => {
+    const res = action === 'save'
+      ? await saveLetter({ queue: queue(), id, edits, home: paths.home, profile, output: paths.output, trackerFile })
+      : applyDecision({ queue: queue(), id, action, edits, home: paths.home, profile, trackerFile });
     push('changed', {});
     return res;
   };

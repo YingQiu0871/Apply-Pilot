@@ -34,7 +34,7 @@ scan ──► triage ──► evaluate ──► (user decides) ──► tail
 | Follow up | `apply-pilot followups` | rules in `profile.followUp`, so drafts only, sending needs approval |
 | Review | `apply-pilot ui` | http://localhost:4321 |
 | Run the day | `apply-pilot today` | scans, evaluates and drafts through the chosen agent; results wait in `data/review.json` |
-| Decide | `apply-pilot review`, `review approve ID`, `review reject ID` | for a follow-up, approve means the user has already sent it |
+| Decide | `apply-pilot review`, `review approve ID`, `review reject ID` | for a follow-up, approve means the user has already sent it; for a letter, approve saves its files under `output/letters/` |
 
 ## Writing letters and emails
 

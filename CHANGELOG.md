@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — 2026-10-30
+
+- Cover letters: today's work drafts one for each tracked application with status Evaluated and a score at or above the Apply threshold (default 80/100), up to `profile.daily.letters` per run (default 3).
+- Letters wait in the review queue. Edit one on the Today page, then save it. Saving writes `Cover_Letter.txt`, `.docx` and, with Word or LibreOffice, `.pdf` to a new folder under `output/letters/`, and logs it in the tracker. Nothing is sent and the status does not change.
+- Answers are checked: forbidden claims and square-bracket placeholders are refused, also after you edit. Stock phrases and other writing issues are shown on the card.
+- Optional `writing.letterTemplate` (`{ "file": "...", "first": 3, "last": 16 }`) fills your own .docx template, keeping its photo and styles. `writing.letterLanguage` sets the language (default English).
+- New: `today --only letters`, and `review approve ID` saves a letter.
+
 ## 0.4.2 — 2026-10-30
 
 - AI page: cards keep their layout when you choose an AI or run a test. Status labels have their own row, the result has a reserved place, and a long error is folded under "Details".

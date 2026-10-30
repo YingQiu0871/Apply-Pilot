@@ -68,6 +68,24 @@ export async function readParagraphs(file) {
   return listParagraphs(await zip.file('word/document.xml').async('string'));
 }
 
+const PLAIN = {
+  '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+  '_rels/.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+};
+
+/** A plain A4 document, for users without their own template. */
+export async function plainDocx(targetPath, paragraphs) {
+  const run = '<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri" w:eastAsia="Microsoft YaHei"/><w:sz w:val="22"/></w:rPr>';
+  const body = paragraphs.map((p) => {
+    const lines = String(p).split('\n').map((l) => `<w:t xml:space="preserve">${encode(l)}</w:t>`).join('<w:br/>');
+    return `<w:p><w:pPr><w:spacing w:after="200" w:line="276" w:lineRule="auto"/></w:pPr><w:r>${run}${lines}</w:r></w:p>`;
+  }).join('');
+  const zip = new JSZip();
+  for (const [name, xml] of Object.entries(PLAIN)) zip.file(name, xml);
+  zip.file('word/document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1418" w:right="1418" w:bottom="1418" w:left="1418" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`);
+  writeFileSync(targetPath, await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
+}
+
 /** Build target from template; verifies untouched parts and returns the template sha256. */
 export async function buildDocx(templatePath, targetPath, changes) {
   const original = readFileSync(templatePath);

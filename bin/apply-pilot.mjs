@@ -50,7 +50,7 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
   eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
   agent [claude|codex|deepseek|dsh] [--test]   show or choose the AI agent; --test sends one short request
-  today [--no-scan] [--only evaluate,followups]   scan, evaluate and draft; results wait in the review queue
+  today [--no-scan] [--only evaluate,followups,letters]   scan, evaluate and draft; results wait in the review queue
   review [approve|reject ID]            list the review queue, or decide one item
   jd URL [--out FILE] [--browser] [--json]   fetch a job description (ATS APIs, page text, optional browser)
   keywords REPORT.md [--cv cv.md] [--json]   which "## Keywords extracted" items your CV covers
@@ -144,10 +144,10 @@ async function main() {
     case 'today': {
       const { readAgent } = await import('../src/agents.mjs');
       const { runToday } = await import('../src/daily.mjs');
-      const steps = opt.only ? String(opt.only).split(',') : [...(opt['no-scan'] ? [] : ['scan']), 'evaluate', 'followups'];
+      const steps = opt.only ? String(opt.only).split(',') : [...(opt['no-scan'] ? [] : ['scan']), 'evaluate', 'followups', 'letters'];
       const scan = () => new Promise((done) => { spawn(process.execPath, [join(PKG, 'bin', 'apply-pilot.mjs'), 'scan', 'all', '--pipeline'], { stdio: 'inherit' }).on('close', done); });
       const res = await runToday({ home, profile, agent: readAgent(home), steps, scan });
-      console.log(`${res.evaluated} evaluated, ${res.unread} unreadable, ${res.drafted} drafted, ${res.errors.length} problem(s). Review them in the panel or with "apply-pilot review".`);
+      console.log(`${res.evaluated} evaluated, ${res.unread} unreadable, ${res.drafted} follow-ups and ${res.letters} letters drafted, ${res.errors.length} problem(s). Review them in the panel or with "apply-pilot review".`);
       process.exitCode = res.stopped ? 1 : 0;
       break;
     }
@@ -163,6 +163,11 @@ async function main() {
       if (!['approve', 'reject'].includes(pos[0]) || !pos[1]) throw new Error('review [list] | review approve ID | review reject ID');
       const item = queue.get(pos[1]);
       if (!item) throw new Error(`no review item ${pos[1]}`);
+      if (item.type === 'letter' && pos[0] === 'approve') {
+        const { saveLetter } = await import('../src/letters.mjs');
+        console.log(JSON.stringify(await saveLetter({ queue, id: pos[1], home, profile, output: p.output, trackerFile: p.tracker })));
+        break;
+      }
       const action = pos[0] === 'reject' ? 'reject' : item.type === 'followup' ? 'sent' : 'approve';
       console.log(JSON.stringify(applyDecision({ queue, id: pos[1], action, home, profile, trackerFile: p.tracker })));
       break;

@@ -1,7 +1,7 @@
 {
   "name": "apply-pilot",
-  "version": "0.4.2",
-  "description": "A local, agent-agnostic job and internship application pipeline: scan, deduplicate, score, track, follow up, and review letters. Works with Claude Code, Codex, DeepSeek and any OpenAI-compatible model.",
+  "version": "0.5.0",
+  "description": "A local, agent-agnostic job and internship application pipeline: scan, deduplicate, score, track, follow up, draft and review letters. Works with Claude Code, Codex, DeepSeek and any OpenAI-compatible model.",
   "type": "module",
   "bin": {
     "apply-pilot": "bin/apply-pilot.mjs"

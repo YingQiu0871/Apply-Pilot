@@ -73,7 +73,7 @@ export function applyDecision({ queue, id, action, edits = {}, home, profile, tr
   const pipelineFile = join(home, 'data', 'pipeline.md');
   let result = {};
   if (action === 'reject') {
-    if (item.type !== 'followup') closePipeline(pipelineFile, item.payload.url);
+    if (!['followup', 'letter'].includes(item.type)) closePipeline(pipelineFile, item.payload.url);
   } else if (item.type === 'evaluation' && action === 'approve') {
     result = approveEvaluation(item, { trackerFile, pipelineFile, today });
   } else if (item.type === 'followup' && action === 'sent') {

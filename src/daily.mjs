@@ -1,4 +1,5 @@
-// "Start today's work": scan, evaluate pending postings, draft due follow-ups.
+// "Start today's work": scan, evaluate pending postings, draft due follow-ups and
+// cover letters for high-scoring applications.
 // Apply-Pilot fetches and checks; the AI only judges and writes, and every result
 // goes to the review queue. A failed item stays pending and is tried on the next run.
 import { join } from 'node:path';
@@ -7,6 +8,7 @@ import { localDate, paths as pathsOf } from './config.mjs';
 import { buildPrompt, finishEvaluation } from './evaluate.mjs';
 import { dueFollowUps } from './followups.mjs';
 import { fetchJd } from './jd.mjs';
+import { letterCandidates, letterPrompt, validateLetter } from './letters.mjs';
 import { lintText } from './lint.mjs';
 import { ReviewQueue, reviewFile } from './review.mjs';
 import { Tracker, findDuplicates, normalizeUrl } from './tracker.mjs';
@@ -15,6 +17,7 @@ import { askAgent, askJson, classifyFailure } from './worker.mjs';
 const text = (v, max) => String(v ?? '').trim().slice(0, max);
 const list = (v, count, max) => (Array.isArray(v) ? v.map((x) => text(x, max)).filter(Boolean).slice(0, count) : []);
 
+const STOP = ['login', 'quota', 'missing', 'network'];
 const PLACEHOLDER = /\breplace (with|this)\b|^these are the only/i;
 
 /** What a new user still has to do before the first run. */
@@ -108,7 +111,7 @@ async function evaluateStep({ profile, queue, tracker, pipelineFile, ask, fetch,
     } catch (e) {
       res.errors.push(`${it.company} | ${it.role}: ${e.message}`);
       log(`! ${label}: ${e.message}`);
-      if (['login', 'quota', 'missing', 'network'].includes(e.reason)) { res.stopped = e.reason; return; }
+      if (STOP.includes(e.reason)) { res.stopped = e.reason; return; }
     }
   }
 }
@@ -128,16 +131,48 @@ async function followupStep({ profile, queue, tracker, ask, log, limit, res, tod
     } catch (e) {
       res.errors.push(`#${row.num} ${row.company}: ${e.message}`);
       log(`! ${label}: ${e.message}`);
-      if (['login', 'quota', 'missing', 'network'].includes(e.reason)) { res.stopped = e.reason; return; }
+      if (STOP.includes(e.reason)) { res.stopped = e.reason; return; }
     }
   }
 }
 
-/** steps: any of scan, evaluate, followups. `scan` runs the scanners and returns an exit code. */
-export async function runToday({ home, profile, agent, steps = ['scan', 'evaluate', 'followups'], scan, log = console.log, today = localDate(), ask, fetch = fetchJd }) {
-  const res = { evaluated: 0, unread: 0, drafted: 0, errors: [], stopped: null };
+async function letterStep({ profile, queue, tracker, ask, fetch, log, limit, res }) {
+  const open = letterCandidates(tracker.rows(), profile, queue);
+  const items = open.slice(0, limit);
+  log(`letters: ${items.length} of ${open.length} waiting`);
+  for (const [i, row] of items.entries()) {
+    const label = `${i + 1}/${items.length} #${row.num} ${row.company}`;
+    try {
+      let jd;
+      try {
+        jd = await fetch(row.url);
+        if (jd.text.length < 200) throw new Error('the page has no readable job description');
+      } catch (e) {
+        if (classifyFailure(e.message) === 'network') throw Object.assign(e, { reason: 'network' });
+        queue.add({ type: 'unread', key: `letter:${row.num}`, title: `${row.company} | ${row.role}`, payload: { url: row.url, company: row.company, role: row.role, reason: e.message } });
+        queue.save();
+        res.unread += 1;
+        log(`${label}: no readable page, left for you to open`);
+        continue;
+      }
+      const payload = await askJson(ask, letterPrompt(profile, row, jd.text), validateLetter(profile, row));
+      queue.add({ type: 'letter', key: `letter:${row.num}`, title: `${row.company} | ${row.role}`, payload });
+      queue.save();
+      res.letters += 1;
+      log(`${label}: letter drafted`);
+    } catch (e) {
+      res.errors.push(`#${row.num} ${row.company}: ${e.message}`);
+      log(`! ${label}: ${e.message}`);
+      if (STOP.includes(e.reason)) { res.stopped = e.reason; return; }
+    }
+  }
+}
+
+/** steps: any of scan, evaluate, followups, letters. `scan` runs the scanners and returns an exit code. */
+export async function runToday({ home, profile, agent, steps = ['scan', 'evaluate', 'followups', 'letters'], scan, log = console.log, today = localDate(), ask, fetch = fetchJd }) {
+  const res = { evaluated: 0, unread: 0, drafted: 0, letters: 0, errors: [], stopped: null };
   const p = pathsOf(home, profile);
-  const useAi = steps.includes('evaluate') || steps.includes('followups');
+  const useAi = ['evaluate', 'followups', 'letters'].some((s) => steps.includes(s));
   if (useAi && !agent) throw new Error('choose an AI agent first');
   if (steps.includes('scan')) {
     log('scan: all sources');
@@ -149,5 +184,6 @@ export async function runToday({ home, profile, agent, steps = ['scan', 'evaluat
   const shared = { profile, queue: new ReviewQueue(reviewFile(home)), tracker: new Tracker(p.tracker), ask: worker, log, res, today };
   if (steps.includes('evaluate')) await evaluateStep({ ...shared, pipelineFile: join(home, 'data', 'pipeline.md'), fetch, limit: profile.daily.evaluate });
   if (steps.includes('followups') && !res.stopped) await followupStep({ ...shared, limit: profile.daily.followups });
+  if (steps.includes('letters') && !res.stopped) await letterStep({ ...shared, fetch, limit: profile.daily.letters });
   return res;
 }
