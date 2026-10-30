@@ -60,7 +60,7 @@ jobs:
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Apply-Pilot ${GITHUB_REF_NAME#v}" --notes "See CHANGELOG.md."
           gh release upload "$GITHUB_REF_NAME" dist/*.msi --clobber
   mac:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
