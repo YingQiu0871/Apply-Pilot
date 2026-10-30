@@ -4,6 +4,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { localDate } from './config.mjs';
+import { EVENT_TYPES, eventType, scheduledFor } from './events.mjs';
 
 export const HEADER = '| # | Date | Company | Role | Score | Status | PDF | Report | Notes | URL |';
 const RULE = '|---|------|---------|------|-------|--------|-----|--------|-------|-----|';
@@ -139,26 +140,19 @@ export function findDuplicates(rows, candidate, threshold = 0.7) {
   });
 }
 
-/** Rough event type from a note fragment; order matters. */
-export function eventKind(text) {
-  if (/reject|not retained|non retenue|not selected|regret|already filled|has been filled|unable to offer|not .{0,20}moving forward|拒|未录用/i.test(text)) return 'rejected';
-  if (/\binterview|entretien|面试|\bvisio\b/i.test(text)) return 'interview';
-  if (/follow-?up|relancer|\breminder|check-in|跟进/i.test(text)) return 'followup';
-  if (/\b(replied|replies)\b|\basked\b|\bresponded\b|回信|回复了|收到.{0,40}回复/i.test(text)) return 'reply';
-  if (/submit|applied|\bsent\b|scheduled|emailed|投递|发送|已发/i.test(text)) return 'sent';
-  return 'note';
-}
-
 /** Dated fragments of the notes cell, ignoring future dates such as start dates. */
 export function events(row, today = localDate()) {
   const out = [];
-  // An event starts at a date at the beginning of the cell or after "; ", "。" or ". ";
-  // dates inside a sentence ("scheduled for 2026-10-30") stay part of the text.
-  const re = /(?:^|[;。]\s*|\.\s+)(20\d\d-\d\d-\d\d)(?:[ T]\d\d:\d\d)?[:\s]+([^]*?)(?=(?:[;。]\s*|\.\s+)20\d\d-\d\d-\d\d|$)/g;
+  // An event starts at a date at the beginning of the cell or after "; ", "。" or ". ",
+  // optionally labelled "Note:"; dates inside a sentence ("scheduled for 2026-10-30")
+  // stay part of the text.
+  const re = /(?:^|[;。]\s*|\.\s+)(?:Note:\s*)?(20\d\d-\d\d-\d\d)(?:[ T](\d\d:\d\d))?[:\s]+([^]*?)(?=(?:[;。]\s*|\.\s+)(?:Note:\s*)?20\d\d-\d\d-\d\d|$)/g;
   for (const m of String(row.notes || '').matchAll(re)) {
     if (m[1] > today) continue;
-    const text = m[2].trim().replace(/^[:;,\s]+/, '').slice(0, 240);
-    if (text) out.push({ date: m[1], kind: eventKind(text), text });
+    const text = m[3].replace(/[;.。]?\s*Link:\s.*$/i, '').trim().replace(/^[:;,\s]+/, '');
+    if (!text) continue;
+    const type = eventType(text);
+    out.push({ date: m[1], time: m[2] || null, kind: EVENT_TYPES[type], type, sendAt: scheduledFor(text), text });
   }
   return out;
 }

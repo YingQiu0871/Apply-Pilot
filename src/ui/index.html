@@ -11,6 +11,7 @@
   --accent: #3b6cf0; --accent-soft: #e8eefd; --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
   --applied: #3b6cf0; --responded: #12875e; --interview: #7c4ddb; --rejected: #c4431b; --evaluated: #9a7a00; --skip: #98a1ae; --warn: #b8560b;
   --applied-bg: #e8eefd; --responded-bg: #e3f5ec; --interview-bg: #efe8fb; --rejected-bg: #fbeae4; --evaluated-bg: #f8f1d8; --skip-bg: #eef0f3; --warn-bg: #fdf0e3;
+  --offer: #c2378a; --offer-bg: #fbe8f3; --c-sent: #3b6cf0; --c-followup: #c77a0a; --c-reply: #12875e; --c-interview: #7c4ddb; --c-offer: #c2378a; --c-rejected: #c4431b; --c-note: #98a1ae;
   --radius: 12px;
 }
 @media (prefers-color-scheme: dark) {
@@ -19,6 +20,7 @@
     --accent: #7aa2ff; --accent-soft: #1f2a44; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
     --applied: #7aa2ff; --responded: #4cd39a; --interview: #b597ff; --rejected: #ff8c66; --evaluated: #e8cc5a; --skip: #7d8696; --warn: #ffb35c;
     --applied-bg: #1f2a44; --responded-bg: #173528; --interview-bg: #2a2244; --rejected-bg: #3a2119; --evaluated-bg: #353016; --skip-bg: #232831; --warn-bg: #3a2a14;
+    --c-sent: #5f86ea; --c-followup: #c98424; --c-reply: #2ba574; --c-interview: #9478e6; --c-offer: #d95fa0; --c-rejected: #df6c2e; --c-note: #6e7786; --offer: #f08ac4; --offer-bg: #3a1f30;
   }
 }
 :root[data-theme="dark"] {
@@ -26,6 +28,7 @@
   --accent: #7aa2ff; --accent-soft: #1f2a44; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
   --applied: #7aa2ff; --responded: #4cd39a; --interview: #b597ff; --rejected: #ff8c66; --evaluated: #e8cc5a; --skip: #7d8696; --warn: #ffb35c;
   --applied-bg: #1f2a44; --responded-bg: #173528; --interview-bg: #2a2244; --rejected-bg: #3a2119; --evaluated-bg: #353016; --skip-bg: #232831; --warn-bg: #3a2a14;
+  --c-sent: #5f86ea; --c-followup: #c98424; --c-reply: #2ba574; --c-interview: #9478e6; --c-offer: #d95fa0; --c-rejected: #df6c2e; --c-note: #6e7786; --offer: #f08ac4; --offer-bg: #3a1f30;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -72,7 +75,9 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .kpi:hover { border-color: var(--accent); transform: translateY(-1px); }
 .kpi .n { font-size: 28px; font-weight: 680; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .kpi .l { color: var(--muted); font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
-.kpi .l i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.kpi .l i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.kpi .l .bi small { display: block; margin-left: 0; }
+.kpi .sub { margin-top: 6px; color: var(--faint); font-size: 11.5px; line-height: 1.5; }
 .two { grid-template-columns: 1.3fr 1fr; }
 
 /* lists */
@@ -90,16 +95,21 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .s-Applied { color: var(--applied); background: var(--applied-bg); }
 .s-Responded { color: var(--responded); background: var(--responded-bg); }
-.s-Interview, .s-Offer { color: var(--interview); background: var(--interview-bg); }
+.s-Interview { color: var(--interview); background: var(--interview-bg); }
+.s-Offer { color: var(--offer); background: var(--offer-bg); }
 .s-Rejected { color: var(--rejected); background: var(--rejected-bg); }
 .s-Evaluated { color: var(--evaluated); background: var(--evaluated-bg); }
 .s-SKIP, .s-Discarded { color: var(--skip); background: var(--skip-bg); }
 .k-rejected { color: var(--rejected); background: var(--rejected-bg); }
-.k-reply { color: var(--responded); background: var(--responded-bg); }
+.k-reply, .k-ack { color: var(--responded); background: var(--responded-bg); }
+.k-offer { color: var(--offer); background: var(--offer-bg); }
 .k-interview { color: var(--interview); background: var(--interview-bg); }
 .k-followup { color: var(--warn); background: var(--warn-bg); }
 .k-sent { color: var(--applied); background: var(--applied-bg); }
 .k-note { color: var(--skip); background: var(--skip-bg); }
+.bi small { font-size: .92em; font-weight: 500; opacity: .72; margin-left: 5px; }
+.stage { margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+.stage .bi small { margin-left: 4px; }
 
 /* toolbar */
 .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--line); }
@@ -112,7 +122,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 
 /* table */
 .table { width: 100%; }
-.tr { display: grid; grid-template-columns: 56px minmax(0, 1.1fr) minmax(0, 1.6fr) 64px 104px 108px; gap: 14px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); cursor: pointer; }
+.tr { display: grid; grid-template-columns: 56px minmax(0, 1.1fr) minmax(0, 1.6fr) 64px 150px 108px; gap: 14px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); cursor: pointer; }
 .tr:hover { background: var(--surface-2); }
 .tr.head { cursor: default; color: var(--faint); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; background: none; border-top: 0; padding-top: 10px; padding-bottom: 8px; }
 .tr .num { color: var(--faint); font-variant-numeric: tabular-nums; }
@@ -124,9 +134,70 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .more { padding: 14px; text-align: center; }
 
 /* timeline */
-.day { padding: 14px 18px 4px; font-size: 12px; font-weight: 620; color: var(--muted); }
-.ev { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 9px 18px; cursor: pointer; align-items: baseline; }
-.ev:hover { background: var(--surface-2); }
+.day { padding: 14px 18px 6px; font-size: 12px; font-weight: 620; color: var(--muted); }
+.ev-list { padding: 0 18px 8px; }
+.ev { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+.ev.dated { grid-template-columns: 46px 26px minmax(0, 1fr); }
+.ev[data-open] { cursor: pointer; }
+.ev[data-open]:hover .ev-title { color: var(--accent); }
+.ev-when { padding-top: 3px; text-align: right; font-size: 11.5px; line-height: 1.4; color: var(--faint); font-variant-numeric: tabular-nums; }
+.ev-when b { display: block; color: var(--muted); font-weight: 600; }
+.ev-node { position: relative; display: flex; justify-content: center; }
+.ev-node::before { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: var(--line); }
+.ev:first-child .ev-node::before { top: 13px; }
+.ev:last-child .ev-node::before { bottom: calc(100% - 13px); }
+.ev-gap .ev-node::before { background: repeating-linear-gradient(var(--line) 0 4px, transparent 4px 8px); }
+.ev-dot { position: relative; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--g); border: 1.5px solid var(--g); background: color-mix(in srgb, var(--g) 16%, var(--surface)); }
+.ev-dot svg { width: 13px; height: 13px; }
+.g-ack .ev-dot { border-style: dashed; background: var(--surface); }
+.g-note .ev-dot { background: var(--surface); }
+.g-sent { --g: var(--c-sent); } .g-followup { --g: var(--c-followup); } .g-reply, .g-ack { --g: var(--c-reply); } .g-interview { --g: var(--c-interview); } .g-offer { --g: var(--c-offer); } .g-rejected { --g: var(--c-rejected); } .g-note { --g: var(--c-note); }
+.ev-body { min-width: 0; padding: 2px 0 14px; }
+.ev-title { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-weight: 600; font-size: 13px; line-height: 22px; }
+.ev-co { color: var(--muted); font-weight: 500; overflow-wrap: anywhere; }
+.chip { font-size: 11px; font-weight: 500; line-height: 16px; padding: 0 6px; border-radius: 5px; color: var(--muted); background: var(--surface-2); white-space: nowrap; }
+.ev-text { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+.ev-text.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ev-more { border: 0; background: none; padding: 0; color: var(--accent); font-size: 12px; cursor: pointer; }
+.ev-gap { min-height: 26px; align-items: center; }
+.ev-gap .ev-body { padding: 0; font-size: 11.5px; color: var(--faint); }
+
+/* progress steps */
+.steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 4px 0 18px; }
+.step { position: relative; text-align: center; font-size: 11.5px; color: var(--faint); line-height: 1.35; }
+.step::before { content: ''; position: absolute; top: 7px; left: -50%; width: 100%; height: 2px; background: var(--line); }
+.step:first-child::before { display: none; }
+.step i { position: relative; display: block; width: 16px; height: 16px; margin: 0 auto 6px; border-radius: 50%; background: var(--surface); border: 2px solid var(--line); }
+.step.on { color: var(--text); font-weight: 600; }
+.step.on::before { background: var(--c-sent); }
+.step.on i { background: var(--c-sent); border-color: var(--c-sent); }
+.step.bad i { background: var(--c-rejected); border-color: var(--c-rejected); }
+.step.good i { background: var(--c-offer); border-color: var(--c-offer); }
+.step.off i { background: var(--c-note); border-color: var(--c-note); }
+.step small { display: block; font-weight: 400; color: var(--muted); }
+.step .date { color: var(--faint); font-weight: 400; font-variant-numeric: tabular-nums; }
+.d-body details { margin-top: 14px; }
+.d-body summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+.d-body details .notes { margin-top: 8px; }
+
+/* activity chart */
+.chart { position: relative; padding: 14px 18px 12px; border-bottom: 1px solid var(--line); }
+.chart h2 { margin: 0 0 12px; font-size: 13px; font-weight: 620; }
+.plot { position: relative; height: 132px; display: flex; align-items: stretch; gap: 2px; border-bottom: 1px solid var(--line); }
+.plot .grid-line { position: absolute; left: 0; right: 0; top: 0; border-top: 1px dashed var(--line); }
+.plot .grid-max { position: absolute; top: 2px; left: 0; font-size: 11px; color: var(--faint); background: var(--surface); padding-right: 4px; font-variant-numeric: tabular-nums; }
+.col { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column-reverse; align-items: center; gap: 2px; cursor: pointer; border-radius: 4px 4px 0 0; }
+.col:hover, .col.on { background: var(--surface-2); }
+.col .seg-bar { width: min(100%, 26px); flex: none; }
+.col .seg-bar:last-child { border-radius: 4px 4px 0 0; }
+.seg-bar.dim { opacity: .22; }
+.axis { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.tip { position: absolute; z-index: 5; pointer-events: none; display: none; min-width: 132px; padding: 8px 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0, 0, 0, .18); font-size: 12px; }
+.tip b { display: block; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.tip div { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.tip div span { margin-left: auto; padding-left: 12px; color: var(--text); font-variant-numeric: tabular-nums; }
+.swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; display: inline-block; background: var(--g); }
+.g-ack .swatch { background: none; border: 1.5px dashed var(--g); }
 
 /* buttons */
 .btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 7px 13px; cursor: pointer; font-size: 13px; font-weight: 560; }
@@ -158,8 +229,8 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 /* drawer */
 .scrim { position: fixed; inset: 0; background: rgba(10, 14, 20, .35); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
 .scrim.on { opacity: 1; pointer-events: auto; }
-.drawer { position: fixed; top: 0; right: 0; height: 100vh; width: min(520px, 100vw); background: var(--surface); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgba(0, 0, 0, .12); transform: translateX(100%); transition: transform .22s ease; z-index: 21; display: flex; flex-direction: column; }
-.drawer.on { transform: none; }
+.drawer { position: fixed; top: 0; right: 0; height: 100vh; width: min(560px, 100vw); background: var(--surface); border-left: 1px solid var(--line); transform: translateX(100%); transition: transform .22s ease; z-index: 21; display: flex; flex-direction: column; }
+.drawer.on { transform: none; box-shadow: -8px 0 24px rgba(0, 0, 0, .12); }
 .d-head { padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
 .d-head .x { float: right; border: 0; background: var(--surface-2); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 16px; color: var(--muted); }
 .d-head h3 { margin: 0 0 4px; font-size: 17px; padding-right: 40px; }
@@ -167,10 +238,6 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .d-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
 .d-body { padding: 16px 22px 28px; overflow: auto; }
 .d-body h4 { margin: 14px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
-.tl { border-left: 2px solid var(--line); margin-left: 4px; padding-left: 14px; }
-.tl .e { position: relative; padding: 0 0 12px; }
-.tl .e::before { content: ''; position: absolute; left: -20px; top: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
-.tl .e .d { font-size: 12px; color: var(--faint); }
 .notes { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; color: var(--muted); background: var(--surface-2); padding: 10px 12px; border-radius: 8px; }
 .err { display: none; padding: 10px 14px; border-radius: 9px; background: var(--rejected-bg); color: var(--rejected); margin-bottom: 14px; }
 
@@ -180,6 +247,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
   .side { position: sticky; top: 0; height: auto; flex-direction: row; align-items: center; overflow-x: auto; padding: 8px 12px; z-index: 10; border-right: 0; border-bottom: 1px solid var(--line); gap: 2px; }
   .brand { padding: 0 10px 0 0; }
   .brand span, .side-foot { display: none; }
+  #navs { display: flex; gap: 2px; }
   .nav { width: auto; white-space: nowrap; }
   main { padding: 18px 16px 48px; }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -219,6 +287,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
           <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search"></label>
           <div class="seg" id="filters"></div>
           <span class="count" id="count"></span>
+          <div class="seg" id="stages" style="flex-basis:100%;display:none"></div>
         </div>
         <div class="table" id="table"></div>
       </div>
@@ -232,7 +301,8 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
     <section class="view" data-view="activity">
       <div class="page-head"><div><h1 data-t="actTitle"></h1><p data-t="actSub"></p></div></div>
       <div class="card">
-        <div class="toolbar"><div class="seg" id="periods"></div><div class="seg" id="kinds"></div></div>
+        <div class="toolbar"><div class="seg" id="periods"></div><div class="seg" id="kinds"></div><div class="seg" id="evTypes" style="flex-basis:100%;display:none"></div></div>
+        <div class="chart" id="actChart"></div>
         <div id="timeline"></div>
       </div>
     </section>
@@ -304,8 +374,6 @@ const I18N = {
     toolsTitle: '工具', toolsSub: '只运行本地任务：扫描、检查、导出。不会发送或提交任何东西。', output: '运行输出', openData: '打开数据文件夹', quit: '退出',
     k: { applied: '已投递，等待中', reply: '有回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒' },
     f: { active: '进行中', applied: '已投递', reply: '回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒', all: '全部' },
-    status: { Applied: '已投递', Responded: '有回复', Interview: '面试', Offer: 'Offer', Rejected: '被拒', Evaluated: '待决定', SKIP: '跳过', Discarded: '已关闭' },
-    kind: { rejected: '被拒', interview: '面试', reply: '回复', followup: '跟进', sent: '投递/发出', note: '记录' },
     channel: { email: '邮件联系', portal: '招聘系统', unknown: '渠道不明' },
     head: ['#', '公司 / 联系人', '岗位', '评分', '状态', '最近动态'],
     tasks: {
@@ -324,7 +392,7 @@ const I18N = {
     empty: '没有符合条件的申请', emptyFeed: '这段时间没有动态', emptyAction: '暂时没有要处理的事', more: (n) => `显示更多（还有 ${n} 条）`,
     search: '搜索公司、岗位、联系人或备注…', rows: '行', updated: '更新于', connecting: '连接中…',
     fuSub: (d, n) => `已投递或有回复、${d} 天以上没有新记录的申请，共 ${n} 条。只是提醒，发不发由你决定。`,
-    overviewSub: (n, a) => `共 ${n} 条记录，其中 ${a} 条正在进行`, open: '打开岗位页面', timeline: '时间线', notes: '完整备注', score: '评分', added: '记录日期', theme: '主题', lang: 'EN',
+    overviewSub: (n, a) => `共 ${n} 条记录，其中 ${a} 条正在进行`, open: '打开岗位页面', timeline: '时间线', notes: '完整备注', score: '评分', added: '记录日期', theme: '主题', lang: 'EN', expand: '展开', collapse: '收起', scheduled: '定时', chartEmpty: '这段时间没有对外动态',
   },
   en: {
     nav: { overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', tools: 'Tools' },
@@ -344,8 +412,6 @@ const I18N = {
     toolsTitle: 'Tools', toolsSub: 'Runs local tasks only: scans, checks, export. Nothing is sent or submitted.', output: 'Output', openData: 'Open data folder', quit: 'Quit',
     k: { applied: 'Applied, waiting', reply: 'Replies / interviews', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
     f: { active: 'Active', applied: 'Applied', reply: 'Replies', follow: 'Follow-up', pending: 'To decide', rejected: 'Rejected', all: 'All' },
-    status: { Applied: 'Applied', Responded: 'Responded', Interview: 'Interview', Offer: 'Offer', Rejected: 'Rejected', Evaluated: 'To decide', SKIP: 'Skipped', Discarded: 'Closed' },
-    kind: { rejected: 'Rejected', interview: 'Interview', reply: 'Reply', followup: 'Follow-up', sent: 'Sent', note: 'Note' },
     channel: { email: 'By email', portal: 'Through a portal', unknown: 'Channel unknown' },
     head: ['#', 'Company / contact', 'Role', 'Score', 'Status', 'Last activity'],
     tasks: {
@@ -364,10 +430,36 @@ const I18N = {
     empty: 'No matching applications', emptyFeed: 'Nothing in this period', emptyAction: 'Nothing needs you right now', more: (n) => `Show more (${n} left)`,
     search: 'Search company, role, contact or notes…', rows: 'rows', updated: 'updated', connecting: 'connecting…',
     fuSub: (d, n) => `${n} applications that are applied or answered and have had no new entry for ${d}+ days. A reminder only; you decide what to send.`,
-    overviewSub: (n, a) => `${n} records, ${a} active`, open: 'Open posting', timeline: 'Timeline', notes: 'Full notes', score: 'Score', added: 'Added', theme: 'Theme', lang: '中文',
+    overviewSub: (n, a) => `${n} records, ${a} active`, open: 'Open posting', timeline: 'Timeline', notes: 'Full notes', score: 'Score', added: 'Added', theme: 'Theme', lang: '中文', expand: 'More', collapse: 'Less', scheduled: 'Scheduled', chartEmpty: 'No outward activity in this period',
   },
 };
 let T = I18N[LANG === 'zh' ? 'zh' : 'en'];
+
+// Category names are always shown in both languages: [Chinese, English].
+const BI = {
+  kind: { sent: ['发出', 'Sent'], followup: ['跟进', 'Follow-up'], ack: ['回执', 'Receipt'], reply: ['回复', 'Reply'], interview: ['面试', 'Interview'], offer: ['录用', 'Offer'], rejected: ['被拒', 'Rejected'], note: ['记录', 'Note'] },
+  type: {
+    applied: ['投递', 'Application'], outreach: ['主动联系', 'Outreach'], materials: ['补交材料', 'Documents sent'], response: ['我方回复', 'My reply'],
+    followup: ['跟进', 'Follow-up'], ack: ['收件确认', 'Acknowledged'], autoreply: ['自动回复', 'Auto-reply'],
+    positive: ['积极回复', 'Positive reply'], request: ['索要材料', 'Asked for more'], pending: ['对方审阅中', 'Under review'], reply: ['回复', 'Reply'],
+    invite: ['面试邀请', 'Interview invite'], held: ['面试完成', 'Interview held'], offer: ['录用', 'Offer'],
+    filled: ['名额已满', 'Position filled'], afterinterview: ['面试后被拒', 'Rejected after interview'], rejected: ['被拒', 'Rejected'],
+    prep: ['准备', 'Preparation'], evaluation: ['评估', 'Evaluation'], audit: ['核查', 'Audit'], note: ['记录', 'Note'],
+  },
+  status: { Applied: ['已投递', 'Applied'], Responded: ['有回复', 'Responded'], Interview: ['面试', 'Interview'], Offer: ['录用', 'Offer'], Rejected: ['被拒', 'Rejected'], Evaluated: ['待决定', 'To decide'], SKIP: ['跳过', 'Skipped'], Discarded: ['已关闭', 'Closed'] },
+  stage: {
+    ready: ['材料已备', 'Materials ready'], recommended: ['建议投递', 'Recommended'], consider: ['可考虑', 'Consider'], weak: ['匹配偏弱', 'Weak fit'], unscored: ['未评分', 'Not scored'],
+    queued: ['定时待发', 'Queued'], followedup: ['已跟进', 'Followed up'], acknowledged: ['已收回执', 'Acknowledged'], byemail: ['邮件投递', 'By email'], outreached: ['主动联系', 'Outreach'], byportal: ['招聘系统', 'Via portal'], channelunknown: ['渠道不明', 'Channel unknown'],
+    meeting: ['约见面谈', 'Meeting'], positive: ['有意向', 'Positive'], request: ['索要材料', 'Asked for more'], pending: ['对方审阅中', 'Under review'], answered: ['已答复', 'Answered'],
+    interviewupcoming: ['待面试', 'Upcoming'], interviewdone: ['已面试', 'Done'],
+    afterinterview: ['面试后被拒', 'After interview'], filled: ['名额已满', 'Position filled'], closed: ['其他拒绝', 'Other rejection'],
+  },
+  step: [['评估', 'Evaluated'], ['投递', 'Applied'], ['回复', 'Reply'], ['面试', 'Interview'], ['结果', 'Outcome']],
+  ui: { timeline: ['时间线', 'Timeline'], chart: ['每日动态', 'Daily activity'], allStages: ['全部', 'All'] },
+};
+const pick = (pair) => pair[LANG === 'zh' ? 0 : 1];
+const bi = (pair) => { const [a, b] = LANG === 'zh' ? pair : [pair[1], pair[0]]; return `<span class="bi">${esc(a)}<small>${esc(b)}</small></span>`; };
+const both = (key, id) => [I18N.zh[key][id], I18N.en[key][id]];
 
 const ICONS = {
   overview: '<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v8h8V3zM3 21h8v-6H3z"/>',
@@ -377,13 +469,25 @@ const ICONS = {
   agents: '<rect x="6" y="7" width="12" height="11" rx="2"/><path d="M12 3v4M9.5 12h.01M14.5 12h.01M10 15h4"/>',
   tools: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.8-.7-.7-2.8z"/>',
 };
+const X_ICON = '<path d="M6 6l12 12M18 6 6 18"/>';
+const STAR_ICON = '<path d="m12 3 2.7 5.8 6.3.8-4.6 4.4 1.2 6.3L12 17l-5.6 3 1.2-6.3L3 9.6l6.3-.8z"/>';
+const EVENT_ICONS = {
+  applied: '<path d="M4 12 20 4l-6 16-3-7z"/>', outreach: '<path d="M4 10v4l12 5V5zM16 9a3 3 0 0 1 0 6"/>',
+  materials: '<path d="M20 11l-8.5 8.5a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/>', response: '<path d="M9 7 4 12l5 5M4 12h11a5 5 0 0 1 5 5v2"/>',
+  followup: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/>', ack: '<path d="M5 12.5 10 17l9-10"/>', autoreply: '<path d="M5 12.5 10 17l9-10"/>',
+  positive: STAR_ICON, request: '<path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.2-1.5 2.4M12 18h.01"/>', pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', reply: '<path d="M4 5h16v11H9l-5 4z"/>',
+  invite: '<path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/>', held: '<path d="M3 7h12v10H3zM15 11l6-3v8l-6-3"/>', offer: STAR_ICON,
+  filled: X_ICON, afterinterview: X_ICON, rejected: X_ICON,
+  prep: '<path d="M6 3h9l4 4v14H6zM14 3v5h5"/>', evaluation: '<path d="M5 20V10M12 20V4M19 20v-7"/>', audit: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>', note: '<path d="M5 7h14M5 12h14M5 17h9"/>',
+};
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const today = () => new Date(new Date().toLocaleDateString('sv-SE'));
 const days = (d) => Math.round((today() - new Date(d)) / 86400000);
-const pill = (s) => `<span class="pill s-${esc(s)}">${T.status[s] || esc(s)}</span>`;
-const kpill = (k) => `<span class="pill k-${k}">${T.kind[k]}</span>`;
+const pill = (s) => `<span class="pill s-${esc(s)}">${BI.status[s] ? bi(BI.status[s]) : esc(s)}</span>`;
+const tpill = (e) => `<span class="pill k-${e.kind}">${bi(BI.type[e.type])}</span>`;
+const stageTag = (r) => (r.stage ? `<div class="stage">${bi(BI.stage[r.stage])}</div>` : '');
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 
@@ -397,8 +501,40 @@ const FILTERS = {
   all: () => true,
 };
 const KPI_COLORS = { applied: 'var(--applied)', reply: 'var(--responded)', follow: 'var(--warn)', pending: 'var(--evaluated)', rejected: 'var(--rejected)' };
+const CHART_KINDS = ['sent', 'followup', 'reply', 'interview', 'offer', 'rejected'];
+const chartKind = (k) => (k === 'ack' ? 'reply' : k);
 
-const S = { rows: [], view: read('ap-view') || 'overview', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', followDays: 14, running: null, inbox: [] };
+// One event on a rail, shared by the drawer and the Activity page.
+function evRow(e, { row = null, company = false, id = '' } = {}) {
+  const long = !row && e.text.length > 220;
+  const when = row ? '' : `<div class="ev-when"><b>${e.date.slice(5)}</b>${e.time || e.date.slice(0, 4)}</div>`;
+  const send = e.sendAt ? `<span class="chip">${T.scheduled} ${esc(e.sendAt.slice(5))}</span>` : '';
+  const who = company ? `<span class="ev-co">#${row.num} ${esc(row.company)}</span>` : '';
+  return `<div class="ev ${row ? '' : 'dated'} g-${e.kind}" ${row ? `data-open="${row.num}"` : ''}>${when}
+    <div class="ev-node"><span class="ev-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${EVENT_ICONS[e.type]}</svg></span></div>
+    <div class="ev-body"><div class="ev-title">${bi(BI.type[e.type])}${send}${who}</div>
+      <div class="ev-text ${long || row ? 'clamp' : ''}" id="${id}">${esc(e.text)}</div>
+      ${long ? `<button class="ev-more" data-expand="${id}">${T.expand}</button>` : ''}</div></div>`;
+}
+
+// Five steps of one application, each dated by its first event.
+function stepsOf(r) {
+  const first = (...kinds) => r.events.find((e) => kinds.includes(e.kind))?.date;
+  const rank = { Applied: 1, Responded: 2, Interview: 3, Offer: 4, Rejected: 4 }[r.status] || 0;
+  const sent = first('sent'), reply = first('reply'), talk = first('interview');
+  const end = r.events.findLast((e) => ['rejected', 'offer'].includes(e.kind))?.date;
+  const closed = ['SKIP', 'Discarded'].includes(r.status);
+  const steps = [
+    { on: true, date: r.date },
+    { on: rank >= 1 || Boolean(sent), date: sent },
+    { on: rank >= 2 || Boolean(reply), date: reply },
+    { on: rank === 3 || Boolean(talk) || r.status === 'Offer', date: talk },
+    { on: rank === 4 || closed, date: end, cls: r.status === 'Rejected' ? 'bad' : r.status === 'Offer' ? 'good' : closed ? 'off' : '' },
+  ];
+  return `<div class="steps">${steps.map((s, i) => `<div class="step ${s.on ? 'on' : ''} ${s.cls || ''}"><i></i>${pick(BI.step[i])}<small>${pick([...BI.step[i]].reverse())}</small>${s.on && s.date ? `<span class="date">${s.date.slice(5)}</span>` : ''}</div>`).join('')}</div>`;
+}
+
+const S = { rows: [], view: read('ap-view') || 'overview', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
 
 function setView(v) {
   S.view = v; store('ap-view', v);
@@ -415,34 +551,45 @@ function renderNav() {
     ${v === 'tools' && S.running ? '<span class="spin on" style="margin-left:auto"></span>' : ''}</button>`).join('');
 }
 
-function eventsSince(n) {
+function eventsSince(n, notes = false) {
   return S.rows.filter((r) => !['SKIP', 'Discarded'].includes(r.status))
-    .flatMap((r) => r.events.filter((e) => days(e.date) <= n && e.kind !== 'note').map((e) => ({ ...e, r })))
+    .flatMap((r) => r.events.filter((e) => days(e.date) <= n && (notes || e.kind !== 'note')).map((e) => ({ ...e, r })))
     .sort((a, b) => b.date.localeCompare(a.date) || b.r.num - a.r.num);
 }
 
 function renderOverview() {
   const active = S.rows.filter(FILTERS.active).length;
   $('overviewSub').textContent = T.overviewSub(S.rows.length, active);
-  $('kpis').innerHTML = Object.keys(T.k).map((id) => `<button class="card kpi" data-kpi="${id}"><div class="n">${S.rows.filter(FILTERS[id]).length}</div><div class="l"><i style="background:${KPI_COLORS[id]}"></i>${T.k[id]}</div></button>`).join('');
+  $('kpis').innerHTML = Object.keys(T.k).map((id) => {
+    const list = S.rows.filter(FILTERS[id]);
+    const parts = Object.entries(BI.stage).map(([k, p]) => [p, list.filter((r) => r.stage === k).length]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const sub = id === 'follow' ? '' : parts.map(([p, n]) => `${pick(p)} ${n}`).join(' · ');
+    return `<button class="card kpi" data-kpi="${id}"><div class="n">${list.length}</div><div class="l"><i style="background:${KPI_COLORS[id]}"></i>${bi(both('k', id))}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</button>`;
+  }).join('');
   const replies = S.rows.filter(FILTERS.reply);
   const due = S.rows.filter(FILTERS.follow).sort((a, b) => days(b.lastActivity) - days(a.lastActivity));
-  const items = [...replies.map((r) => ({ r, meta: pill(r.status) })), ...due.slice(0, 6).map((r) => ({ r, meta: `<span class="age warn">${T.quiet(days(r.lastActivity))}</span>` }))];
+  const items = [...replies.map((r) => ({ r, meta: `<div style="text-align:right">${pill(r.status)}${stageTag(r)}</div>` })), ...due.slice(0, 6).map((r) => ({ r, meta: `<span class="age warn">${T.quiet(days(r.lastActivity))}</span>` }))];
   $('ovAction').innerHTML = items.length ? items.map(({ r, meta }) => `<div class="item" data-open="${r.num}"><div class="grow"><div class="t1">${esc(r.company)}</div><div class="t2">${esc(r.role)}</div></div>${meta}</div>`).join('') : `<div class="empty">${T.emptyAction}</div>`;
   const ev = eventsSince(7).slice(0, 8);
-  $('ovFeed').innerHTML = ev.length ? ev.map((e) => `<div class="item" data-open="${e.r.num}"><div class="grow"><div class="t1">${esc(e.r.company)}</div><div class="t2">${esc(e.text)}</div></div><div style="text-align:right">${kpill(e.kind)}<div class="meta">${e.date.slice(5)}</div></div></div>`).join('') : `<div class="empty">${T.emptyFeed}</div>`;
+  $('ovFeed').innerHTML = ev.length ? ev.map((e) => `<div class="item" data-open="${e.r.num}"><div class="grow"><div class="t1">${esc(e.r.company)}</div><div class="t2">${esc(e.text)}</div></div><div style="text-align:right">${tpill(e)}<div class="meta">${e.date.slice(5)}</div></div></div>`).join('') : `<div class="empty">${T.emptyFeed}</div>`;
 }
 
 function renderApps() {
-  $('filters').innerHTML = Object.keys(T.f).map((f) => `<button class="${S.filter === f ? 'on' : ''}" data-filter="${f}">${T.f[f]}</button>`).join('');
+  $('filters').innerHTML = Object.keys(T.f).map((f) => `<button class="${S.filter === f ? 'on' : ''}" data-filter="${f}">${bi(both('f', f))}</button>`).join('');
   const q = S.q.trim().toLowerCase();
-  const rows = S.rows.filter(FILTERS[S.filter]).filter((r) => !q || `${r.num} ${r.company} ${r.role} ${r.notes}`.toLowerCase().includes(q))
+  const scoped = S.rows.filter(FILTERS[S.filter]).filter((r) => !q || `${r.num} ${r.company} ${r.role} ${r.notes}`.toLowerCase().includes(q));
+  const stages = ['applied', 'reply', 'pending', 'rejected'].includes(S.filter) ? Object.keys(BI.stage).filter((k) => scoped.some((r) => r.stage === k)) : [];
+  if (!stages.includes(S.stage)) S.stage = null;
+  $('stages').style.display = stages.length > 1 ? 'flex' : 'none';
+  $('stages').innerHTML = [['', BI.ui.allStages, scoped.length], ...stages.map((k) => [k, BI.stage[k], scoped.filter((r) => r.stage === k).length])]
+    .map(([k, p, n]) => `<button class="${(S.stage || '') === k ? 'on' : ''}" data-stage="${k}">${bi(p)} ${n}</button>`).join('');
+  const rows = scoped.filter((r) => !S.stage || r.stage === S.stage)
     .sort((a, b) => b.lastActivity.localeCompare(a.lastActivity) || b.num - a.num);
   $('count').textContent = T.count(rows.length);
   const head = `<div class="tr head">${T.head.map((h) => `<div>${h}</div>`).join('')}</div>`;
   $('table').innerHTML = rows.length ? head + rows.slice(0, S.limit).map((r) => `<div class="tr" data-open="${r.num}">
       <div class="num">${r.num}</div><div class="co">${esc(r.company)}</div><div class="role">${esc(r.role)}</div>
-      <div class="score">${r.score ?? '–'}</div><div>${pill(r.status)}</div>
+      <div class="score">${r.score ?? '–'}</div><div>${pill(r.status)}${stageTag(r)}</div>
       <div class="age ${r.due ? 'warn' : ''}">${esc(r.lastActivity)}<br>${T.ago(days(r.lastActivity))}</div></div>`).join('')
     + (rows.length > S.limit ? `<div class="more"><button class="btn" data-more>${T.more(rows.length - S.limit)}</button></div>` : '')
     : `<div class="empty">${T.empty}</div>`;
@@ -457,21 +604,53 @@ function renderFollowups() {
     </div></div>`).join('') : `<div class="card"><div class="empty">${T.emptyAction}</div></div>`;
 }
 
+function renderChart(all) {
+  const dates = Array.from({ length: S.period + 1 }, (_, i) => new Date(today() - (S.period - i) * 864e5).toISOString().slice(0, 10));
+  const outward = all.filter((e) => e.kind !== 'note');
+  const byDay = Object.fromEntries(dates.map((d) => [d, {}]));
+  outward.forEach((e) => { const c = byDay[e.date]; if (c) { const k = chartKind(e.kind); c[k] = (c[k] || 0) + 1; } });
+  const totals = dates.map((d) => Object.values(byDay[d]).reduce((a, b) => a + b, 0));
+  const max = Math.max(...totals);
+  if (!max) { $('actChart').innerHTML = `<h2>${bi(BI.ui.chart)}</h2><div class="empty">${T.chartEmpty}</div>`; return; }
+  const dim = (k) => (S.kind !== 'all' && chartKind(S.kind) !== k ? 'dim' : '');
+  const cols = dates.map((d, i) => `<div class="col ${S.day === d ? 'on' : ''}" data-day="${d}">${CHART_KINDS.filter((k) => byDay[d][k]).map((k) => `<div class="seg-bar g-${k} ${dim(k)}" style="height:${Math.max(3, (byDay[d][k] / max) * 124)}px;background:var(--g)"></div>`).join('')}</div>`).join('');
+  $('actChart').innerHTML = `<h2>${bi(BI.ui.chart)}</h2><div class="plot" id="plot"><div class="grid-line"></div><span class="grid-max">${max}</span>${cols}</div>
+    <div class="axis"><span>${dates[0].slice(5)}</span><span>${dates[Math.floor(S.period / 2)].slice(5)}</span><span>${dates.at(-1).slice(5)}</span></div><div class="tip" id="tip"></div>`;
+  const tip = $('tip');
+  $('plot').onmousemove = (ev) => {
+    const col = ev.target.closest('.col');
+    if (!col) { tip.style.display = 'none'; return; }
+    const d = col.dataset.day;
+    const rows = CHART_KINDS.filter((k) => byDay[d][k]).map((k) => `<div class="g-${k}"><i class="swatch"></i>${pick(BI.kind[k])}<span>${byDay[d][k]}</span></div>`).join('');
+    tip.innerHTML = `<b>${d}</b>${rows || `<div>0</div>`}`;
+    tip.style.display = 'block';
+    const box = $('actChart').getBoundingClientRect();
+    tip.style.left = `${Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 8)}px`;
+    tip.style.top = `${ev.clientY - box.top - 10}px`;
+  };
+  $('plot').onmouseleave = () => { tip.style.display = 'none'; };
+}
+
 function renderActivity() {
   $('periods').innerHTML = [7, 14, 30, 90].map((d) => `<button class="${S.period === d ? 'on' : ''}" data-period="${d}">${T.days(d)}</button>`).join('');
-  const all = eventsSince(S.period);
+  const all = eventsSince(S.period, true);
   const counts = {};
   all.forEach((e) => { counts[e.kind] = (counts[e.kind] || 0) + 1; });
-  $('kinds').innerHTML = [['all', `${T.all} ${all.length}`], ...['rejected', 'reply', 'interview', 'followup', 'sent'].map((k) => [k, `${T.kind[k]} ${counts[k] || 0}`])]
-    .map(([k, l]) => `<button class="${S.kind === k ? 'on' : ''}" data-kind="${k}">${l}</button>`).join('');
-  const shown = all.filter((e) => S.kind === 'all' || e.kind === S.kind).slice(0, 200);
+  const outward = all.filter((e) => e.kind !== 'note').length;
+  $('kinds').innerHTML = [`<button class="${S.kind === 'all' ? 'on' : ''}" data-kind="all">${T.all} ${outward}</button>`,
+    ...['sent', 'followup', 'ack', 'reply', 'interview', 'offer', 'rejected', 'note'].filter((k) => counts[k] || S.kind === k).map((k) => `<button class="${S.kind === k ? 'on' : ''}" data-kind="${k}"><span class="g-${k}" style="display:inline-flex;align-items:center;gap:5px"><i class="swatch"></i>${bi(BI.kind[k])} ${counts[k] || 0}</span></button>`)].join('');
+  const inKind = S.kind === 'all' ? all.filter((e) => e.kind !== 'note') : all.filter((e) => e.kind === S.kind);
+  const types = S.kind === 'all' ? [] : Object.keys(BI.type).filter((t) => inKind.some((e) => e.type === t));
+  if (!types.includes(S.evType)) S.evType = null;
+  $('evTypes').style.display = types.length > 1 ? 'flex' : 'none';
+  $('evTypes').innerHTML = [['', BI.ui.allStages, inKind.length], ...types.map((t) => [t, BI.type[t], inKind.filter((e) => e.type === t).length])]
+    .map(([t, p, n]) => `<button class="${(S.evType || '') === t ? 'on' : ''}" data-evtype="${t}">${bi(p)} ${n}</button>`).join('');
+  renderChart(all);
+  const shown = inKind.filter((e) => (!S.evType || e.type === S.evType) && (!S.day || e.date === S.day)).slice(0, 200);
   if (!shown.length) { $('timeline').innerHTML = `<div class="empty">${T.emptyFeed}</div>`; return; }
-  let html = '', last = '';
-  for (const e of shown) {
-    if (e.date !== last) { html += `<div class="day">${e.date} · ${T.ago(days(e.date))}</div>`; last = e.date; }
-    html += `<div class="ev" data-open="${e.r.num}"><div>${kpill(e.kind)}</div><div><span class="t1">#${e.r.num} ${esc(e.r.company)}</span><div class="t2">${esc(e.text)}</div></div></div>`;
-  }
-  $('timeline').innerHTML = html;
+  const byDate = new Map();
+  shown.forEach((e) => byDate.set(e.date, [...(byDate.get(e.date) || []), e]));
+  $('timeline').innerHTML = [...byDate].map(([d, list]) => `<div class="day">${d} · ${T.ago(days(d))} · ${list.length}</div><div class="ev-list">${list.map((e) => evRow(e, { row: e.r, company: true })).join('')}</div>`).join('');
 }
 
 const base = (p) => String(p || '').split(/[\\/]/).pop();
@@ -517,12 +696,18 @@ function openDrawer(num) {
   const r = S.rows.find((x) => x.num === Number(num));
   if (!r) return;
   $('dHead').innerHTML = `<button class="x" data-close>×</button><h3>${esc(r.company)}</h3><div class="sub">${esc(r.role)}</div>
-    <div class="d-meta">${pill(r.status)}<span class="meta">#${r.num} · ${T.added} ${esc(r.date)}</span>${r.score != null ? `<span class="meta">${T.score} ${r.score}</span>` : ''}
+    <div class="d-meta">${pill(r.status)}${r.stage ? `<span class="chip">${bi(BI.stage[r.stage])}</span>` : ''}<span class="meta">#${r.num} · ${T.added} ${esc(r.date)}</span>${r.score != null ? `<span class="meta">${T.score} ${r.score}</span>` : ''}
     ${r.due ? `<span class="pill k-followup">${T.quiet(days(r.lastActivity))}</span>` : ''}</div>
     ${r.url ? `<div style="margin-top:14px"><a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">${T.open} ↗</a></div>` : ''}`;
   const ev = [...r.events].reverse();
-  $('dBody').innerHTML = (ev.length ? `<h4>${T.timeline}</h4><div class="tl">${ev.map((e) => `<div class="e"><div class="d">${e.date} · ${T.kind[e.kind]}</div><div>${esc(e.text)}</div></div>`).join('')}</div>` : '')
-    + `<h4>${T.notes}</h4><div class="notes">${esc(r.notes || '—')}</div>`;
+  const gap = (a, b) => Math.round((new Date(a) - new Date(b)) / 864e5);
+  const rail = ev.map((e, i) => {
+    const next = ev[i + 1];
+    const n = next ? gap(e.date, next.date) : 0;
+    return evRow(e, { id: `ev${i}` }) + (n > 1 ? `<div class="ev dated ev-gap"><div></div><div class="ev-node"></div><div class="ev-body">${bi([`间隔 ${n} 天`, `${n} days`])}</div></div>` : '');
+  }).join('');
+  $('dBody').innerHTML = stepsOf(r) + (ev.length ? `<h4>${bi(BI.ui.timeline)}</h4><div>${rail}</div>` : '')
+    + `<details><summary>${T.notes}</summary><div class="notes">${esc(r.notes || '—')}</div></details>`;
   $('drawer').classList.add('on'); $('scrim').classList.add('on');
 }
 const closeDrawer = () => { $('drawer').classList.remove('on'); $('scrim').classList.remove('on'); };
@@ -586,13 +771,17 @@ async function load() {
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-period],[data-kind],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],#langBtn,#themeBtn,#scrim');
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],#langBtn,#themeBtn,#scrim');
   if (!t) return;
   if (t.dataset.go) return setView(t.dataset.go);
-  if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
-  if (t.dataset.filter) { S.filter = t.dataset.filter; store('ap-filter', S.filter); S.limit = 60; return render(); }
-  if (t.dataset.period) { S.period = Number(t.dataset.period); store('ap-period', S.period); return render(); }
-  if (t.dataset.kind) { S.kind = t.dataset.kind; return render(); }
+  if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.stage = null; S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
+  if (t.dataset.filter) { S.filter = t.dataset.filter; store('ap-filter', S.filter); S.stage = null; S.limit = 60; return render(); }
+  if (t.dataset.stage !== undefined) { S.stage = t.dataset.stage || null; S.limit = 60; return render(); }
+  if (t.dataset.period) { S.period = Number(t.dataset.period); S.day = null; store('ap-period', S.period); return render(); }
+  if (t.dataset.kind) { S.kind = t.dataset.kind; S.evType = null; return render(); }
+  if (t.dataset.evtype !== undefined) { S.evType = t.dataset.evtype || null; return render(); }
+  if (t.dataset.day) { S.day = S.day === t.dataset.day ? null : t.dataset.day; return render(); }
+  if (t.dataset.expand) { const on = $(t.dataset.expand).classList.toggle('clamp'); t.textContent = on ? T.expand : T.collapse; return; }
   if (t.dataset.open) return openDrawer(t.dataset.open);
   if (t.hasAttribute('data-close') || t.id === 'scrim') return closeDrawer();
   if (t.hasAttribute('data-more')) { S.limit += 100; return render(); }

@@ -45,4 +45,4 @@ scan ──► triage ──► evaluate ──► (user decides) ──► tail
 
 ## Notes format
 
-Start each note with a date (`2026-10-29: ...`). Use the words *submitted*, *follow-up*, *replied*, *interview* or *rejected*, so the dashboard timeline classifies the event. Write facts, not plans. "Follow up if no reply by 10/12" is a plan and belongs in your own reminders, not in the notes.
+Start each note with a date (`2026-10-29: ...`), and add the time if you have it (`2026-10-29 14:30: ...`). Lead with what happened, because the opening clause decides the timeline category: *submitted*, *cold email sent*, *follow-up sent*, *X replied: interested*, *X replied: asked for references*, *acknowledgement email received*, *interview held*, *rejected*, *position filled*. Write `scheduled for YYYY-MM-DD HH:MM` for a queued send. Start internal checks with `audit:`, so they stay out of the activity feed. Write facts, not plans. "Follow up if no reply by 10/12" is a plan and belongs in your own reminders, not in the notes.

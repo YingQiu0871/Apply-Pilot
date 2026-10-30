@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.2 — 2026-10-30
+
+**Timeline**
+- The application drawer now has a progress bar (evaluated, applied, reply, interview, outcome) and a rail with an icon per event, the time of day, scheduled send times and the gap between events. Long entries expand, and the full notes fold away.
+- The Activity page has a stacked daily chart. Hover a bar for the counts and click it to filter by day.
+- Category and status names appear in English and Chinese side by side, whichever language the panel uses. Notes keep the language they were written in.
+
+**Finer categories**
+- Events now carry a finer `type` under the broad `kind`: application, outreach, documents sent, my reply, follow-up, acknowledgement, auto-reply, positive reply, asked for more, under review, interview invite and held, position filled, rejected after interview, preparation, evaluation, audit.
+- Applications get a stage inside their status. To decide: materials ready, recommended, consider, weak fit, not scored. Applied: queued, followed up, acknowledged, by email, outreach, via portal. Replied: meeting, positive, asked for more, under review, answered. Rejected: after interview, position filled, other.
+- The applications list can filter by stage, and the overview cards show the largest stages.
+
+**Fixes**
+- "Not applied", "not yet submitted" and "already applied" no longer count as an application being sent.
+- Rejections that only say "position filled" or "cannot host" are now rejections, not replies.
+- Audit notes that mention an interview no longer show up as interviews. "asked whether..." in an outgoing email is no longer a reply.
+- Timeline entries are no longer cut at 240 characters, and trailing `Link:` fields are dropped from them.
+- Dated entries labelled `Note:` now reach the timeline.
+- On narrow screens the navigation runs in one row. The closed drawer no longer casts a shadow on the page edge.
+
 ## 0.3.1 — 2026-10-29
 
 - The installer no longer sets `APPLY_PILOT_HOME`. In 0.3.0 it pointed users who had no such variable at a new, empty `Documents\Apply-Pilot`, so existing data seemed to vanish.

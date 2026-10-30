@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DEFAULTS } from '../src/config.mjs';
 import { Tracker, canonicalStatus, events, findDuplicates, lastActivity, normalizeUrl } from '../src/tracker.mjs';
+import { eventKind, eventType, stageOf } from '../src/events.mjs';
 import { hardFilter, scoreEvaluation } from '../src/scoring.mjs';
 import { dueFollowUps } from '../src/followups.mjs';
 import { lintText } from '../src/lint.mjs';
@@ -54,6 +55,55 @@ test('events ignore future dates and classify follow-ups and rejections', () => 
   assert.equal(inline.length, 1);
   assert.match(inline[0].text, /for 2026-10-30 09:00, approved/);
   assert.equal(lastActivity(row, '2026-10-30'), '2026-10-30');
+});
+
+test('event types read what happened, not words used in passing', () => {
+  const cases = {
+    "application emailed from school mailbox to two contacts; asked whether the internship can run in English.": 'applied',
+    'search on a job board. Closest fit. Not applied; JD not yet opened.': 'evaluation',
+    'user approved applying; materials in output/x. Not yet submitted.': 'prep',
+    'user approved; materials ready. Not submitted.; Submitted via Workday': 'applied',
+    "audit: submitted CV lists the wrong grade; bring it up at the interview": 'audit',
+    'Dr Roe replied: position filled at the end of last week.': 'filled',
+    'J. Doe: after interview, a higher-ranked student accepted the internship.': 'afterinterview',
+    '收到回复：项目高度依赖细胞技术。结果：拒绝；无需回复。': 'rejected',
+    'Prof Lee replied: will read applications and invite some to interview.': 'pending',
+    'video interview held (questions on past experience)': 'held',
+    'Dr Kim replied: interested in hosting a six-month internship': 'positive',
+    'A. Smith: application caught his interest, asked for 2 references': 'request',
+    'references sent (A, B). No outcome since.': 'materials',
+    'auto-reply to the 12:15 reply: out of office, back 3 November': 'autoreply',
+    'Acme acknowledgement email received': 'ack',
+    'cold email scheduled from school mailbox for 2026-10-30 09:00': 'outreach',
+    'reply sent to Dr Kim from personal mailbox': 'response',
+    'LinkedIn reminder email to apply to saved job received; already Applied, no action.': 'note',
+    '用户决定跳过该项目；保留记录用于去重。': 'note',
+  };
+  for (const [text, type] of Object.entries(cases)) assert.equal(eventType(text), type, text);
+  assert.equal(eventKind('Acme acknowledgement email received'), 'ack');
+});
+
+test('events keep the time, the send date and the whole text, and drop link tails', () => {
+  const long = 'x'.repeat(400);
+  const [a, b, c] = events({ notes: `2026-10-29 12:16: cold email scheduled for 2026-10-30 09:00; 2026-10-29: ${long}; Link: https://x.test/1; Note: 2026-10-30 已收到回复。` }, '2026-10-30');
+  assert.equal(a.time, '12:16');
+  assert.equal(a.sendAt, '2026-10-30 09:00');
+  assert.equal(b.text, long);
+  assert.equal(c.type, 'reply');
+});
+
+test('stages split a status by what the notes show', () => {
+  const stage = (row, opts = {}) => stageOf(row, events(row, '2026-10-30'), { today: '2026-10-30', thresholds: { apply: 80, consider: 65 }, ...opts });
+  assert.equal(stage({ status: 'Evaluated', notes: '' }, { score: 90 }), 'recommended');
+  assert.equal(stage({ status: 'Evaluated', notes: '' }, { score: 70 }), 'consider');
+  assert.equal(stage({ status: 'Evaluated', notes: 'Skip; score 3.9/5' }, { score: 78 }), 'weak');
+  assert.equal(stage({ status: 'Evaluated', notes: '' }), 'unscored');
+  assert.equal(stage({ status: 'Applied', notes: '2026-10-29: cold email scheduled for 2026-11-02 09:00' }), 'queued');
+  assert.equal(stage({ status: 'Applied', notes: '2026-10-01: submitted; 2026-10-20: follow-up sent' }), 'followedup');
+  assert.equal(stage({ status: 'Applied', notes: '2026-10-01: submitted' }, { channel: 'portal' }), 'byportal');
+  assert.equal(stage({ status: 'Responded', notes: '2026-10-02: X replied: interested in hosting' }), 'positive');
+  assert.equal(stage({ status: 'Rejected', notes: '2026-10-02: X replied: position filled' }), 'filled');
+  assert.equal(stage({ status: 'SKIP', notes: '' }), null);
 });
 
 test('follow-ups respect afterDays, maxFollowUps and skipAppliedBefore', () => {

@@ -13,7 +13,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homeSource, loadProfile, localDate, paths as pathsOf, saveHome } from '../config.mjs';
 import { initHome, inspectHome, suggestedHome } from '../home.mjs';
-import { followUpStatus } from '../followups.mjs';
+import { channelOf, followUpStatus } from '../followups.mjs';
+import { stageOf } from '../events.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
 import { AGENT_TASKS, detectAgents, launchInteractive, readAgent, saveAgent, taskCommand } from '../agents.mjs';
 
@@ -50,10 +51,14 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
     const today = localDate();
     return new Tracker(trackerFile).rows().map((r) => {
       const f = followUpStatus(r, profile.followUp, today);
+      const evs = events(r, today);
+      const score = parseScore(r.score);
+      const channel = f?.channel || channelOf(r);
       return {
         num: r.num, date: r.date, company: r.company, role: r.role, status: r.status, notes: r.notes,
-        score: parseScore(r.score), url: (r.url.match(/https?:\/\/\S+/) || [])[0] || '',
-        lastActivity: lastActivity(r, today), events: events(r, today), due: Boolean(f?.due), channel: f?.channel || null,
+        score, url: (r.url.match(/https?:\/\/\S+/) || [])[0] || '',
+        lastActivity: lastActivity(r, today), events: evs, due: Boolean(f?.due), channel,
+        stage: stageOf(r, evs, { score, thresholds: profile.scoring?.thresholds, channel, today }),
       };
     });
   };
