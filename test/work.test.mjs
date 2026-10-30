@@ -11,6 +11,7 @@ import { ReviewQueue, applyDecision, reviewFile } from '../src/review.mjs';
 import { runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
 import { buildDocx, plainDocx, readParagraphs } from '../src/docx.mjs';
 import { letterCandidates, saveLetter, validateLetter } from '../src/letters.mjs';
+import { SOURCES, sourceState, testSource, updateSource } from '../src/sources.mjs';
 import { askJson, classifyFailure, dshArgs, dshPatch, dshStart, testAgent, workerCommand } from '../src/worker.mjs';
 
 const JD = 'Formulation intern for a six month project on lipid nanoparticles. '.repeat(8);
@@ -355,4 +356,56 @@ test('a letter template replaces the named paragraphs and keeps the rest', async
   const out = join(dir, 'out.docx');
   await buildDocx(template, out, { 1: ['New first', 'New second'], 2: [], 3: [] });
   assert.deepEqual(await readParagraphs(out), ['Sender', 'New first', 'New second', 'Footer']);
+});
+
+test('a source reports only whether its keys are set', () => {
+  const profile = { sources: { boards: [{ name: 'Adzuna', provider: 'adzuna', keywords: { fr: ['stage'] } }] } };
+  process.env.ADZUNA_APP_ID = 'secret-id'; delete process.env.ADZUNA_APP_KEY;
+  const state = sourceState(profile);
+  const adzuna = state.find((s) => s.id === 'adzuna');
+  assert.deepEqual(adzuna.keys, [{ name: 'ADZUNA_APP_ID', set: true }, { name: 'ADZUNA_APP_KEY', set: false }]);
+  assert.equal(adzuna.ready, false);
+  assert.equal(adzuna.multi, true);
+  assert.ok(!JSON.stringify(state).includes('secret-id'));
+  delete process.env.ADZUNA_APP_ID;
+});
+
+test('turning a source on keeps the rest of the profile and a backup', () => {
+  const home = newHome();
+  const file = join(home, 'profile.json');
+  const before = JSON.parse(readFileSync(file, 'utf8'));
+  before.sources = { boards: [{ name: 'My Adzuna', provider: 'adzuna', countries: ['de'], keywords: { de: ['Praktikum'] }, maxDays: 7 }], portals: { companies: [{ name: 'Keep' }] } };
+  writeFileSync(file, JSON.stringify(before));
+  assert.throws(() => updateSource(home, { id: 'jooble', on: true, keywords: [] }), /search term/);
+  updateSource(home, { id: 'jooble', on: true, keywords: [' internship ', ''] });
+  updateSource(home, { id: 'adzuna', on: false, keywords: ['ignored'] });
+  const after = JSON.parse(readFileSync(file, 'utf8'));
+  assert.deepEqual(after.sources.portals.companies, [{ name: 'Keep' }]);
+  assert.deepEqual(after.sources.boards.find((b) => b.provider === 'jooble'), { name: 'Jooble', provider: 'jooble', locations: ['France'], keywords: ['internship'] });
+  const adzuna = after.sources.boards.find((b) => b.provider === 'adzuna');
+  assert.equal(adzuna.enabled, false);
+  assert.deepEqual(adzuna.keywords, { de: ['Praktikum'] }, 'per-language terms are not replaced');
+  assert.equal(adzuna.maxDays, 7);
+  updateSource(home, { id: 'adzuna', on: true });
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).sources.boards.find((b) => b.provider === 'adzuna').enabled, undefined);
+  assert.ok(readdirSync(home).some((f) => f.startsWith('profile.backup-')));
+  assert.throws(() => updateSource(home, { id: 'brave', on: true }), /cannot be set up/);
+});
+
+test('a source test sends one request and explains failures', async () => {
+  const real = globalThis.fetch;
+  const urls = [];
+  globalThis.fetch = async (url) => { urls.push(String(url)); return { ok: true, json: async () => ({ jobs: [{ title: 'a', link: 'l' }] }) }; };
+  try {
+    process.env.JOOBLE_API_KEY = 'k';
+    const profile = { sources: { boards: [{ name: 'J', provider: 'jooble', locations: ['France', 'Deutschland'], keywords: ['one', 'two'] }] } };
+    assert.deepEqual(await testSource(profile, 'jooble'), { ok: true, found: 1 });
+    assert.equal(urls.length, 1);
+    globalThis.fetch = async () => ({ ok: false, status: 403 });
+    assert.equal((await testSource(profile, 'jooble')).ok, false);
+    delete process.env.JOOBLE_API_KEY;
+    assert.equal((await testSource(profile, 'jooble')).reason, 'key');
+    assert.equal((await testSource({}, 'adzuna')).reason, 'key');
+  } finally { globalThis.fetch = real; delete process.env.JOOBLE_API_KEY; }
+  assert.ok(SOURCES.brave.search);
 });

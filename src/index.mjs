@@ -11,3 +11,4 @@ export { triage } from './triage.mjs';
 export { askAgent, askJson, testAgent, classifyFailure } from './worker.mjs';
 export { ReviewQueue, applyDecision } from './review.mjs';
 export { runToday, setupState } from './daily.mjs';
+export { SOURCES, sourceState, testSource, updateSource } from './sources.mjs';

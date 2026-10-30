@@ -20,6 +20,7 @@ import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readA
 import { profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
 import { saveLetter } from '../letters.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../review.mjs';
+import { SOURCES, sourceState, testSource, updateSource } from '../sources.mjs';
 import { askAgent, askJson, testAgent } from '../worker.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -164,6 +165,18 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
     agents = detectAgents();
     return { ok: true };
   };
+  const saveSourceKey = ({ id, name, key }) => {
+    if (!SOURCES[id]?.keys.includes(name)) throw new Error('this source has no such key');
+    const value = String(key || '').trim();
+    if (!/^[\x21-\x7e]{4,300}$/.test(value)) throw new Error('that does not look like a key');
+    saveEnv(paths.home, name, value);
+    return { ok: true };
+  };
+  const saveSource = ({ id, on, keywords }) => {
+    updateSource(paths.home, { id, on, keywords });
+    profile = loadProfile(paths.home);
+    return { ok: true };
+  };
   const draftProfile = async ({ text }) => {
     const cv = String(text || '').trim();
     if (cv.length < 200) throw new Error('paste the full text of your CV');
@@ -203,7 +216,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
+      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), sources: sourceState(profile), lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
       catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
@@ -228,6 +241,9 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false }) {
       if (pathname === '/api/agent/launch') return withBody((b) => ({ ok: launchInteractive(b.agent, { home: paths.home }) }));
       if (pathname === '/api/agent/test') return withBody(testConnection);
       if (pathname === '/api/agent/key') return withBody(saveKey);
+      if (pathname === '/api/source/key') return withBody(saveSourceKey);
+      if (pathname === '/api/source/save') return withBody(saveSource);
+      if (pathname === '/api/source/test') return withBody(({ id }) => testSource(profile, id));
       if (pathname === '/api/review/decide') return withBody(decide);
       if (pathname === '/api/profile/draft') return withBody(draftProfile, 2e5);
       if (pathname === '/api/profile/save') return withBody(saveProfile, 2e5);

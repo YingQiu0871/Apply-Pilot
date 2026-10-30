@@ -119,6 +119,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `init`, `doctor` | create and check the data folder | 创建、检查数据目录 |
 | `ui`, `shortcut` | live dashboard and control panel; desktop launcher (Windows `.lnk`, macOS `.command`, Linux `.desktop`) | 实时看板和控制面板；桌面双击图标 |
 | `agent` | choose and test the AI agent: Claude Code, Codex CLI, DeepSeek, DeepSeek Harness | 选择并测试搭配的 AI 助手 |
+| `sources` | show job sources and test one | 查看岗位来源并测试 |
 | `today`, `review` | scan, evaluate and draft in one run; decide what comes back | 一次完成扫描、评估和起草；审核结果 |
 | `import PATH` | read an existing database from a file or folder; preview first, `--write` appends new rows only | 从文件或文件夹读取已有数据；先预览，`--write` 只追加新行 |
 | `add`, `status`, `note`, `list` | the tracker `data/applications.md`, with duplicate detection | 申请表，自动查重 |

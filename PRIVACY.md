@@ -1,6 +1,6 @@
 # Privacy Policy · 隐私策略
 
-Last updated / 最后更新：2026-10-30 (0.5.0)
+Last updated / 最后更新：2026-10-30 (0.5.1)
 
 Apply-Pilot is free, open-source software that runs on your own computer. It has no server, no account system, no analytics and no telemetry. The author receives no data from you.
 
@@ -14,7 +14,7 @@ Everything Apply-Pilot reads or writes stays in your data folder (`APPLY_PILOT_H
 - `data/applications.md` and `data/pipeline.md`: your applications and candidate postings;
 - `inbox/`, `output/`: scan results, evaluations, drafts and exports;
 - `browser/`: the browser session you create with `apply-pilot linkedin login`;
-- `.env`: API keys you add yourself or enter on the AI page, stored as plain text;
+- `.env`: API keys you add yourself or enter on the AI or Job sources page, stored as plain text;
 - `agent.json`: which AI agent you chose and when its connection test passed;
 - `data/review.json`: AI evaluations, draft follow-ups and cover letters waiting for your decision, and your past decisions;
 - `output/letters/`: the cover letters you save;
@@ -30,7 +30,7 @@ Apply-Pilot 读写的所有数据都放在你自己硬盘上的数据目录（`A
 - `data/applications.md`、`data/pipeline.md`：申请记录和待筛岗位；
 - `inbox/`、`output/`：扫描结果、评估、草稿和导出文件；
 - `browser/`：你用 `apply-pilot linkedin login` 登录后保存的浏览器状态；
-- `.env`：你自己填写或在 AI 助手页输入的 API key，以明文保存；
+- `.env`：你自己填写或在 AI 助手页、岗位来源页输入的 API key，以明文保存；
 - `agent.json`：你选择搭配的 AI 助手，以及连接测试通过的时间；
 - `data/review.json`：等待你确认的 AI 评估、跟进草稿和求职信，以及你做过的决定；
 - `output/letters/`：你保存的求职信；
@@ -53,6 +53,7 @@ Only when you run a command or click a button that needs the network:
 | `eval run`, `eval pipeline` | the model provider you choose: DeepSeek, OpenAI, OpenRouter, Anthropic; Ollama stays local / 你选择的模型服务商；Ollama 在本机运行 | the job description, plus the summary, facts, gaps and rubric from your `profile.json` / 岗位描述，以及 `profile.json` 中的目标概述、经历、短板和评分标准 |
 | Today page, `today`: evaluate, draft follow-ups and letters / 今日工作页、`today`：评估、起草跟进和求职信 | the AI you chose / 你选择的 AI 服务 | each job description, your profile summary, facts, gaps and rubric, and for a follow-up that application's tracker notes / 每个岗位描述，`profile.json` 中的目标概述、经历、短板和评分标准；起草跟进时还有该申请的备注 |
 | First-run CV step / 首次设置的 CV 步骤 | the AI you chose / 你选择的 AI 服务 | the full CV text you paste / 你粘贴的 CV 全文 |
+| Job sources page: test / 岗位来源页：测试 | that source's official API / 对应来源的官方接口 | your key for that source and one search term / 该来源的 Key 和一个搜索词 |
 | AI page: test connection / AI 助手页：测试连接 | the AI you chose / 你选择的 AI 服务 | a short fixed test message / 一条固定的简短测试消息 |
 | AI page: open in terminal / AI 助手页：在终端中打开 | that agent's own service / 对应 agent 自己的服务 | whatever the agent reads in your data folder while it works / agent 工作时读取的数据目录内容 |
 

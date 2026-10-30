@@ -50,6 +50,7 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
   eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
   agent [claude|codex|deepseek|dsh] [--test]   show or choose the AI agent; --test sends one short request
+  sources [test ID]                     show job sources, or send one small test request
   today [--no-scan] [--only evaluate,followups,letters]   scan, evaluate and draft; results wait in the review queue
   review [approve|reject ID]            list the review queue, or decide one item
   jd URL [--out FILE] [--browser] [--json]   fetch a job description (ATS APIs, page text, optional browser)
@@ -170,6 +171,12 @@ async function main() {
       }
       const action = pos[0] === 'reject' ? 'reject' : item.type === 'followup' ? 'sent' : 'approve';
       console.log(JSON.stringify(applyDecision({ queue, id: pos[1], action, home, profile, trackerFile: p.tracker })));
+      break;
+    }
+    case 'sources': {
+      const { sourceState, testSource } = await import('../src/sources.mjs');
+      if (pos[0] === 'test') { console.log(JSON.stringify(await testSource(profile, pos[1]))); break; }
+      for (const s of sourceState(profile)) console.log(`${s.on ? '●' : '○'} ${s.label.padEnd(18)} ${s.ready ? 'ready' : `needs ${s.keys.filter((k) => !k.set).map((k) => k.name).join(', ')}`}`);
       break;
     }
     case 'shortcut': {

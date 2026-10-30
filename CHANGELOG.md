@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1 — 2026-10-30
+
+- New Job sources page: enter keys for France Travail, Adzuna, Jooble, Careerjet and Brave Search, turn sources on or off, edit search terms and send one small test request. No more editing `.env` or `profile.json` by hand for this. The old `profile.json` is kept as a backup.
+- New command: `sources`, and `sources test ID`.
+
 ## 0.5.0 — 2026-10-30
 
 - Cover letters: today's work drafts one for each tracked application with status Evaluated and a score at or above the Apply threshold (default 80/100), up to `profile.daily.letters` per run (default 3).

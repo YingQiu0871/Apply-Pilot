@@ -350,6 +350,12 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
       <p class="meta" style="white-space:normal" data-t="agSafe"></p>
     </section>
 
+    <section class="view" data-view="sources">
+      <div class="page-head"><div><h1 data-t="srcTitle"></h1><p data-t="srcSub"></p></div></div>
+      <div class="grid tasks" id="sourceCards" style="margin-bottom:16px"></div>
+      <p class="meta" style="white-space:normal" data-t="srcSafe"></p>
+    </section>
+
     <section class="view" data-view="tools">
       <div class="page-head"><div><h1 data-t="toolsTitle"></h1><p data-t="toolsSub"></p></div>
         <div class="mini" style="gap:8px"><button class="btn" data-act="open-data" data-t="openData"></button><button class="btn" data-act="quit" data-t="quit"></button></div></div>
@@ -393,7 +399,8 @@ const TOKEN = '__TOKEN__';
 let LANG = (() => { try { return localStorage.getItem('ap-lang'); } catch { return null; } })() || new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
 const I18N = {
   zh: {
-    nav: { today: '今日工作', overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', tools: '工具' },
+    nav: { today: '今日工作', overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', sources: '岗位来源', tools: '工具' },
+    srcTitle: '岗位来源', srcSub: '选择今日工作去哪里找岗位。需要 Key 的来源都有免费额度，填一次即可。', srcSafe: 'Key 明文保存在数据目录的 .env 里，不会发给 AI，只发给对应来源的官方接口。测试只发送一次小请求。', srcOn: '已开启', srcOff: '未开启', srcNeedKey: '需要 Key', srcNoKey: '不需要 Key', srcEnable: '开启', srcDisable: '关闭', srcWords: '搜索词（每行一个）', srcMulti: '搜索词按语言分别设置，请在 profile.json 中修改', srcSave: '保存搜索词', srcSaved: '已保存', srcKeySet: '已设置', srcKeySave: '保存', srcGet: '获取 Key', srcTest: '测试', srcTesting: '测试中…', srcFound: (n) => `连接正常，这次搜到 ${n} 条`, srcFail: { input: '没有保存，请检查输入', key: '还缺 Key', login: 'Key 无效或没有权限', quota: '额度不足或请求太频繁', network: '网络连接失败', other: '调用失败' }, srcQueries: (n) => `使用 ${n} 条搜索语句`, srcNoQueries: '没有搜索语句，请在 profile.json 的 searchQueries 中添加',
     agentsTitle: 'AI 助手', agentsSub: '选择和哪个 AI 搭配，测试通过后，它就能替你评估岗位、起草跟进。',
     ag: { claude: '用你已登录的 Claude Code。需要先安装并登录', codex: '用你已登录的 Codex CLI。需要先安装并登录', deepseek: '直接调用 DeepSeek API，不用安装其他软件，只需要一个 API key', dsh: '用你已登录的 DeepSeek Harness，不需要单独填 API key。需要先安装并登录' },
     agSelected: '当前搭配', agChoose: '选用', agTerminal: '在终端中打开', agReady: '已就绪', agMissing: '未安装或未配置', agCli: '命令行', agKey: 'API key', agSet: '已设置', agUnset: '未设置', agGet: '获取 / 安装', agRefresh: '重新检测',
@@ -440,7 +447,8 @@ const I18N = {
     overviewSub: (n, a) => `共 ${n} 条记录，其中 ${a} 条正在进行`, open: '打开岗位页面', timeline: '时间线', notes: '完整备注', score: '评分', added: '记录日期', theme: '主题', lang: 'EN', expand: '展开', collapse: '收起', scheduled: '定时', chartEmpty: '这段时间没有对外动态',
   },
   en: {
-    nav: { today: 'Today', overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', tools: 'Tools' },
+    nav: { today: 'Today', overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', sources: 'Job sources', tools: 'Tools' },
+    srcTitle: 'Job sources', srcSub: "Choose where today's work looks for postings. Sources that need a key have a free tier, and you enter it once.", srcSafe: 'Keys are stored as plain text in .env in your data folder. They go only to that source\'s official API, never to the AI. A test sends one small request.', srcOn: 'On', srcOff: 'Off', srcNeedKey: 'Needs a key', srcNoKey: 'No key needed', srcEnable: 'Turn on', srcDisable: 'Turn off', srcWords: 'Search terms, one per line', srcMulti: 'Search terms are set per language. Edit them in profile.json', srcSave: 'Save terms', srcSaved: 'Saved', srcKeySet: 'set', srcKeySave: 'Save', srcGet: 'Get a key', srcTest: 'Test', srcTesting: 'Testing…', srcFound: (n) => `Connected, ${n} results this time`, srcFail: { input: 'Not saved. Check what you entered', key: 'A key is missing', login: 'The key is invalid or has no access', quota: 'Out of quota or too many requests', network: 'Network connection failed', other: 'The call failed' }, srcQueries: (n) => `Uses ${n} search queries`, srcNoQueries: 'No search queries. Add them under searchQueries in profile.json',
     agentsTitle: 'AI agent', agentsSub: 'Choose which AI to pair with. Once the test passes, it can evaluate postings and draft follow-ups for you.',
     ag: { claude: 'Uses your signed-in Claude Code. Install and sign in first', codex: 'Uses your signed-in Codex CLI. Install and sign in first', deepseek: 'Calls the DeepSeek API directly. Nothing else to install, you only need an API key', dsh: 'Uses your signed-in DeepSeek Harness, with no separate API key. Install and sign in first' },
     agSelected: 'Paired', agChoose: 'Use this', agTerminal: 'Open in terminal', agReady: 'Ready', agMissing: 'Not installed or not configured', agCli: 'CLI', agKey: 'API key', agSet: 'set', agUnset: 'missing', agGet: 'Get / install', agRefresh: 'Re-detect',
@@ -517,6 +525,7 @@ const bi = (pair) => { const [a, b] = LANG === 'zh' ? pair : [pair[1], pair[0]];
 const both = (key, id) => [I18N.zh[key][id], I18N.en[key][id]];
 
 const ICONS = {
+  sources: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   today: '<path d="M5 12.5 10 17l9-10"/><path d="M4 21h16"/>',
   overview: '<path d="M3 13h8V3H3zM13 21h8v-8h-8zM13 3v8h8V3zM3 21h8v-6H3z"/>',
   applications: '<path d="M4 6h16M4 12h16M4 18h10"/>',
@@ -590,7 +599,7 @@ function stepsOf(r) {
   return `<div class="steps">${steps.map((s, i) => `<div class="step ${s.on ? 'on' : ''} ${s.cls || ''}"><i></i>${pick(BI.step[i])}<small>${pick([...BI.step[i]].reverse())}</small>${s.on && s.date ? `<span class="date">${s.date.slice(5)}</span>` : ''}</div>`).join('')}</div>`;
 }
 
-const S = { review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: read('ap-view') || 'today', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
+const S = { sources: [], srcWords: {}, srcTests: {}, srcTesting: null, review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: read('ap-view') || 'today', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
 
 function setView(v) {
   S.view = v; store('ap-view', v);
@@ -728,6 +737,35 @@ function renderAgents() {
   }).join('');
 }
 
+function renderSources() {
+  if (document.activeElement?.closest?.('#sourceCards')) return;
+  $('sourceCards').innerHTML = (S.sources || []).map((s) => {
+    const keys = s.keys.map((k) => `<label class="field">${esc(k.name)}${k.set ? ` · ${T.srcKeySet}` : ''}<span style="display:flex;gap:8px"><input id="srckey-${k.name}" type="password" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button class="btn" data-srckey="${s.id}" data-name="${k.name}">${T.srcKeySave}</button></span></label>`).join('');
+    const words = S.srcWords[s.id] ?? s.keywords.join('\n');
+    const terms = s.search ? `<div class="meta" style="white-space:normal">${s.queries ? T.srcQueries(s.queries) : T.srcNoQueries}</div>`
+      : s.multi ? `<div class="meta" style="white-space:normal">${T.srcMulti}</div>`
+        : `<label class="field">${T.srcWords}<textarea data-srcwords="${s.id}" style="min-height:76px" spellcheck="false">${esc(words)}</textarea></label>`;
+    return `<div class="card task"><h3 style="white-space:nowrap">${esc(s.label)}</h3>
+    <div class="ag-pills"><span class="pill ${s.on ? 's-Responded' : 's-SKIP'}">${s.on ? T.srcOn : T.srcOff}</span><span class="meta">${s.keys.length ? T.srcNeedKey : T.srcNoKey}</span></div>
+    ${keys}${terms}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto">
+      ${s.search ? '' : `<button class="btn ${s.on ? '' : 'primary'}" data-srcon="${s.id}">${s.on ? T.srcDisable : T.srcEnable}</button>`}
+      ${s.search || s.multi ? '' : `<button class="btn" data-srcsave="${s.id}">${T.srcSave}</button>`}
+      <button class="btn" data-srctest="${s.id}" ${s.ready ? '' : 'disabled'}>${T.srcTest}</button>
+      ${s.keys.length ? `<a class="btn" href="${esc(s.site)}" target="_blank" rel="noopener">${T.srcGet} ↗</a>` : ''}
+    </div><div class="ag-note">${sourceNote(s.id)}</div></div>`;
+  }).join('');
+}
+
+const sourceNote = (id) => {
+  if (S.srcTesting === id) return `<span class="spin on"></span> ${T.srcTesting}`;
+  const r = S.srcTests[id];
+  if (!r) return '';
+  if (r.saved) return `<span style="color:var(--responded)">${T.srcSaved}</span>`;
+  return r.ok ? `<span style="color:var(--responded)">${T.srcFound(r.found)}</span>`
+    : `<span style="color:var(--rejected)">${esc(T.srcFail[r.reason] || T.srcFail.other)}</span>${r.detail ? `<details><summary>${T.agDetail}</summary><pre>${esc(r.detail)}</pre></details>` : ''}`;
+};
+
 const agentNote = (id) => {
   if (S.testing === id) return `<span class="spin on"></span> ${T.agTesting}`;
   const r = S.tests[id];
@@ -826,7 +864,7 @@ function render() {
   $('impPath').placeholder = T.impPh;
   $('langBtn').textContent = T.lang;
   $('themeBtn').textContent = T.theme;
-  ({ today: renderToday, overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, tools: renderTools })[S.view]?.();
+  ({ today: renderToday, overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, sources: renderSources, tools: renderTools })[S.view]?.();
 }
 
 function openDrawer(num) {
@@ -914,7 +952,7 @@ async function load() {
     const res = await fetch('/api/data', { cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
-    Object.assign(S, { home: d.home, rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent, review: d.review || [], ready: d.ready, lastRun: d.lastRun });
+    Object.assign(S, { home: d.home, rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent, sources: d.sources || [], review: d.review || [], ready: d.ready, lastRun: d.lastRun });
     fillDraft(d.candidate);
     $('updated').textContent = `${d.rows.length} ${T.rows} · ${new Date(d.generated).toLocaleTimeString()}`;
     $('err').style.display = 'none';
@@ -923,7 +961,7 @@ async function load() {
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],[data-review],[data-rvcopy],[data-rvmail],[data-test],[data-key],[data-suread],[data-susave],#langBtn,#themeBtn,#scrim');
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],[data-review],[data-rvcopy],[data-rvmail],[data-test],[data-key],[data-srckey],[data-srcon],[data-srcsave],[data-srctest],[data-suread],[data-susave],#langBtn,#themeBtn,#scrim');
   if (!t) return;
   if (t.dataset.go) return setView(t.dataset.go);
   if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.stage = null; S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
@@ -972,6 +1010,29 @@ document.addEventListener('click', async (e) => {
     S.testing = null;
     return load();
   }
+  if (t.dataset.srckey) {
+    const id = t.dataset.srckey, box = $(`srckey-${t.dataset.name}`);
+    const r = await post('/api/source/key', { id, name: t.dataset.name, key: box.value });
+    S.srcTests[id] = r.ok ? { saved: true } : { ok: false, reason: 'input', detail: r.error };
+    box.value = '';
+    return load();
+  }
+  if (t.dataset.srcon || t.dataset.srcsave) {
+    const id = t.dataset.srcon || t.dataset.srcsave;
+    const s = S.sources.find((x) => x.id === id);
+    const words = S.srcWords[id];
+    const r = await post('/api/source/save', { id, on: t.dataset.srcon ? !s.on : s.on, keywords: words === undefined ? s.keywords : words.split('\n') });
+    S.srcTests[id] = r.ok ? { saved: true } : { ok: false, reason: 'input', detail: r.error };
+    if (r.ok) delete S.srcWords[id];
+    return load();
+  }
+  if (t.dataset.srctest) {
+    const id = t.dataset.srctest;
+    S.srcTesting = id; renderSources();
+    const r = await post('/api/source/test', { id });
+    S.srcTesting = null; S.srcTests[id] = r; renderSources();
+    return;
+  }
   if (t.dataset.key) {
     const box = $(`key-${t.dataset.key}`);
     const r = await post('/api/agent/key', { agent: t.dataset.key, key: box.value });
@@ -1011,6 +1072,7 @@ document.addEventListener('click', async (e) => {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
 $('q').addEventListener('input', (e) => { S.q = e.target.value; S.limit = 60; renderApps(); });
 $('reviewList').addEventListener('input', (e) => { const { edit, k } = e.target.dataset; if (edit) (S.edits[edit] ||= {})[k] = e.target.value; });
+$('sourceCards').addEventListener('input', (e) => { const id = e.target.dataset.srcwords; if (id) S.srcWords[id] = e.target.value; });
 $('setupSteps').addEventListener('input', (e) => { const { draft } = e.target.dataset; if (draft) S.draft[draft] = e.target.value; });
 window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (v && v !== S.view && T.nav[v]) setView(v); });
 
@@ -1027,7 +1089,7 @@ es.addEventListener('task', (m) => {
   const d = JSON.parse(m.data);
   if (d.state === 'start') { S.running = d.task; log(`$ ${d.task}`); }
   else { S.running = null; $('runState').textContent = T.done(d.task, d.code); load(); }
-  renderNav(); if (S.view === 'tools') renderTools(); if (S.view === 'agents') renderAgents(); if (S.view === 'today') renderToday();
+  renderNav(); if (S.view === 'tools') renderTools(); if (S.view === 'agents') renderAgents(); if (S.view === 'sources') renderSources(); if (S.view === 'today') renderToday();
 });
 setInterval(load, 60000);
 const initial = location.hash.slice(1);
