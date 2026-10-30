@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3 — 2026-10-30
+
+- Follow-ups: audit notes and bracketed tags such as `[mailbox audit 2026-10-29]` no longer reset the days of silence, so these applications are not hidden from the follow-up list.
+
 ## 0.3.2 — 2026-10-30
 
 **Timeline**

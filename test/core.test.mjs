@@ -106,6 +106,14 @@ test('stages split a status by what the notes show', () => {
   assert.equal(stage({ status: 'SKIP', notes: '' }), null);
 });
 
+test('audit notes and bracketed tags do not count as activity', () => {
+  const row = { date: '2026-09-01', notes: '2026-09-10: submitted through the portal [mailbox audit 2026-10-29]; 2026-10-30 audit: CV lists the wrong grade' };
+  assert.equal(lastActivity(row, '2026-10-30'), '2026-09-10');
+  assert.equal(lastActivity({ date: '2026-09-01', notes: '2026-10-29: follow-up sent; 2026-10-30 audit: checked' }, '2026-10-30'), '2026-10-29');
+  const rules = { afterDays: 14, maxFollowUps: 1, skipAppliedBefore: '2026-09-01' };
+  assert.deepEqual(dueFollowUps([{ ...row, num: 1, status: 'Applied' }], rules, '2026-10-30').map((d) => d.row.num), [1]);
+});
+
 test('follow-ups respect afterDays, maxFollowUps and skipAppliedBefore', () => {
   const rules = { afterDays: 14, maxFollowUps: 1, skipAppliedBefore: '2026-09-01' };
   const rows = [

@@ -140,14 +140,15 @@ export function findDuplicates(rows, candidate, threshold = 0.7) {
   });
 }
 
+// An event starts at a date at the beginning of the cell or after "; ", "。" or ". ",
+// optionally labelled "Note:"; dates inside a sentence ("scheduled for 2026-10-30")
+// stay part of the text.
+const EVENT_RE = /(?:^|[;。]\s*|\.\s+)(?:Note:\s*)?(20\d\d-\d\d-\d\d)(?:[ T](\d\d:\d\d))?[:\s]+([^]*?)(?=(?:[;。]\s*|\.\s+)(?:Note:\s*)?20\d\d-\d\d-\d\d|$)/g;
+
 /** Dated fragments of the notes cell, ignoring future dates such as start dates. */
 export function events(row, today = localDate()) {
   const out = [];
-  // An event starts at a date at the beginning of the cell or after "; ", "。" or ". ",
-  // optionally labelled "Note:"; dates inside a sentence ("scheduled for 2026-10-30")
-  // stay part of the text.
-  const re = /(?:^|[;。]\s*|\.\s+)(?:Note:\s*)?(20\d\d-\d\d-\d\d)(?:[ T](\d\d:\d\d))?[:\s]+([^]*?)(?=(?:[;。]\s*|\.\s+)(?:Note:\s*)?20\d\d-\d\d-\d\d|$)/g;
-  for (const m of String(row.notes || '').matchAll(re)) {
+  for (const m of String(row.notes || '').matchAll(EVENT_RE)) {
     if (m[1] > today) continue;
     const text = m[3].replace(/[;.。]?\s*Link:\s.*$/i, '').trim().replace(/^[:;,\s]+/, '');
     if (!text) continue;
@@ -157,7 +158,11 @@ export function events(row, today = localDate()) {
   return out;
 }
 
+/** Latest date in the row. Internal checks (audit notes, [bracketed] tags) are not activity. */
 export function lastActivity(row, today = localDate()) {
-  const dates = [row.date, ...(String(row.notes || '').match(DATE_RE) || [])].filter((d) => d && d <= today).sort();
+  const notes = String(row.notes || '')
+    .replace(EVENT_RE, (m, _date, _time, body) => (eventType(body) === 'audit' ? ' ' : m))
+    .replace(/\[[^\]]*\]/g, ' ');
+  const dates = [row.date, ...(notes.match(DATE_RE) || [])].filter((d) => d && d <= today).sort();
   return dates.at(-1) || row.date;
 }
