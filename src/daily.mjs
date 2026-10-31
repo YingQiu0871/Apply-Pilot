@@ -10,6 +10,7 @@ import { dueFollowUps } from './followups.mjs';
 import { loginProfile, readSites } from './browser.mjs';
 import { fetchJd } from './jd.mjs';
 import { letterCandidates, letterPrompt, validateLetter } from './letters.mjs';
+import { fetchRecent, isNoise, mailPrompt, mailState, markChecked, matchMessage, openImap, parseMessage, parseWith, readMailSettings, validateMail } from './mail.mjs';
 import { lintText } from './lint.mjs';
 import { ReviewQueue, reviewFile } from './review.mjs';
 import { Tracker, findDuplicates, normalizeUrl } from './tracker.mjs';
@@ -169,11 +170,58 @@ async function letterStep({ profile, queue, tracker, ask, fetch, log, limit, res
   }
 }
 
-/** steps: any of scan, evaluate, followups, letters. `scan` runs the scanners and returns an exit code. */
-export async function runToday({ home, profile, agent, steps = ['scan', 'evaluate', 'followups', 'letters'], scan, log = console.log, today = localDate(), ask, fetch = (url) => fetchJd(url, { browser: profile.daily.browser, session: { profile: loginProfile(home), sites: readSites(home) } }) }) {
-  const res = { evaluated: 0, unread: 0, drafted: 0, letters: 0, errors: [], stopped: null };
+// The mailbox is read once per run, read-only. A message reaches the AI only when it
+// belongs to a tracked application and is not list mail; the rest is never sent anywhere.
+async function mailStep({ home, profile, queue, tracker, ask, log, limit, res, today, mail }) {
+  const state = mailState(home);
+  if (!state.ready) { log('mail: not set up, skipped'); return; }
+  const rows = tracker.rows();
+  let fetched;
+  try {
+    const client = await mail.open({ host: state.host });
+    try {
+      const since = new Date(Date.now() - state.days * 86400000);
+      fetched = await fetchRecent(client, { since, after: readMailSettings(home).checked, limit });
+    } finally { await client.logout(); }
+  } catch (e) {
+    const detail = String(e.responseText || e.message);
+    res.errors.push(`mail: ${detail}`);
+    log(`! mail: ${detail}`);
+    res.stopped = /auth|credential|login|password/i.test(detail) ? 'login' : classifyFailure(detail);
+    if (res.stopped === 'other') res.stopped = null;
+    return;
+  }
+  log(`mail: ${fetched.messages.length} new message(s)`);
+  for (const raw of fetched.messages) {
+    let msg;
+    try { msg = await parseMessage(raw, mail.parse); } catch (e) { res.errors.push(`mail uid ${raw.uid}: ${e.message}`); continue; }
+    if (isNoise(msg)) continue;
+    const hit = matchMessage(msg, rows);
+    if (!hit) { res.mailSkipped += 1; continue; }
+    const key = `mail:${msg.messageId || `${fetched.last.uidvalidity}:${msg.uid}`}`;
+    if (queue.has(key)) continue;
+    const label = `#${hit.row.num} ${hit.row.company}: ${msg.subject.slice(0, 60)}`;
+    try {
+      const judged = msg.auto ? { kind: 'auto', summary: 'automatic reply', needsReply: false, reply: '', issues: [] } : await askJson(ask, mailPrompt(profile, msg, hit.row, today), validateMail(profile));
+      queue.add({ type: 'mail', key, title: `${hit.row.company} | ${hit.row.role}`, payload: { num: hit.row.num, company: hit.row.company, role: hit.row.role, status: hit.row.status, how: hit.how, from: msg.from, subject: msg.subject, date: msg.date, excerpt: msg.text.slice(0, 1500), messageId: msg.messageId, ...judged } });
+      queue.save();
+      res.mail += 1;
+      log(`${label}: ${judged.kind}`);
+    } catch (e) {
+      res.errors.push(`mail ${label}: ${e.message}`);
+      log(`! ${label}: ${e.message}`);
+      if (STOP.includes(e.reason)) { res.stopped = e.reason; return; }
+    }
+  }
+  // Nothing is read twice, even when a message was skipped.
+  markChecked(home, fetched.last);
+}
+
+/** steps: any of scan, evaluate, followups, letters, mail. `scan` runs the scanners and returns an exit code. */
+export async function runToday({ home, profile, agent, steps = ['scan', 'mail', 'evaluate', 'followups', 'letters'], scan, mail = { open: openImap, parse: parseWith }, log = console.log, today = localDate(), ask, fetch = (url) => fetchJd(url, { browser: profile.daily.browser, session: { profile: loginProfile(home), sites: readSites(home) } }) }) {
+  const res = { evaluated: 0, unread: 0, drafted: 0, letters: 0, mail: 0, mailSkipped: 0, errors: [], stopped: null };
   const p = pathsOf(home, profile);
-  const useAi = ['evaluate', 'followups', 'letters'].some((s) => steps.includes(s));
+  const useAi = ['evaluate', 'followups', 'letters', 'mail'].some((s) => steps.includes(s));
   if (useAi && !agent) throw new Error('choose an AI agent first');
   if (steps.includes('scan')) {
     log('scan: all sources');
@@ -183,7 +231,8 @@ export async function runToday({ home, profile, agent, steps = ['scan', 'evaluat
   if (!useAi) return res;
   const worker = ask || ((prompt) => askAgent(agent, prompt));
   const shared = { profile, queue: new ReviewQueue(reviewFile(home)), tracker: new Tracker(p.tracker), ask: worker, log, res, today };
-  if (steps.includes('evaluate')) await evaluateStep({ ...shared, pipelineFile: join(home, 'data', 'pipeline.md'), fetch, limit: profile.daily.evaluate });
+  if (steps.includes('mail')) await mailStep({ ...shared, home, mail, limit: profile.daily.mail });
+  if (steps.includes('evaluate') && !res.stopped) await evaluateStep({ ...shared, pipelineFile: join(home, 'data', 'pipeline.md'), fetch, limit: profile.daily.evaluate });
   if (steps.includes('followups') && !res.stopped) await followupStep({ ...shared, limit: profile.daily.followups });
   if (steps.includes('letters') && !res.stopped) await letterStep({ ...shared, fetch, limit: profile.daily.letters });
   return res;

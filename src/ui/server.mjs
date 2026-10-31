@@ -20,6 +20,7 @@ import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readA
 import { profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
 import { clearLogins, openLogin, readSites, removeSite } from '../browser.mjs';
 import { saveLetter } from '../letters.mjs';
+import { MAIL_KEYS, PROVIDERS as MAIL_PROVIDERS, mailState, openImap, saveMailSettings, testMail } from '../mail.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../review.mjs';
 import { SOURCES, sourceState, testSource, updateSource } from '../sources.mjs';
 import { askAgent, askJson, testAgent } from '../worker.mjs';
@@ -28,7 +29,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI = resolve(HERE, '..', '..', 'bin', 'apply-pilot.mjs');
 
 // Steps of "today's work" the panel can start.
-const WORK = { today: ['scan', 'evaluate', 'followups', 'letters'], evaluate: ['evaluate'], drafts: ['followups'], letters: ['letters'] };
+const WORK = { today: ['scan', 'mail', 'evaluate', 'followups', 'letters'], evaluate: ['evaluate'], drafts: ['followups'], letters: ['letters'], mail: ['mail'] };
 
 const TASKS = {
   doctor: { label: 'doctor', args: () => ['doctor'] },
@@ -177,6 +178,12 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
     saveEnv(paths.home, name, value);
     return { ok: true };
   };
+  const saveMail = ({ provider, host, days, user, password }) => {
+    if (user !== undefined) { const v = String(user).trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) throw new Error('that does not look like an email address'); saveEnv(paths.home, MAIL_KEYS[0], v); }
+    if (password !== undefined) { const v = String(password).trim(); if (v.length < 8) throw new Error('that does not look like an app password'); saveEnv(paths.home, MAIL_KEYS[1], v); }
+    if (provider !== undefined || host !== undefined || days !== undefined) saveMailSettings(paths.home, { provider, host, days });
+    return { ok: true };
+  };
   const saveSource = ({ id, on, keywords }) => {
     updateSource(paths.home, { id, on, keywords });
     profile = loadProfile(paths.home);
@@ -221,7 +228,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), sources: sourceState(profile), sites: readSites(paths.home), lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
+      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), sources: sourceState(profile), sites: readSites(paths.home), mail: { ...mailState(paths.home), providers: Object.entries(MAIL_PROVIDERS).map(([id, p]) => ({ id, label: p.label, host: p.host, help: p.help })) }, lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
       catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
@@ -249,6 +256,8 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
       if (pathname === '/api/login/open') return withBody(({ url }) => ({ ok: true, ...openLogin(paths.home, url) }));
       if (pathname === '/api/login/remove') return withBody(({ site }) => { removeSite(paths.home, site); return { ok: true }; });
       if (pathname === '/api/login/clear') return withBody(() => { clearLogins(paths.home); return { ok: true }; });
+      if (pathname === '/api/mail/save') return withBody(saveMail);
+      if (pathname === '/api/mail/test') return withBody(() => testMail(paths.home, openImap));
       if (pathname === '/api/source/key') return withBody(saveSourceKey);
       if (pathname === '/api/source/save') return withBody(saveSource);
       if (pathname === '/api/source/test') return withBody(({ id }) => testSource(profile, id));

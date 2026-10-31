@@ -1,6 +1,6 @@
 # Privacy Policy · 隐私策略
 
-Last updated / 最后更新：2026-10-30 (0.5.6)
+Last updated / 最后更新：2026-10-31 (0.6.0)
 
 Apply-Pilot is free, open-source software that runs on your own computer. It has no server, no account system, no analytics and no telemetry. The author receives no data from you.
 
@@ -14,7 +14,8 @@ Everything Apply-Pilot reads or writes stays in your data folder (`APPLY_PILOT_H
 - `data/applications.md` and `data/pipeline.md`: your applications and candidate postings;
 - `inbox/`, `output/`: scan results, evaluations, drafts and exports;
 - `browser/`: the browser session you create with `apply-pilot linkedin login`;
-- `.env`: API keys you add yourself or enter on the AI or Job sources page, stored as plain text;
+- `.env`: API keys you add yourself or enter on the AI or Job sources page, and the mailbox address and app password, stored as plain text;
+- `mail.json`: the mail service, server name, how many days to look back, and how far the last check got;
 - `agent.json`: which AI agent you chose and when its connection test passed;
 - `data/review.json`: AI evaluations, draft follow-ups and cover letters waiting for your decision, and your past decisions;
 - `output/letters/`: the cover letters you save;
@@ -31,7 +32,8 @@ Apply-Pilot 读写的所有数据都放在你自己硬盘上的数据目录（`A
 - `data/applications.md`、`data/pipeline.md`：申请记录和待筛岗位；
 - `inbox/`、`output/`：扫描结果、评估、草稿和导出文件；
 - `browser/`：你用 `apply-pilot linkedin login` 登录后保存的浏览器状态；
-- `.env`：你自己填写或在 AI 助手页、岗位来源页输入的 API key，以明文保存；
+- `.env`：你自己填写或在 AI 助手页、岗位来源页输入的 API key，以及邮箱地址和应用专用密码，以明文保存；
+- `mail.json`：邮箱服务、服务器名、首次回看天数，以及上次检查到哪里；
 - `agent.json`：你选择搭配的 AI 助手，以及连接测试通过的时间；
 - `data/review.json`：等待你确认的 AI 评估、跟进草稿和求职信，以及你做过的决定；
 - `output/letters/`：你保存的求职信；
@@ -53,6 +55,7 @@ Only when you run a command or click a button that needs the network:
 | `scan websearch` | Brave Search, Mojeek or your SearXNG / 或你自建的 SearXNG | your search queries and API key / 搜索语句和 key |
 | `linkedin scan` | LinkedIn, through your own logged-in browser / 通过你自己登录的浏览器 | the same as browsing LinkedIn yourself / 与你手动浏览领英相同 |
 | `eval run`, `eval pipeline` | the model provider you choose: DeepSeek, OpenAI, OpenRouter, Anthropic; Ollama stays local / 你选择的模型服务商；Ollama 在本机运行 | the job description, plus the summary, facts, gaps and rubric from your `profile.json` / 岗位描述，以及 `profile.json` 中的目标概述、经历、短板和评分标准 |
+| Mailbox check / 邮箱检查 | your mail server over IMAP (read-only), then the AI you chose / 你的邮件服务器（IMAP 只读），然后是你选择的 AI 服务 | your address and app password go to the mail server only. Only a message matched to a tracked application reaches the AI: sender, subject, date and up to 5000 characters of its text, with your profile facts. Unmatched mail is read on this computer and discarded. Mail is never marked read, moved, deleted or sent / 地址和应用专用密码只发给邮件服务器。只有匹配到申请的邮件会发给 AI：发件人、主题、日期和最多 5000 字的正文，以及你的经历。未匹配的邮件只在本机读取后丢弃。邮件不会被标记已读、移动、删除或发送 |
 | Reading a site you signed in to / 读取你登录过的网站 | that site, then the AI you chose / 该网站，然后是你选择的 AI 服务 | your sign-in cookies go to that site only; the text of the page, which can include your name and applications, goes to the AI / 登录 Cookie 只发给该网站；页面文字（可能含姓名和申请记录）会发给 AI |
 | Reading a posting in the local browser / 用本机浏览器读取岗位 | that posting's website / 该岗位所在网站 | a normal page visit from an empty temporary browser profile, with none of your sign-ins or cookies; the profile is deleted afterwards / 一次普通网页访问，使用空白临时配置，不含你的登录状态和 Cookie，用完即删 |
 | Today page, `today`: evaluate, draft follow-ups and letters / 今日工作页、`today`：评估、起草跟进和求职信 | the AI you chose / 你选择的 AI 服务 | each job description, your profile summary, facts, gaps and rubric, and for a follow-up that application's tracker notes / 每个岗位描述，`profile.json` 中的目标概述、经历、短板和评分标准；起草跟进时还有该申请的备注 |

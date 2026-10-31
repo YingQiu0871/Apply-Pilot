@@ -170,6 +170,7 @@ Tell the user, briefly:
 
 - where the data folder is and that it stays private;
 - how to open the panel (icon or `apply-pilot ui --open`);
+- the mailbox is optional: the user sets it up on the Job sources page with an app password; never type their password for them;
 - the daily loop: press "Start today's work" on the Today page (or run `apply-pilot today`), decide what comes back, apply, log;
 - that nothing is ever sent or submitted without their approval.
 

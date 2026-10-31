@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path';
 import { closePipeline } from './additions.mjs';
 import { localDate } from './config.mjs';
 import { lintText } from './lint.mjs';
+import { noteFor, statusFor } from './mail.mjs';
 import { Tracker, findDuplicates } from './tracker.mjs';
 
 export const reviewFile = (home) => join(home, 'data', 'review.json');
@@ -65,7 +66,26 @@ function recordFollowup(item, edits, { trackerFile, profile, today }) {
   return { num: row.num };
 }
 
-/** action: approve | reject for evaluations, sent | reject for follow-ups, retry | reject for unread pages. */
+// "log" records the message; "replied" also records that the user sent the reply themselves.
+function recordMail(item, edits, action, { trackerFile, profile, today }) {
+  const m = { ...item.payload, reply: String(edits.reply ?? item.payload.reply ?? '') };
+  if (action === 'replied') {
+    if (!m.reply.trim()) throw new Error('the reply is empty');
+    const blocked = lintText(m.reply, profile).issues.filter((i) => i.rule === 'forbidden-claim');
+    if (blocked.length) throw new Error(`forbidden claim in the reply: ${blocked[0].detail}`);
+  }
+  const tracker = new Tracker(trackerFile);
+  const row = tracker.get(m.num);
+  if (!row) throw new Error(`row #${m.num} not found`);
+  const status = statusFor(m.kind, row.status) || row.status;
+  tracker.setStatus(row.num, status, noteFor(m, m.kind, m.summary, today));
+  if (action === 'replied') tracker.setStatus(row.num, status, `${today}: reply sent to ${String(m.from).match(/[^\s<>]+@[^\s<>]+/)?.[0] || m.from}: ${m.subject}`);
+  tracker.save();
+  item.payload = m;
+  return { num: row.num, status };
+}
+
+/** action: approve | reject for evaluations, log | replied | reject for mail, sent | reject for follow-ups, retry | reject for unread pages. */
 export function applyDecision({ queue, id, action, edits = {}, home, profile, trackerFile, today = localDate() }) {
   const item = queue.get(id);
   if (!item) throw new Error(`no review item ${id}`);
@@ -80,13 +100,15 @@ export function applyDecision({ queue, id, action, edits = {}, home, profile, tr
   const pipelineFile = join(home, 'data', 'pipeline.md');
   let result = {};
   if (action === 'reject') {
-    if (!['followup', 'letter'].includes(item.type)) closePipeline(pipelineFile, item.payload.url);
+    if (!['followup', 'letter', 'mail'].includes(item.type)) closePipeline(pipelineFile, item.payload.url);
   } else if (item.type === 'evaluation' && action === 'approve') {
     result = approveEvaluation(item, { trackerFile, pipelineFile, today });
   } else if (item.type === 'followup' && action === 'sent') {
     result = recordFollowup(item, edits, { trackerFile, profile, today });
+  } else if (item.type === 'mail' && ['log', 'replied'].includes(action)) {
+    result = recordMail(item, edits, action, { trackerFile, profile, today });
   } else throw new Error(`cannot ${action} a ${item.type}`);
-  item.status = action === 'reject' ? 'rejected' : action === 'sent' ? 'sent' : 'approved';
+  item.status = action === 'reject' ? 'rejected' : ['sent', 'replied'].includes(action) ? 'sent' : 'approved';
   item.decided = new Date().toISOString();
   queue.save();
   return { ok: true, status: item.status, ...result };

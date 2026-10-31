@@ -50,6 +50,7 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
   eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
   agent [claude|codex|deepseek|dsh] [--test]   show or choose the AI agent; --test sends one short request
+  mail [test]                           mailbox settings (set up in the panel), or one read-only connection test
   login URL | login list | login remove SITE | login clear   sign in to a site in a separate browser profile
   sources [test ID]                     show job sources, or send one small test request
   today [--no-scan] [--only evaluate,followups,letters]   scan, evaluate and draft; results wait in the review queue
@@ -149,10 +150,10 @@ async function main() {
     case 'today': {
       const { readAgent } = await import('../src/agents.mjs');
       const { runToday } = await import('../src/daily.mjs');
-      const steps = opt.only ? String(opt.only).split(',') : [...(opt['no-scan'] ? [] : ['scan']), 'evaluate', 'followups', 'letters'];
+      const steps = opt.only ? String(opt.only).split(',') : [...(opt['no-scan'] ? [] : ['scan']), 'mail', 'evaluate', 'followups', 'letters'];
       const scan = () => new Promise((done) => { spawn(process.execPath, [join(PKG, 'bin', 'apply-pilot.mjs'), 'scan', 'all', '--pipeline'], { stdio: 'inherit' }).on('close', done); });
       const res = await runToday({ home, profile, agent: readAgent(home), steps, scan });
-      console.log(`${res.evaluated} evaluated, ${res.unread} unreadable, ${res.drafted} follow-ups and ${res.letters} letters drafted, ${res.errors.length} problem(s). Review them in the panel or with "apply-pilot review".`);
+      console.log(`${res.mail} mail(s) sorted, ${res.evaluated} evaluated, ${res.unread} unreadable, ${res.drafted} follow-ups and ${res.letters} letters drafted, ${res.errors.length} problem(s). Review them in the panel or with "apply-pilot review".`);
       process.exitCode = res.stopped ? 1 : 0;
       break;
     }
@@ -173,7 +174,7 @@ async function main() {
         console.log(JSON.stringify(await saveLetter({ queue, id: pos[1], home, profile, output: p.output, trackerFile: p.tracker })));
         break;
       }
-      const action = pos[0] === 'reject' ? 'reject' : item.type === 'followup' ? 'sent' : 'approve';
+      const action = pos[0] === 'reject' ? 'reject' : item.type === 'followup' ? 'sent' : item.type === 'mail' ? 'log' : 'approve';
       console.log(JSON.stringify(applyDecision({ queue, id: pos[1], action, home, profile, trackerFile: p.tracker })));
       break;
     }
@@ -181,6 +182,12 @@ async function main() {
       const { sourceState, testSource } = await import('../src/sources.mjs');
       if (pos[0] === 'test') { console.log(JSON.stringify(await testSource(profile, pos[1]))); break; }
       for (const s of sourceState(profile)) console.log(`${s.on ? '●' : '○'} ${s.label.padEnd(18)} ${s.ready ? 'ready' : `needs ${s.keys.filter((k) => !k.set).map((k) => k.name).join(', ')}`}`);
+      break;
+    }
+    case 'mail': {
+      const { mailState, openImap, testMail } = await import('../src/mail.mjs');
+      if (pos[0] === 'test') { console.log(JSON.stringify(await testMail(home, openImap))); break; }
+      console.log(JSON.stringify(mailState(home), null, 2));
       break;
     }
     case 'login': {

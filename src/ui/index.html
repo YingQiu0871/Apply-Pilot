@@ -301,7 +301,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 
     <section class="view" data-view="today">
       <div class="page-head"><div><h1 data-t="todayTitle"></h1><p id="todaySub"></p></div>
-        <div class="work"><button class="btn primary" data-task="today" id="todayBtn" data-t="todayStart"></button><button class="btn" data-task="evaluate" data-t="todayEval"></button><button class="btn" data-task="drafts" data-t="todayDraft"></button><button class="btn" data-task="letters" data-t="todayLetters"></button></div></div>
+        <div class="work"><button class="btn primary" data-task="today" id="todayBtn" data-t="todayStart"></button><button class="btn" data-task="evaluate" data-t="todayEval"></button><button class="btn" data-task="drafts" data-t="todayDraft"></button><button class="btn" data-task="letters" data-t="todayLetters"></button><button class="btn" data-task="mail" data-t="todayMail"></button></div></div>
       <div class="card" id="setupCard" style="margin-bottom:16px"><div class="card-h"><h2 data-t="suTitle"></h2></div><div class="card-b" id="setupSteps"></div></div>
       <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-t="runTitle"></h2><div class="status-line"><span class="spin" id="todaySpin"></span><span id="todayState"></span></div></div>
         <div class="card-b"><pre class="console" id="todayConsole"></pre></div></div>
@@ -354,6 +354,12 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
       <div class="page-head"><div><h1 data-t="srcTitle"></h1><p data-t="srcSub"></p></div></div>
       <div class="grid tasks" id="sourceCards" style="margin-bottom:16px"></div>
       <p class="meta" style="white-space:normal" data-t="srcSafe"></p>
+      <div class="card task" style="margin-top:16px" id="mailCard">
+        <h3 data-t="mlTitle"></h3>
+        <p data-t="mlSub"></p>
+        <div id="mailForm"></div>
+        <p class="meta" style="white-space:normal" data-t="mlRisk"></p>
+      </div>
       <div class="card task" style="margin-top:16px">
         <h3 data-t="lgTitle"></h3>
         <p data-t="lgSub"></p>
@@ -407,6 +413,7 @@ let LANG = (() => { try { return localStorage.getItem('ap-lang'); } catch { retu
 const I18N = {
   zh: {
     nav: { today: '今日工作', overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', sources: '岗位来源', tools: '工具' },
+    mlTitle: '邮箱', mlSub: '软件会只读地查看收件箱，把和申请相关的回信交给 AI 归类并起草回复，其他邮件不会发给任何人。邮件不会被标记已读、移动或删除，回复也不会替你发送。', mlProvider: '邮箱服务', mlHost: 'IMAP 服务器', mlUser: '邮箱地址', mlPass: '应用专用密码（不是登录密码）', mlDays: '首次查看最近几天', mlSave: '保存', mlHelp: '如何生成应用专用密码', mlFound: (n) => `连接正常，收件箱有 ${n} 封`, mlChecked: (t) => `上次检查：${t}`, mlRisk: 'Outlook.com 和 Hotmail 个人邮箱已不支持密码登录，这个版本还接不上。密码明文保存在数据目录的 .env 里。匹配到申请的邮件正文会发给你选的 AI。', mlReview: '待确认的回信', mlKind: { positive: '积极回复', interview: '面试邀请', request: '索要材料', rejection: '拒绝', auto: '自动回复', other: '其他' }, mlHow: { address: '按联系人匹配', domain: '按域名匹配', subject: '按主题匹配' }, mlExcerpt: '查看邮件原文', mlReply: '回复草稿', mlNoReply: '不需要回复', mlLog: '记入申请表', mlCopy: '复制回复', mlReplied: '我已回复，记录',
     lgTitle: '登录网站', lgSub: '有些岗位页要登录才能看。在这里打开网站并登录一次，它会自动加入下面的列表，之后读取这个网站时会带上登录状态。这里用的是单独的浏览器配置，不是你平时的 Chrome。', lgOpen: '打开并登录', lgRemove: '移除', lgClear: '清除所有登录', lgClearAsk: '删除专用配置里的所有登录状态？', lgCleared: '已清除所有登录', lgOpened: (s) => `${s} 已加入列表。在弹出的窗口里登录，然后关闭窗口；窗口开着时读不了这些网站。`, lgRisk: '登录后页面上的内容（可能有姓名和申请记录）会发给你选的 AI，所以不要放邮箱。邮箱网站会被拒绝，学校邮箱请自己避开。LinkedIn 等平台限制自动化访问，账号有受限风险。登录信息保存在数据目录的 browser 文件夹，不要同步或发给别人。',
     srcTitle: '岗位来源', srcSub: '选择今日工作去哪里找岗位。需要 Key 的来源都有免费额度，填一次即可。', srcSafe: 'Key 明文保存在数据目录的 .env 里，不会发给 AI，只发给对应来源的官方接口。测试只发送一次小请求。', srcOn: '已开启', srcOff: '未开启', srcNeedKey: '需要 Key', srcNoKey: '不需要 Key', srcCaution: '这个网站的 robots.txt 不允许自动读取搜索页，所以默认不开启。开启前请自行判断。', srcAcademic: '学术', srcAll: '读取该机构全部硕士实习和博士岗位，不用搜索词', srcEnable: '开启', srcDisable: '关闭', srcWords: '搜索词（每行一个）', srcMulti: '搜索词按语言分别设置，请在 profile.json 中修改', srcSave: '保存搜索词', srcSaved: '已保存', srcKeySet: '已设置', srcKeySave: '保存', srcGet: '获取 Key', srcTest: '测试', srcTesting: '测试中…', srcFound: (n) => `连接正常，这次搜到 ${n} 条`, srcFail: { input: '没有保存，请检查输入', key: '还缺 Key', login: 'Key 无效或没有权限', quota: '额度不足或请求太频繁', network: '网络连接失败', other: '调用失败' }, srcQueries: (n) => `使用 ${n} 条搜索语句`, srcNoQueries: '没有搜索语句，请在 profile.json 的 searchQueries 中添加',
     agentsTitle: 'AI 助手', agentsSub: '选择和哪个 AI 搭配，测试通过后，它就能替你评估岗位、起草跟进。',
@@ -415,7 +422,7 @@ const I18N = {
     agSafe: '后台工作时，AI 只收到提示词并返回文字，不能操作你的文件，也不能发送或提交任何东西。Key 明文保存在数据目录的 .env 里，不要把这个文件发给别人。',
     agTest: '测试连接', agDetail: '查看详情', agTesting: '测试中…', agOk: (n) => `连接正常（${n} 秒）`, agFail: { restart: '请从开始菜单或桌面图标重新打开 Apply-Pilot，再测试一次', login: '未登录或 key 无效。请先在终端登录，或重新填写 key', quota: '额度不足或请求太频繁', network: '网络连接失败', missing: '没有找到这个 AI，请先安装', timeout: '等待超时', invalid: '收到了回答，但格式不对', busy: '有任务正在运行，稍后再试', other: '调用失败' },
     agKeyPh: '粘贴 DeepSeek API key', agKeySave: '保存', agKeySaved: 'Key 已保存',
-    todayTitle: '今日工作', todayStart: '开始今天的工作', todayEval: '只评估岗位', todayDraft: '只起草跟进', todayLetters: '只起草求职信',
+    todayTitle: '今日工作', todayStart: '开始今天的工作', todayEval: '只评估岗位', todayDraft: '只起草跟进', todayLetters: '只起草求职信', todayMail: '只检查邮箱',
     todaySub: (n) => (n ? `有 ${n} 项等你确认。AI 不会发送或提交任何东西。` : '扫描新岗位、评估匹配度、起草跟进，结果都会先交给你确认。'),
     suTitle: '开始之前', suAgent: '选择搭配的 AI', suAgentDo: '选一个 AI 并通过连接测试', suGo: '去选择', suProfile: '整理你的经历', suProfileDo: '粘贴 CV 全文，AI 会整理出经历和搜索词。这份 CV 会发给你选的 AI 服务。之后的评估和跟进只使用你确认过的内容，请逐条核对。',
     suCv: 'CV 全文', suRead: '让 AI 读取', suReading: '读取中…', suSummary: '目标（两三句话）', suFacts: '可以证明的经历（每行一条）', suLangs: '语言（每行一条）', suKeywords: '搜索词（每行一条）', suSave: '确认并保存', suSaved: '已保存',
@@ -445,7 +452,7 @@ const I18N = {
       doctor: ['自检', '检查环境、配置和申请表'],
       export: ['导出 Excel', '生成一份新的申请表 Excel'],
     },
-    work: { today: '今天的工作', evaluate: '评估岗位', drafts: '起草跟进', letters: '起草求职信', 'read CV': '读取 CV', 'connection test': '连接测试' },
+    work: { today: '今天的工作', evaluate: '评估岗位', drafts: '起草跟进', letters: '起草求职信', mail: '检查邮箱', 'read CV': '读取 CV', 'connection test': '连接测试' },
     run: '运行', running: (t) => `正在运行：${t}`, done: (t, c) => `${t} 已结束（退出码 ${c}）`, idle: '空闲',
     inbox: '最近的扫描文件：', bye: '已退出，可以关闭这个页面。',
     days: (n) => `近 ${n} 天`, ago: (n) => (n <= 0 ? '今天' : `${n} 天前`), quiet: (n) => `${n} 天没动静`, count: (n) => `${n} 条`, all: '全部',
@@ -456,6 +463,7 @@ const I18N = {
   },
   en: {
     nav: { today: 'Today', overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', sources: 'Job sources', tools: 'Tools' },
+    mlTitle: 'Mailbox', mlSub: 'Apply-Pilot reads your inbox read-only, hands replies about your applications to the AI to sort and draft an answer, and sends nothing else anywhere. Mail is never marked read, moved or deleted, and replies are never sent for you.', mlProvider: 'Mail service', mlHost: 'IMAP server', mlUser: 'Email address', mlPass: 'App password (not your sign-in password)', mlDays: 'Days to look back on the first check', mlSave: 'Save', mlHelp: 'How to create an app password', mlFound: (n) => `Connected, ${n} messages in the inbox`, mlChecked: (t) => `Last check: ${t}`, mlRisk: 'Personal Outlook.com and Hotmail accounts no longer accept password sign-in, so this version cannot read them. The password is stored as plain text in .env in your data folder. The text of a matched message goes to the AI you chose.', mlReview: 'Replies to review', mlKind: { positive: 'Positive reply', interview: 'Interview', request: 'Asked for more', rejection: 'Rejected', auto: 'Auto-reply', other: 'Other' }, mlHow: { address: 'matched by contact', domain: 'matched by domain', subject: 'matched by subject' }, mlExcerpt: 'Show the message', mlReply: 'Reply draft', mlNoReply: 'No reply needed', mlLog: 'Log in the tracker', mlCopy: 'Copy reply', mlReplied: 'I replied, log it',
     lgTitle: 'Sign in to a site', lgSub: 'Some postings need a sign-in. Open the site here and sign in once. It joins the list below, and Apply-Pilot then reads that site signed in. This uses a separate browser profile, not your everyday Chrome.', lgOpen: 'Open and sign in', lgRemove: 'Remove', lgClear: 'Delete all sign-ins', lgClearAsk: 'Delete every sign-in in the separate profile?', lgCleared: 'All sign-ins deleted', lgOpened: (s) => `${s} is on the list. Sign in in the new window, then close it. These sites cannot be read while it is open.`, lgRisk: 'What a signed-in page shows, which can include your name and applications, goes to the AI you chose, so keep mailboxes out. Known mail sites are refused; avoid your school mail yourself. LinkedIn and similar platforms restrict automated access, so your account could be limited. Sign-ins are stored in the browser folder of your data folder. Do not sync or share it.',
     srcTitle: 'Job sources', srcSub: "Choose where today's work looks for postings. Sources that need a key have a free tier, and you enter it once.", srcSafe: 'Keys are stored as plain text in .env in your data folder. They go only to that source\'s official API, never to the AI. A test sends one small request.', srcOn: 'On', srcOff: 'Off', srcNeedKey: 'Needs a key', srcNoKey: 'No key needed', srcCaution: "This site's robots.txt disallows automated reading of its search pages, so it is off by default. Decide for yourself before turning it on.", srcAcademic: 'Academic', srcAll: 'Reads all master and PhD positions there, no search terms needed', srcEnable: 'Turn on', srcDisable: 'Turn off', srcWords: 'Search terms, one per line', srcMulti: 'Search terms are set per language. Edit them in profile.json', srcSave: 'Save terms', srcSaved: 'Saved', srcKeySet: 'set', srcKeySave: 'Save', srcGet: 'Get a key', srcTest: 'Test', srcTesting: 'Testing…', srcFound: (n) => `Connected, ${n} results this time`, srcFail: { input: 'Not saved. Check what you entered', key: 'A key is missing', login: 'The key is invalid or has no access', quota: 'Out of quota or too many requests', network: 'Network connection failed', other: 'The call failed' }, srcQueries: (n) => `Uses ${n} search queries`, srcNoQueries: 'No search queries. Add them under searchQueries in profile.json',
     agentsTitle: 'AI agent', agentsSub: 'Choose which AI to pair with. Once the test passes, it can evaluate postings and draft follow-ups for you.',
@@ -464,7 +472,7 @@ const I18N = {
     agSafe: 'During background work the AI only receives a prompt and returns text. It cannot touch your files, send or submit anything. Keys are stored as plain text in .env in your data folder, so do not share that file.',
     agTest: 'Test connection', agDetail: 'Details', agTesting: 'Testing…', agOk: (n) => `Connected (${n} s)`, agFail: { restart: 'Reopen Apply-Pilot from the Start menu or desktop icon, then test again', login: 'Not signed in or the key is invalid. Sign in from a terminal, or enter the key again', quota: 'Out of quota or too many requests', network: 'Network error', missing: 'This AI was not found. Install it first', timeout: 'Timed out', invalid: 'It answered, but not in the expected format', busy: 'A task is running. Try again shortly', other: 'The call failed' },
     agKeyPh: 'Paste your DeepSeek API key', agKeySave: 'Save', agKeySaved: 'Key saved',
-    todayTitle: 'Today', todayStart: "Start today's work", todayEval: 'Evaluate only', todayDraft: 'Draft follow-ups only', todayLetters: 'Draft letters only',
+    todayTitle: 'Today', todayStart: "Start today's work", todayEval: 'Evaluate only', todayDraft: 'Draft follow-ups only', todayLetters: 'Draft letters only', todayMail: 'Check mail only',
     todaySub: (n) => (n ? `${n} item(s) wait for your decision. The AI never sends or submits anything.` : 'Scan new postings, evaluate them and draft follow-ups. Everything waits for your decision.'),
     suTitle: 'Before you start', suAgent: 'Choose your AI', suAgentDo: 'Pick an AI and pass the connection test', suGo: 'Choose', suProfile: 'Set out your experience', suProfileDo: 'Paste your full CV and the AI will list your experience and search terms. The CV goes to the AI service you chose. Evaluations and follow-ups only use what you confirm here, so check every line.',
     suCv: 'Full CV text', suRead: 'Let the AI read it', suReading: 'Reading…', suSummary: 'Your target (two or three sentences)', suFacts: 'Experience you can prove (one per line)', suLangs: 'Languages (one per line)', suKeywords: 'Search terms (one per line)', suSave: 'Confirm and save', suSaved: 'Saved',
@@ -494,7 +502,7 @@ const I18N = {
       doctor: ['Check setup', 'Environment, profile and tracker'],
       export: ['Export Excel', 'A fresh spreadsheet of the tracker'],
     },
-    work: { today: "today's work", evaluate: 'evaluation', drafts: 'drafting', letters: 'drafting letters', 'read CV': 'reading CV', 'connection test': 'connection test' },
+    work: { today: "today's work", evaluate: 'evaluation', drafts: 'drafting', letters: 'drafting letters', mail: 'checking mail', 'read CV': 'reading CV', 'connection test': 'connection test' },
     run: 'Run', running: (t) => `Running: ${t}`, done: (t, c) => `${t} finished (exit ${c})`, idle: 'Idle',
     inbox: 'Latest scan files:', bye: 'Stopped. You can close this page.',
     days: (n) => `${n} days`, ago: (n) => (n <= 0 ? 'today' : `${n} d ago`), quiet: (n) => `${n} days quiet`, count: (n) => `${n}`, all: 'All',
@@ -608,7 +616,7 @@ function stepsOf(r) {
   return `<div class="steps">${steps.map((s, i) => `<div class="step ${s.on ? 'on' : ''} ${s.cls || ''}"><i></i>${pick(BI.step[i])}<small>${pick([...BI.step[i]].reverse())}</small>${s.on && s.date ? `<span class="date">${s.date.slice(5)}</span>` : ''}</div>`).join('')}</div>`;
 }
 
-const S = { sites: [], loginMsg: '', sources: [], srcWords: {}, srcTests: {}, srcTesting: null, review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: read('ap-view') || 'today', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
+const S = { mail: null, mailDraft: null, mailTest: null, mailTesting: false, sites: [], loginMsg: '', sources: [], srcWords: {}, srcTests: {}, srcTesting: null, review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: read('ap-view') || 'today', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
 
 function setView(v) {
   S.view = v; store('ap-view', v);
@@ -746,6 +754,32 @@ function renderAgents() {
   }).join('');
 }
 
+function renderMail() {
+  if (document.activeElement?.closest?.('#mailForm')) return;
+  // A choice made in the form stays until a save succeeds, also when a save fails.
+  const m = { ...(S.mail || { providers: [] }), ...S.mailDraft };
+  const sel = (id) => (m.provider === id ? 'selected' : '');
+  const other = m.provider === 'other';
+  $('mailForm').innerHTML = `
+    <label class="field">${T.mlProvider}<select id="mlProvider">${['', ...m.providers.map((p) => p.id)].map((id) => `<option value="${id}" ${sel(id)}>${id ? esc(m.providers.find((p) => p.id === id).label) : '—'}</option>`).join('')}</select></label>
+    ${other ? `<label class="field">${T.mlHost}<input id="mlHost" value="${esc(m.host)}" placeholder="imap.example.com" spellcheck="false"></label>` : ''}
+    <label class="field">${T.mlUser}${m.user ? ` · ${T.srcKeySet}` : ''}<input id="mlUser" type="email" autocomplete="off" spellcheck="false"></label>
+    <label class="field">${T.mlPass}${m.password ? ` · ${T.srcKeySet}` : ''}<input id="mlPass" type="password" autocomplete="off"></label>
+    <label class="field">${T.mlDays}<input id="mlDays" type="number" min="1" max="60" value="${m.days || 14}" style="width:90px"></label>
+    ${m.provider === 'outlook' ? '' : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-mail="save">${T.mlSave}</button><button class="btn" data-mail="test" ${m.ready ? '' : 'disabled'}>${T.srcTest}</button>${m.providers.find((p) => p.id === m.provider)?.help ? `<a class="btn" href="${esc(m.providers.find((p) => p.id === m.provider).help)}" target="_blank" rel="noopener">${T.mlHelp} ↗</a>` : ''}</div>
+    <div class="ag-note">${mailNote()}</div>`;
+  $('mlProvider').addEventListener('change', (e) => { S.mailDraft = { provider: e.target.value, host: '' }; renderMail(); });
+}
+const mailNote = () => {
+  if (S.mailTesting) return `<span class="spin on"></span> ${T.srcTesting}`;
+  const r = S.mailTest;
+  if (!r) return S.mail?.checked ? `<span class="meta">${T.mlChecked(S.mail.checked.at.slice(0, 16).replace('T', ' '))}</span>` : '';
+  if (r.saved) return `<span style="color:var(--responded)">${T.srcSaved}</span>`;
+  return r.ok ? `<span style="color:var(--responded)">${T.mlFound(r.found)}</span>`
+    : `<span style="color:var(--rejected)">${esc(T.srcFail[r.reason] || T.srcFail.other)}</span>${r.detail ? `<details><summary>${T.agDetail}</summary><pre>${esc(r.detail)}</pre></details>` : ''}`;
+};
+
 function renderLogins() {
   const list = S.sites.map((s) => `<div style="display:flex;align-items:center;gap:8px;padding:6px 0"><span class="grow">${esc(s)}</span><button class="btn" data-siteremove="${esc(s)}">${T.lgRemove}</button></div>`).join('');
   const clear = S.sites.length ? `<button class="btn" data-login="clear" style="margin-top:6px">${T.lgClear}</button>` : '';
@@ -753,6 +787,7 @@ function renderLogins() {
 }
 
 function renderSources() {
+  renderMail();
   renderLogins();
   if (document.activeElement?.closest?.('#sourceCards')) return;
   $('sourceCards').innerHTML = (S.sources || []).map((s) => {
@@ -812,6 +847,18 @@ function unreadCard(i) {
     <div class="acts"><a class="btn primary" href="${esc(e.url)}" target="_blank" rel="noopener">${T.rvOpen} ↗</a><button class="btn" data-review="reject" data-id="${i.id}">${T.rvSkip}</button></div></div>`;
 }
 
+function mailCard(i) {
+  const d = { ...i.payload, ...S.edits[i.id] };
+  const issues = (i.payload.issues || []).map((x) => x.detail || x.rule);
+  return `<div class="card rv"><div class="rv-head"><div class="grow"><div class="t1">#${d.num} ${esc(d.company)}</div><div class="t2">${esc(d.role)}</div><div class="meta" style="white-space:normal">${esc(d.from)} · ${esc(d.date)} · ${T.mlHow[d.how] || ''}</div></div><div><span class="pill ${{ positive: 's-Responded', interview: 's-Interview', request: 's-Applied', rejection: 's-Rejected', auto: 's-SKIP', other: 's-Evaluated' }[d.kind]}">${T.mlKind[d.kind]}</span></div></div>
+    <p><b>${esc(d.subject)}</b><br>${esc(d.summary)}</p>
+    <details><summary>${T.mlExcerpt}</summary><pre style="white-space:pre-wrap;font:inherit;max-height:220px;overflow:auto">${esc(d.excerpt)}</pre></details>
+    ${d.kind === 'auto' ? '' : `<label class="field" style="margin-top:10px">${T.mlReply}<textarea data-edit="${i.id}" data-k="reply" style="min-height:120px" placeholder="${T.mlNoReply}">${esc(d.reply || '')}</textarea></label>`}
+    ${issues.length ? `<div class="warn-line">${T.rvIssues}${esc(issues.join(' · '))}</div>` : ''}
+    ${rvErr(i.id)}
+    <div class="acts"><button class="btn primary" data-review="log" data-id="${i.id}">${T.mlLog}</button>${d.kind === 'auto' ? '' : `<button class="btn" data-rvcopy="${i.id}" data-k="reply">${T.mlCopy}</button><button class="btn" data-rvmail="${i.id}">${T.rvMail}</button><button class="btn" data-review="replied" data-id="${i.id}">${T.mlReplied}</button>`}<button class="btn" data-review="reject" data-id="${i.id}">${T.rvSkip}</button></div></div>`;
+}
+
 function letterCard(i) {
   const d = { ...i.payload, ...S.edits[i.id] };
   const issues = (i.payload.issues || []).map((x) => x.detail || x.rule);
@@ -860,9 +907,10 @@ function renderToday() {
   const evals = S.review.filter((i) => i.type === 'evaluation').sort((a, b) => b.payload.score100 - a.payload.score100);
   const fus = S.review.filter((i) => i.type === 'followup');
   const letters = S.review.filter((i) => i.type === 'letter');
+  const mails = S.review.filter((i) => i.type === 'mail');
   const unread = S.review.filter((i) => i.type === 'unread');
   const group = (title, list, card) => (list.length ? `<h2 style="font-size:14px;margin:18px 0 10px">${title} · ${list.length}</h2>${list.map(card).join('')}` : '');
-  $('reviewList').innerHTML = S.review.length ? group(T.rvEval, evals, evalCard) + group(T.rvFollow, fus, followCard) + group(T.rvLetters, letters, letterCard) + group(T.rvUnread, unread, unreadCard) : `<div class="card"><div class="empty">${T.rvEmpty}</div></div>`;
+  $('reviewList').innerHTML = S.review.length ? group(T.rvEval, evals, evalCard) + group(T.mlReview, mails, mailCard) + group(T.rvFollow, fus, followCard) + group(T.rvLetters, letters, letterCard) + group(T.rvUnread, unread, unreadCard) : `<div class="card"><div class="empty">${T.rvEmpty}</div></div>`;
 }
 
 function renderTools() {
@@ -968,7 +1016,7 @@ async function load() {
     const res = await fetch('/api/data', { cache: 'no-store' });
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
-    Object.assign(S, { home: d.home, rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent, sources: d.sources || [], sites: d.sites || [], review: d.review || [], ready: d.ready, lastRun: d.lastRun });
+    Object.assign(S, { home: d.home, rows: d.rows, followDays: d.followUpDays, running: d.running, inbox: d.inbox || [], agents: d.agents, agent: d.agent, sources: d.sources || [], sites: d.sites || [], mail: d.mail || S.mail, review: d.review || [], ready: d.ready, lastRun: d.lastRun });
     fillDraft(d.candidate);
     $('updated').textContent = `${d.rows.length} ${T.rows} · ${new Date(d.generated).toLocaleTimeString()}`;
     $('err').style.display = 'none';
@@ -977,7 +1025,7 @@ async function load() {
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],[data-review],[data-rvcopy],[data-rvmail],[data-test],[data-key],[data-login],[data-siteremove],[data-srckey],[data-srcon],[data-srcsave],[data-srctest],[data-suread],[data-susave],#langBtn,#themeBtn,#scrim');
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],[data-review],[data-rvcopy],[data-rvmail],[data-test],[data-key],[data-mail],[data-login],[data-siteremove],[data-srckey],[data-srcon],[data-srcsave],[data-srctest],[data-suread],[data-susave],#langBtn,#themeBtn,#scrim');
   if (!t) return;
   if (t.dataset.go) return setView(t.dataset.go);
   if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.stage = null; S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
@@ -1015,16 +1063,36 @@ document.addEventListener('click', async (e) => {
   }
   if (t.dataset.rvcopy) {
     const it = S.review.find((i) => i.id === t.dataset.rvcopy);
-    await navigator.clipboard.writeText({ ...it.payload, ...S.edits[it.id] }.body);
+    await navigator.clipboard.writeText({ ...it.payload, ...S.edits[it.id] }[t.dataset.k || 'body']);
     t.textContent = T.rvCopied;
     return;
   }
-  if (t.dataset.rvmail) { const it = S.review.find((i) => i.id === t.dataset.rvmail); location.href = mailUrl({ ...it.payload, ...S.edits[it.id] }); return; }
+  if (t.dataset.rvmail) {
+    const it = S.review.find((i) => i.id === t.dataset.rvmail);
+    const d = { ...it.payload, ...S.edits[it.id] };
+    location.href = it.type === 'mail' ? mailUrl({ to: (String(d.from).match(/[^\s<>]+@[^\s<>]+/) || [''])[0], subject: /^re:/i.test(d.subject) ? d.subject : `Re: ${d.subject}`, body: d.reply || '' }) : mailUrl(d);
+    return;
+  }
   if (t.dataset.test) {
     S.testing = t.dataset.test; render();
     S.tests[t.dataset.test] = await post('/api/agent/test', { agent: t.dataset.test });
     S.testing = null;
     return load();
+  }
+  if (t.dataset.mail === 'save') {
+    const body = { provider: $('mlProvider').value, host: $('mlHost')?.value, days: $('mlDays').value };
+    if ($('mlUser').value.trim()) body.user = $('mlUser').value.trim();
+    if ($('mlPass').value) body.password = $('mlPass').value;
+    const r = await post('/api/mail/save', body);
+    S.mailTest = r.ok ? { saved: true } : { ok: false, reason: 'input', detail: r.error };
+    if (r.ok) { $('mlUser').value = ''; $('mlPass').value = ''; S.mailDraft = null; }
+    return load();
+  }
+  if (t.dataset.mail === 'test') {
+    S.mailTesting = true; renderMail();
+    const r = await post('/api/mail/test');
+    S.mailTesting = false; S.mailTest = r; renderMail();
+    return;
   }
   if (t.dataset.login === 'open') {
     const r = await post('/api/login/open', { url: $('loginUrl').value.trim() });

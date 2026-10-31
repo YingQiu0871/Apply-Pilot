@@ -132,6 +132,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `ui`, `shortcut` | live dashboard and control panel; desktop launcher (Windows `.lnk`, macOS `.command`, Linux `.desktop`) | 实时看板和控制面板；桌面双击图标 |
 | `agent` | choose and test the AI agent: Claude Code, Codex CLI, DeepSeek, DeepSeek Harness | 选择并测试搭配的 AI 助手 |
 | `sources` | show job sources and test one | 查看岗位来源并测试 |
+| `mail` | mailbox settings and a read-only connection test | 邮箱设置与只读连接测试 |
 | `today`, `review` | scan, evaluate and draft in one run; decide what comes back | 一次完成扫描、评估和起草；审核结果 |
 | `import PATH` | read an existing database from a file or folder; preview first, `--write` appends new rows only | 从文件或文件夹读取已有数据；先预览，`--write` 只追加新行 |
 | `add`, `status`, `note`, `list` | the tracker `data/applications.md`, with duplicate detection | 申请表，自动查重 |
@@ -181,9 +182,9 @@ Windows 10/11、macOS、Linux 都能用（Node 20 以上），CI 在三个系统
 
 ## AI agents · AI 助手
 
-Choose Claude Code, Codex, DeepSeek or DeepSeek Harness once on the panel's AI page and pass the connection test. No prompts are needed after that: the Today page scans, evaluates postings, drafts follow-ups and cover letters for your best matches, and every result waits in a review queue for your decision. A saved letter becomes .txt, .docx and, with Word or LibreOffice, .pdf. The AI runs without tools and only returns text, so Apply-Pilot does all reading and writing. Follow-ups are never sent for you: copy one or open it in your mail app, then log it. From the command line: `apply-pilot agent claude|codex|deepseek|dsh --test`, `apply-pilot today`, `apply-pilot review`.
+Choose Claude Code, Codex, DeepSeek or DeepSeek Harness once on the panel's AI page and pass the connection test. No prompts are needed after that: the Today page scans, evaluates postings, drafts follow-ups and cover letters for your best matches, reads replies in your mailbox and sorts them, and every result waits in a review queue for your decision. A saved letter becomes .txt, .docx and, with Word or LibreOffice, .pdf. The AI runs without tools and only returns text, so Apply-Pilot does all reading and writing. Follow-ups are never sent for you: copy one or open it in your mail app, then log it. From the command line: `apply-pilot agent claude|codex|deepseek|dsh --test`, `apply-pilot today`, `apply-pilot review`.
 
-在控制面板的「AI 助手」页选好 Claude Code、Codex、DeepSeek 或 DeepSeek Harness，并通过连接测试，之后就不用再写提示词：「今日工作」页会扫描岗位、评估匹配度、起草跟进，并为高分岗位起草求职信，所有结果都先进入审核队列，由你决定。保存求职信时会生成 .txt 和 .docx；装有 Word 或 LibreOffice 时还会生成 .pdf。AI 没有任何工具，只返回文字，读写文件都由 Apply-Pilot 完成。跟进邮件不会替你发送：你可以复制或在邮件软件中打开，发完再记录。命令行：`apply-pilot agent claude|codex|deepseek|dsh --test`、`apply-pilot today`、`apply-pilot review`。
+在控制面板的「AI 助手」页选好 Claude Code、Codex、DeepSeek 或 DeepSeek Harness，并通过连接测试，之后就不用再写提示词：「今日工作」页会扫描岗位、评估匹配度、起草跟进，为高分岗位起草求职信，并读取邮箱里的回信加以归类，所有结果都先进入审核队列，由你决定。保存求职信时会生成 .txt 和 .docx；装有 Word 或 LibreOffice 时还会生成 .pdf。AI 没有任何工具，只返回文字，读写文件都由 Apply-Pilot 完成。跟进邮件不会替你发送：你可以复制或在邮件软件中打开，发完再记录。命令行：`apply-pilot agent claude|codex|deepseek|dsh --test`、`apply-pilot today`、`apply-pilot review`。
 
 - [INSTALL_FOR_AI.md](INSTALL_FOR_AI.md): step-by-step setup for an agent / 给 agent 的分步安装指引
 - [AGENTS.md](AGENTS.md): rules for every agent / 所有 agent 必须遵守的规则

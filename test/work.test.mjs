@@ -8,6 +8,7 @@ import { initHome, updateProfile } from '../src/home.mjs';
 import { closePipeline, pendingPipeline } from '../src/additions.mjs';
 import { Tracker } from '../src/tracker.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../src/review.mjs';
+import { fetchRecent, isNoise, mailState, matchMessage, noteFor, parseMessage, saveMailSettings, statusFor, testMail, validateMail } from '../src/mail.mjs';
 import { runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
 import { asksForHuman, asksForSignIn, assertPublicUrl, clearLogins, findBrowser, loginProfile, openLogin, readSites, removeSite, renderPage, siteAllowed } from '../src/browser.mjs';
 import { buildDocx, plainDocx, readParagraphs } from '../src/docx.mjs';
@@ -599,4 +600,117 @@ test('the desktop panel takes a free port when its usual one is busy', async () 
   await new Promise((done) => { busy.close(done); });
   panel.server.closeAllConnections();
   await new Promise((done) => { panel.server.close(done); });
+});
+
+const mailRows = [
+  { num: 1, company: 'Gamma Lab', role: 'Intern', status: 'Applied', notes: '2026-10-01: sent to pat@gamma-lab.example', url: '' },
+  { num: 2, company: 'Acme Pharma', role: 'Formulation intern', status: 'Applied', notes: '2026-10-02: applied through portal', url: 'https://jobs.acme-pharma.example/1' },
+  { num: 3, company: 'Acme Pharma', role: 'QC intern', status: 'Applied', notes: '2026-10-03: applied through portal', url: 'https://jobs.acme-pharma.example/2' },
+  { num: 4, company: 'Old', role: 'x', status: 'Discarded', notes: '2026-09-01: sent to old@gamma-lab.example', url: '' },
+];
+
+test('a message is matched by contact, then domain, then subject, and never to a closed row', () => {
+  assert.deepEqual(matchMessage({ from: 'Pat <pat@gamma-lab.example>', subject: 'Re: application' }, mailRows).row.num, 1);
+  assert.equal(matchMessage({ from: 'Pat <pat@gamma-lab.example>', subject: 'x' }, mailRows).how, 'address');
+  const dom = matchMessage({ from: 'hr@acme-pharma.example', subject: 'Your QC intern application' }, mailRows);
+  assert.deepEqual([dom.row.num, dom.how], [3, 'domain']);
+  assert.equal(matchMessage({ from: 'someone@gmail.com', subject: 'Gamma Lab internship: next steps' }, mailRows)?.row.num, 1);
+  assert.equal(matchMessage({ from: 'old@gamma-lab.example', subject: 'hi' }, mailRows).row.num, 1, 'a closed row is skipped, the live one found by domain');
+  assert.equal(matchMessage({ from: 'news@random.example', subject: 'Weekly digest' }, mailRows), null);
+  assert.equal(isNoise({ from: 'no-reply@jobs.example', subject: 'New jobs for you' }), true);
+  assert.equal(isNoise({ from: 'pat@gamma-lab.example', subject: 'Re: application', headers: '' }), false);
+});
+
+test('mail fetching is read-only and remembers where it stopped', async () => {
+  const calls = [];
+  const client = {
+    mailbox: { uidValidity: 7n, exists: 3 },
+    getMailboxLock: async (box, opts) => { calls.push(['lock', box, opts.readOnly]); return { release: () => calls.push(['release']) }; },
+    search: async (q) => { calls.push(['search', q]); return [11, 12, 13]; },
+    fetchOne: async (uid, q, o) => { calls.push(['fetch', uid, o.uid]); return { source: Buffer.from(`Subject: s${uid}\n\nbody`), envelope: { subject: `s${uid}` }, headers: '' }; },
+  };
+  const first = await fetchRecent(client, { since: new Date('2026-10-01') });
+  assert.equal(first.messages.length, 3);
+  assert.deepEqual(first.last, { uidvalidity: '7', uid: 13 });
+  assert.ok(calls.every((c) => c[0] !== 'lock' || c[2] === true), 'always read-only');
+  assert.ok(!JSON.stringify(calls).includes('flag'), 'nothing is flagged');
+  const again = await fetchRecent(client, { since: new Date('2026-10-01'), after: first.last });
+  assert.deepEqual(calls.at(-2)[1], { uid: '14:*' });
+  assert.equal(again.messages.length, 0, 'UIDs at or below the last one are skipped');
+  assert.deepEqual(again.last, first.last);
+});
+
+test('a parsed message keeps the fields the AI sees and flags auto replies', async () => {
+  const parse = async () => ({ from: { text: 'Pat <pat@gamma-lab.example>' }, subject: 'Re: internship', text: 'Hello,\r\nwe would like to talk.', date: new Date('2026-10-30T10:00:00Z'), messageId: '<m1@x>' });
+  const msg = await parseMessage({ uid: 5, source: '', headers: 'Auto-Submitted: auto-replied' }, parse);
+  assert.deepEqual([msg.from, msg.subject, msg.date, msg.text, msg.auto, msg.messageId], ['Pat <pat@gamma-lab.example>', 'Re: internship', '2026-10-30', 'Hello,\nwe would like to talk.', true, '<m1@x>']);
+});
+
+test('the mail answer is checked and maps to a status', () => {
+  const check = validateMail({ writing: { forbiddenClaims: ['flow cytometry'] } });
+  assert.throws(() => check({ kind: 'positive', summary: '' }), /summary/);
+  assert.throws(() => check({ kind: 'positive', summary: 's', reply: 'I did flow cytometry.' }), /forbidden claim/);
+  const v = check({ kind: 'weird', summary: 'They ask for a transcript.', needsReply: true, reply: 'Attached is my transcript, [document].' });
+  assert.deepEqual([v.kind, v.needsReply], ['other', true]);
+  assert.equal(check({ kind: 'rejection', summary: 's', needsReply: true, reply: '' }).needsReply, false, 'no reply text means no reply');
+  assert.equal(statusFor('interview', 'Applied'), 'Interview');
+  assert.equal(statusFor('positive', 'Interview'), null, 'never a step back');
+  assert.equal(statusFor('rejection', 'Interview'), 'Rejected');
+  assert.equal(statusFor('auto', 'Applied'), null);
+  assert.match(noteFor({ from: 'Pat <pat@x.example>' }, 'interview', 'call on Monday', '2026-10-30'), /^2026-10-30: Pat replied: interview proposed: call on Monday$/);
+});
+
+test('today checks the mailbox once, hands matched mail to the AI and logs it on approval', async () => {
+  const home = newHome();
+  const profile = loadProfile(home);
+  const trackerFile = join(home, 'data', 'applications.md');
+  const t = new Tracker(trackerFile);
+  const row = t.add({ date: '2026-10-01', company: 'Gamma Lab', role: 'Intern', status: 'Applied', notes: '2026-10-01: sent to pat@gamma-lab.example' });
+  t.save();
+  saveMailSettings(home, { provider: 'gmail', days: 14 });
+  process.env.APPLY_PILOT_MAIL_USER = 'me@example.com'; process.env.APPLY_PILOT_MAIL_PASSWORD = 'app-password-1';
+  const raw = (uid, from, subject, body, headers = '') => ({ uid, source: `From: ${from}\nSubject: ${subject}\n\n${body}`, envelope: { subject }, headers });
+  const inbox = [raw(1, 'Pat <pat@gamma-lab.example>', 'Re: internship', 'We would like a call next week.'), raw(2, 'news@list.example', 'Newsletter', 'x', 'List-Unsubscribe: <x>'), raw(3, 'stranger@other.example', 'Hello', 'unrelated')];
+  const seen = [];
+  const client = { mailbox: { uidValidity: 1, exists: 3 }, getMailboxLock: async () => ({ release() {} }), search: async () => inbox.map((m) => m.uid), fetchOne: async (uid) => inbox.find((m) => m.uid === Number(uid)), logout: async () => seen.push('logout') };
+  const parse = async (source) => { const [head, body] = String(source).split('\n\n'); const h = Object.fromEntries(head.split('\n').map((l) => l.split(': '))); return { from: { text: h.From }, subject: h.Subject, text: body, date: new Date('2026-10-30'), messageId: `<${h.Subject}@x>` }; };
+  const calls = [];
+  const ask = async (p) => { calls.push(p); return JSON.stringify({ kind: 'interview', summary: 'They propose a call next week.', needsReply: true, reply: 'Thank you, I am available next week. [date]' }); };
+  const res = await runToday({ home, profile, agent: 'codex', steps: ['mail'], ask, mail: { open: async () => client, parse }, log: () => {}, today: '2026-10-30' });
+  assert.deepEqual([res.mail, res.mailSkipped, res.errors], [1, 1, []]);
+  assert.equal(calls.length, 1, 'only the matched message reached the AI');
+  assert.ok(calls[0].user.includes('We would like a call'));
+  assert.ok(!calls[0].user.includes('unrelated'));
+  assert.deepEqual(seen, ['logout']);
+  assert.deepEqual(mailState(home).checked.uid, 3);
+  const queue = new ReviewQueue(reviewFile(home));
+  const item = queue.pending()[0];
+  assert.equal(item.type, 'mail');
+  assert.deepEqual([item.payload.kind, item.payload.num, item.payload.how], ['interview', row.num, 'address']);
+  const again = await runToday({ home, profile, agent: 'codex', steps: ['mail'], ask, mail: { open: async () => client, parse }, log: () => {} });
+  assert.equal(again.mail, 0, 'the same message is not sorted twice');
+  assert.throws(() => applyDecision({ queue, id: item.id, action: 'replied', edits: { reply: 'I ran flow cytometry' }, home, profile: { ...profile, writing: { forbiddenClaims: ['flow cytometry'] } }, trackerFile }), /forbidden claim/);
+  const logged = applyDecision({ queue, id: item.id, action: 'replied', edits: { reply: 'Thank you, Tuesday works.' }, home, profile, trackerFile, today: '2026-10-30' });
+  assert.equal(logged.status, 'Interview');
+  const after = new Tracker(trackerFile).get(row.num);
+  assert.equal(after.status, 'Interview');
+  assert.ok(after.notes.includes('Pat replied: interview proposed'));
+  assert.ok(after.notes.includes('reply sent to pat@gamma-lab.example'));
+  delete process.env.APPLY_PILOT_MAIL_USER; delete process.env.APPLY_PILOT_MAIL_PASSWORD;
+});
+
+test('mail settings never expose the password, and the test needs all three', async () => {
+  const home = newHome();
+  assert.throws(() => saveMailSettings(home, { provider: 'other', host: 'bad host!' }), /server name/);
+  saveMailSettings(home, { provider: 'other', host: 'imap.school.example', days: 99 });
+  const s = mailState(home);
+  assert.deepEqual([s.host, s.days, s.ready], ['imap.school.example', 60, false]);
+  assert.equal((await testMail(home, async () => { throw new Error('must not connect'); })).reason, 'key');
+  process.env.APPLY_PILOT_MAIL_USER = 'me@example.com'; process.env.APPLY_PILOT_MAIL_PASSWORD = 'secret-app-pw';
+  assert.ok(!JSON.stringify(mailState(home)).includes('secret-app-pw'));
+  const r = await testMail(home, async () => ({ mailbox: { exists: 12 }, getMailboxLock: async () => ({ release() {} }), logout: async () => {} }));
+  assert.deepEqual(r, { ok: true, found: 12 });
+  const bad = await testMail(home, async () => { throw Object.assign(new Error('x'), { responseText: 'AUTHENTICATIONFAILED Invalid credentials' }); });
+  assert.equal(bad.reason, 'login');
+  delete process.env.APPLY_PILOT_MAIL_USER; delete process.env.APPLY_PILOT_MAIL_PASSWORD;
 });

@@ -13,3 +13,4 @@ export { askAgent, askJson, testAgent, classifyFailure } from './worker.mjs';
 export { ReviewQueue, applyDecision } from './review.mjs';
 export { runToday, setupState } from './daily.mjs';
 export { SOURCES, sourceState, testSource, updateSource } from './sources.mjs';
+export { PROVIDERS as MAIL_PROVIDERS, fetchRecent, isNoise, mailPrompt, mailState, matchMessage, noteFor, parseMessage, saveMailSettings, statusFor, testMail, validateMail } from './mail.mjs';

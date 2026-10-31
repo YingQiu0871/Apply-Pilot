@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0 — 2026-10-31
+
+- Mailbox: set up Gmail, Yahoo, iCloud or another IMAP server with an app password on the Job sources page. Today's work then reads new mail read-only, matches each message to a tracked application by contact, sender domain or subject, and hands only matched messages to the AI. The AI sorts them (positive, interview, asked for more, rejected, auto-reply, other), writes a one-line summary and a reply draft when one is needed.
+- Replies wait on the Today page. "Log in the tracker" records the message and moves the status forward (Responded, Interview, Rejected), never back. Copy the reply or open it in your mail app, then "I replied, log it". Nothing is sent, marked read, moved or deleted.
+- Each message is looked at once. Mail-list and robot mail is skipped before matching. Personal Outlook.com and Hotmail accounts need OAuth and are not supported yet.
+- New: "Check mail only" on the Today page, `today --only mail`, `mail`, `mail test`. New dependencies: imapflow and mailparser.
+
 ## 0.5.6 — 2026-10-30
 
 - New users no longer get Euraxess by default, because its robots.txt disallows automated reading of its search pages. Their search terms now become a jobRxiv source. Euraxess stays available on the Job sources page with a note, and existing setups are not changed.
