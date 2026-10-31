@@ -19,6 +19,7 @@ import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
 import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readAgentState, saveAgent } from '../agents.mjs';
 import { profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
 import { clearLogins, openLogin, readSites, removeSite } from '../browser.mjs';
+import { ANSWER_KEYS, prefill, readAnswers, saveAnswers } from '../forms.mjs';
 import { saveLetter } from '../letters.mjs';
 import { MAIL_KEYS, PROVIDERS as MAIL_PROVIDERS, mailState, openImap, saveMailSettings, testMail } from '../mail.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../review.mjs';
@@ -178,6 +179,21 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
     saveEnv(paths.home, name, value);
     return { ok: true };
   };
+  let lastPrefill = null;
+  const runPrefill = ({ num }) => {
+    if (running) return { ok: false, error: `"${running}" is still running` };
+    const agent = readAgent(paths.home);
+    if (!agent) return { ok: false, error: 'choose an AI agent first' };
+    const row = new Tracker(trackerFile).get(num);
+    if (!row) return { ok: false, error: `no application #${num}` };
+    begin('prefill');
+    log(`$ prefill #${row.num} ${row.company}`);
+    prefill({ home: paths.home, profile, row, ask: (p) => askAgent(agent, p), log })
+      .then((r) => { lastPrefill = { num: row.num, ...r, at: new Date().toISOString() }; finish('prefill', 0); push('changed', {}); })
+      .catch((e) => { log(`! ${e.message}`); lastPrefill = { num: row.num, error: e.message, at: new Date().toISOString() }; finish('prefill', 1); push('changed', {}); });
+    return { ok: true };
+  };
+  const putAnswers = ({ answers }) => { saveAnswers(paths.home, answers); profile = loadProfile(paths.home); return { ok: true }; };
   const saveMail = ({ provider, host, days, user, password }) => {
     if (user !== undefined) { const v = String(user).trim(); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) throw new Error('that does not look like an email address'); saveEnv(paths.home, MAIL_KEYS[0], v); }
     if (password !== undefined) { const v = String(password).trim(); if (v.length < 8) throw new Error('that does not look like an app password'); saveEnv(paths.home, MAIL_KEYS[1], v); }
@@ -228,7 +244,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
   const server = createServer((req, res) => {
     const { pathname } = new URL(req.url, 'http://localhost');
     if (pathname === '/api/data') {
-      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), sources: sourceState(profile), sites: readSites(paths.home), mail: { ...mailState(paths.home), providers: Object.entries(MAIL_PROVIDERS).map(([id, p]) => ({ id, label: p.label, host: p.host, help: p.help })) }, lastRun, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
+      try { json(res, 200, { generated: new Date().toISOString(), home: homeInfo(), followUpDays: profile.followUp.afterDays, rows: data(), running, inbox: latestInbox(), tasks: Object.keys(TASKS), agents, agent: readAgent(paths.home), review: queue().pending(), sources: sourceState(profile), sites: readSites(paths.home), mail: { ...mailState(paths.home), providers: Object.entries(MAIL_PROVIDERS).map(([id, p]) => ({ id, label: p.label, host: p.host, help: p.help })) }, lastRun, lastPrefill, answers: readAnswers(paths.home), answerKeys: ANSWER_KEYS, ready: setupState(profile, readAgentState(paths.home)), candidate: { summary: profile.candidate?.summary || '', facts: profile.candidate?.facts || [], languages: profile.candidate?.languages || [] } }); }
       catch (err) { res.writeHead(500).end(String(err)); }
       return;
     }
@@ -256,6 +272,8 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
       if (pathname === '/api/login/open') return withBody(({ url }) => ({ ok: true, ...openLogin(paths.home, url) }));
       if (pathname === '/api/login/remove') return withBody(({ site }) => { removeSite(paths.home, site); return { ok: true }; });
       if (pathname === '/api/login/clear') return withBody(() => { clearLogins(paths.home); return { ok: true }; });
+      if (pathname === '/api/prefill') return withBody(runPrefill);
+      if (pathname === '/api/answers') return withBody(putAnswers, 5e4);
       if (pathname === '/api/mail/save') return withBody(saveMail);
       if (pathname === '/api/mail/test') return withBody(() => testMail(paths.home, openImap));
       if (pathname === '/api/source/key') return withBody(saveSourceKey);

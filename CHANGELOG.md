@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0 — 2026-10-31
+
+- Form prefill: open an application from the Applications page and press "Prefill the application form". Apply-Pilot opens the page in a visible window on the sign-in profile, reads the form, asks the AI which prepared answer belongs in each field, and fills those. The window stays open for you to check, finish and submit. Nothing is clicked: no submit, no next, no send.
+- Application answers: a card on the Job sources page holds the answers a form may use (name, contact, nationality, dates, work authorization, CV and cover letter files, consent). The AI sees only answer names and field texts, never your values, and cannot invent an answer. A consent box is ticked only when "agree to terms" is set. Fields it cannot map are listed for you.
+- Uses the Chrome or Edge on your computer through its own debugging protocol; no extra download. New command: `prefill NUM`.
+
 ## 0.6.0 — 2026-10-31
 
 - Mailbox: set up Gmail, Yahoo, iCloud or another IMAP server with an app password on the Job sources page. Today's work then reads new mail read-only, matches each message to a tracked application by contact, sender domain or subject, and hands only matched messages to the AI. The AI sorts them (positive, interview, asked for more, rejected, auto-reply, other), writes a one-line summary and a reply draft when one is needed.

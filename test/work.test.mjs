@@ -8,6 +8,7 @@ import { initHome, updateProfile } from '../src/home.mjs';
 import { closePipeline, pendingPipeline } from '../src/additions.mjs';
 import { Tracker } from '../src/tracker.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../src/review.mjs';
+import { ANSWER_KEYS, fieldPrompt, fillForm, pickOption, prefill, readAnswers, saveAnswers, validatePlan } from '../src/forms.mjs';
 import { fetchRecent, isNoise, mailState, matchMessage, noteFor, parseMessage, saveMailSettings, statusFor, testMail, validateMail } from '../src/mail.mjs';
 import { runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
 import { asksForHuman, asksForSignIn, assertPublicUrl, clearLogins, findBrowser, loginProfile, openLogin, readSites, removeSite, renderPage, siteAllowed } from '../src/browser.mjs';
@@ -713,4 +714,101 @@ test('mail settings never expose the password, and the test needs all three', as
   const bad = await testMail(home, async () => { throw Object.assign(new Error('x'), { responseText: 'AUTHENTICATIONFAILED Invalid credentials' }); });
   assert.equal(bad.reason, 'login');
   delete process.env.APPLY_PILOT_MAIL_USER; delete process.env.APPLY_PILOT_MAIL_PASSWORD;
+});
+
+const FIELDS = [
+  { id: 1, type: 'text', name: 'first_name', label: 'First name', required: true, value: '' },
+  { id: 2, type: 'email', name: 'email', label: 'Email', required: true, value: '' },
+  { id: 3, type: 'select', name: 'country', label: 'Country', required: false, value: '', options: ['Choose', 'France', 'Germany'] },
+  { id: 4, type: 'checkbox', name: 'consent', label: 'I agree to the privacy policy', required: true, value: false },
+  { id: 5, type: 'checkbox', name: 'newsletter', label: 'Send me job alerts', required: false, value: false },
+  { id: 6, type: 'file', name: 'cv', label: 'Resume', required: true, value: '' },
+  { id: 7, type: 'textarea', name: 'why', label: 'Why do you want this job?', required: true, value: '' },
+  { id: 8, type: 'text', name: 'phone', label: 'Phone', required: false, value: '+33 6' },
+];
+
+test('the answer bank keeps only known answers and real files', () => {
+  const home = newHome();
+  const cv = join(home, 'cv.pdf');
+  writeFileSync(cv, 'x');
+  assert.throws(() => saveAnswers(home, { ssn: '1' }), /unknown answer/);
+  assert.throws(() => saveAnswers(home, { cvFile: 'missing.pdf' }), /no file/);
+  const saved = saveAnswers(home, { firstName: ' Alex ', email: '', cvFile: 'cv.pdf', agreeToTerms: 'yes' });
+  assert.deepEqual(saved, { firstName: 'Alex', cvFile: cv, agreeToTerms: 'yes' });
+  assert.deepEqual(readAnswers(home), saved);
+  assert.ok(ANSWER_KEYS.includes('coverLetter'));
+});
+
+test('options are matched to answers by text, never by a short fragment', () => {
+  assert.equal(pickOption(['Select', 'France', 'Germany'], 'france'), 'France');
+  assert.equal(pickOption(['Prefer not to say', 'Male'], 'Prefer not to say'), 'Prefer not to say');
+  assert.equal(pickOption(['Chinese', 'Chile'], 'China'), null);
+  assert.equal(pickOption(['Chinese (China)', 'Chile'], 'Chinese'), 'Chinese (China)');
+  assert.equal(pickOption(['Master (M2)', 'Bachelor'], 'Master'), 'Master (M2)');
+  assert.equal(pickOption(['No', 'Yes'], 'N'), null);
+});
+
+test('the AI gets answer names and field texts, never answer values', () => {
+  const answers = { firstName: 'Alex', email: 'alex@example.com', country: 'France', agreeToTerms: 'yes', cvFile: 'C:/cv.pdf' };
+  const p = fieldPrompt(FIELDS, answers, { company: 'Acme', role: 'Intern' });
+  assert.ok(p.user.includes('firstName, email, country, agreeToTerms, cvFile'));
+  assert.ok(!p.user.includes('alex@example.com'));
+  assert.ok(!p.user.includes('C:/cv.pdf'));
+  assert.ok(p.user.includes('options: ["Choose","France","Germany"]'));
+  assert.ok(p.user.includes('(already has a value)'));
+});
+
+test('a plan is cut down to what the bank can back', () => {
+  const answers = { firstName: 'Alex', email: 'alex@example.com', country: 'France', agreeToTerms: 'yes', cvFile: 'C:/cv.pdf' };
+  const check = validatePlan(FIELDS, answers);
+  const plan = check({ fills: [
+    { id: 1, answer: 'firstName' }, { id: 2, answer: 'email' }, { id: 3, answer: 'country', option: 'France' },
+    { id: 4, check: true }, { id: 5, check: true }, { id: 6, answer: 'cvFile' }, { id: 7, answer: 'coverLetter' },
+    { id: 8, answer: 'phone' }, { id: 1, answer: 'lastName' }, { id: 99, answer: 'firstName' }, { id: 2, answer: 'cvFile' },
+  ], unknown: [7, 42] });
+  assert.deepEqual(plan.fills, [{ id: 1, answer: 'firstName' }, { id: 2, answer: 'email' }, { id: 3, answer: 'country', option: 'France' }, { id: 4, check: true }, { id: 6, answer: 'cvFile' }]);
+  assert.deepEqual(plan.unknown, [7]);
+  assert.deepEqual(check({ fills: [{ id: 3, answer: 'country', option: 'Spain' }] }).fills, [{ id: 3, answer: 'country', option: 'France' }], 'a wrong option is replaced by the one matching the prepared answer');
+  assert.deepEqual(check({ fills: [{ id: 3, answer: 'country' }] }).fills, [{ id: 3, answer: 'country', option: 'France' }], 'no option needed from the AI');
+  assert.deepEqual(validatePlan(FIELDS, { ...answers, country: 'Italy' })({ fills: [{ id: 3, answer: 'country' }] }).fills, [], 'no matching option, no fill');
+  assert.deepEqual(validatePlan(FIELDS, { ...answers, agreeToTerms: undefined })({ fills: [{ id: 4, check: true }] }).fills, [], 'no consent without agreeToTerms');
+});
+
+test('filling touches only planned fields and clicks nothing else', async () => {
+  const run = [];
+  const page = {
+    evaluate: async (expr) => { run.push(expr); return true; },
+    send: async (method, params) => { run.push(method); return { result: { root: { nodeId: 1 }, nodeId: 2 } }; },
+  };
+  const answers = { firstName: 'Alex', country: 'France', agreeToTerms: 'yes', cvFile: 'C:/cv.pdf' };
+  const res = await fillForm(page, FIELDS, { fills: [{ id: 1, answer: 'firstName' }, { id: 3, answer: 'country', option: 'France' }, { id: 4, check: true }, { id: 6, answer: 'cvFile' }], unknown: [7] }, answers);
+  assert.deepEqual(res.filled.map((f) => f.label), ['First name', 'Country', 'I agree to the privacy policy', 'Resume']);
+  assert.deepEqual(res.todo, ['Email', 'Why do you want this job?']);
+  const scripts = run.filter((r) => typeof r === 'string' && r.startsWith('(() =>'));
+  assert.ok(scripts.every((s) => !/submit|requestSubmit|button/i.test(s)), 'never a submit');
+  assert.ok(scripts.some((s) => s.includes('"Alex"')));
+  assert.ok(run.includes('DOM.setFileInputFiles'));
+});
+
+test('prefill reads the page, asks once, fills and logs, and never submits', async () => {
+  const home = newHome();
+  const profile = loadProfile(home);
+  const trackerFile = join(home, 'data', 'applications.md');
+  const t = new Tracker(trackerFile);
+  const row = t.add({ date: '2026-10-20', company: 'Acme Pharma', role: 'Formulation intern', score: '85/100', status: 'Evaluated', url: 'https://jobs.acme-pharma.example/apply/1', notes: 'Apply' });
+  t.save();
+  await assert.rejects(prefill({ home, profile, row, ask: async () => '{}', open: async () => { throw new Error('must not open'); } }), /answers first/);
+  saveAnswers(home, { firstName: 'Alex', email: 'alex@example.com', agreeToTerms: 'yes' });
+  const script = [];
+  const page = { pageUrl: row.url, close: () => script.push('close'), send: async () => ({ result: { root: { nodeId: 1 }, nodeId: 2 } }), evaluate: async (expr) => { script.push(expr); return expr.includes('document.querySelectorAll(') ? { title: 'Apply', fields: FIELDS } : true; } };
+  const opened = [];
+  const asked = [];
+  const res = await prefill({ home, profile, row, today: '2026-10-31', ask: async (p) => { asked.push(p); return JSON.stringify({ fills: [{ id: 1, answer: 'firstName' }, { id: 2, answer: 'email' }, { id: 4, check: true }, { id: 7, answer: 'coverLetter' }], unknown: [7] }); }, open: async (h, url) => { opened.push(url); return { port: 1, url }; }, connect: async () => page });
+  assert.deepEqual(opened, [row.url]);
+  assert.equal(asked.length, 1);
+  assert.deepEqual(res.filled.map((f) => f.label), ['First name', 'Email', 'I agree to the privacy policy']);
+  assert.deepEqual(res.todo, ['Resume', 'Why do you want this job?']);
+  assert.equal(script.at(-1), 'close');
+  assert.ok(new Tracker(trackerFile).get(row.num).notes.includes('application form prefilled (3 field(s))'));
+  assert.equal(new Tracker(trackerFile).get(row.num).status, 'Evaluated', 'prefilling is not applying');
 });
