@@ -3,7 +3,7 @@
 // Apply-Pilot fetches and checks; the AI only judges and writes, and every result
 // goes to the review queue. A failed item stays pending and is tried on the next run.
 import { join } from 'node:path';
-import { closePipeline, pendingPipeline } from './additions.mjs';
+import { appendPipeline, closePipeline, pendingPipeline, pipelineEntries } from './additions.mjs';
 import { localDate, paths as pathsOf } from './config.mjs';
 import { buildPrompt, finishEvaluation } from './evaluate.mjs';
 import { dueFollowUps } from './followups.mjs';
@@ -78,18 +78,27 @@ export function validateProfileDraft(v) {
   return { summary: text(v.summary, 600), facts, languages: list(v.languages, 12, 80), keywords: list(v.keywords, 8, 80) };
 }
 
-async function evaluateStep({ profile, queue, tracker, pipelineFile, ask, fetch, log, limit, res }) {
+/** Postings the user pasted: evaluated even when tracked, queued or ticked off before. */
+function pickedPostings(pipelineFile, urls) {
+  const listed = pipelineEntries(pipelineFile);
+  const items = urls.map((url) => listed.find((e) => normalizeUrl(e.url) === normalizeUrl(url)) || { url, company: '', role: '', location: '' });
+  appendPipeline(pipelineFile, items.filter((it) => !listed.includes(it)));
+  return items.map(({ done, ...it }) => it);
+}
+
+async function evaluateStep({ profile, queue, tracker, pipelineFile, ask, fetch, log, limit, res, urls = [] }) {
   const rows = tracker.rows();
-  const open = pendingPipeline(pipelineFile).reverse().filter((it) => {
+  const open = urls.length ? pickedPostings(pipelineFile, urls) : pendingPipeline(pipelineFile).reverse().filter((it) => {
     if (queue.has(`eval:${normalizeUrl(it.url)}`)) return false;
     if (!findDuplicates(rows, it).length) return true;
     closePipeline(pipelineFile, it.url); // tracked since the scan: nothing to evaluate
     return false;
   });
-  const items = open.slice(0, limit);
-  log(`evaluate: ${items.length} of ${open.length} pending`);
+  const items = urls.length ? open : open.slice(0, limit);
+  log(urls.length ? `evaluate: ${items.length} pasted link(s)` : `evaluate: ${items.length} of ${open.length} pending`);
+  if (!items.length && !urls.length) log('evaluate: nothing to do. New postings come from the scan ("Start today\'s work"); to evaluate a posting you found yourself, paste its link on the Today page.');
   for (const [i, it] of items.entries()) {
-    const label = `${i + 1}/${items.length} ${it.company} | ${it.role}`;
+    const label = `${i + 1}/${items.length} ${it.company || new URL(it.url).hostname} | ${it.role || it.url}`;
     try {
       let jd;
       try {
@@ -98,6 +107,7 @@ async function evaluateStep({ profile, queue, tracker, pipelineFile, ask, fetch,
       } catch (e) {
         if (classifyFailure(e.message) === 'network') throw Object.assign(e, { reason: 'network' });
         // Some pages only load in a browser. Hand them over once instead of retrying every day.
+        if (urls.length) queue.drop(`eval:${normalizeUrl(it.url)}`);
         queue.add({ type: 'unread', key: `eval:${normalizeUrl(it.url)}`, title: `${it.company} | ${it.role}`, payload: { url: it.url, company: it.company, role: it.role, location: it.location, reason: e.message } });
         queue.save();
         res.unread += 1;
@@ -106,6 +116,7 @@ async function evaluateStep({ profile, queue, tracker, pipelineFile, ask, fetch,
       }
       const answer = await askJson(ask, buildPrompt(profile, `${it.company}\n${it.role}\n\n${jd.text}`), (v) => { finishEvaluation(profile, v); return v; });
       const payload = evaluationPayload(profile, it, answer, jd.text);
+      if (urls.length) queue.drop(`eval:${normalizeUrl(it.url)}`); // a pasted link replaces its earlier pending result
       queue.add({ type: 'evaluation', key: `eval:${normalizeUrl(it.url)}`, title: `${payload.company} | ${payload.role}`, payload });
       queue.save();
       res.evaluated += 1;
@@ -217,8 +228,14 @@ async function mailStep({ home, profile, queue, tracker, ask, log, limit, res, t
   markChecked(home, fetched.last);
 }
 
-/** steps: any of scan, evaluate, followups, letters, mail. `scan` runs the scanners and returns an exit code. */
-export async function runToday({ home, profile, agent, steps = ['scan', 'mail', 'evaluate', 'followups', 'letters'], scan, mail = { open: openImap, parse: parseWith }, log = console.log, today = localDate(), ask, fetch = (url) => fetchJd(url, { browser: profile.daily.browser, session: { profile: loginProfile(home), sites: readSites(home) } }) }) {
+/** Links the user pasted for evaluation: http(s) only, at most 20, duplicates dropped. */
+export function pickUrls(text) {
+  const seen = new Set();
+  return String(text || '').split(/\s+/).map((u) => u.trim()).filter((u) => /^https?:\/\/\S+$/i.test(u) && !seen.has(normalizeUrl(u)) && seen.add(normalizeUrl(u))).slice(0, 20);
+}
+
+/** steps: any of scan, evaluate, followups, letters, mail. `scan` runs the scanners and returns an exit code. `urls` evaluates those postings instead of the pipeline. */
+export async function runToday({ home, profile, agent, steps = ['scan', 'mail', 'evaluate', 'followups', 'letters'], scan, urls = [], mail = { open: openImap, parse: parseWith }, log = console.log, today = localDate(), ask, fetch = (url) => fetchJd(url, { browser: profile.daily.browser, session: { profile: loginProfile(home), sites: readSites(home) } }) }) {
   const res = { evaluated: 0, unread: 0, drafted: 0, letters: 0, mail: 0, mailSkipped: 0, errors: [], stopped: null };
   const p = pathsOf(home, profile);
   const useAi = ['evaluate', 'followups', 'letters', 'mail'].some((s) => steps.includes(s));
@@ -232,7 +249,7 @@ export async function runToday({ home, profile, agent, steps = ['scan', 'mail', 
   const worker = ask || ((prompt) => askAgent(agent, prompt));
   const shared = { profile, queue: new ReviewQueue(reviewFile(home)), tracker: new Tracker(p.tracker), ask: worker, log, res, today };
   if (steps.includes('mail')) await mailStep({ ...shared, home, mail, limit: profile.daily.mail });
-  if (steps.includes('evaluate') && !res.stopped) await evaluateStep({ ...shared, pipelineFile: join(home, 'data', 'pipeline.md'), fetch, limit: profile.daily.evaluate });
+  if (steps.includes('evaluate') && !res.stopped) await evaluateStep({ ...shared, pipelineFile: join(home, 'data', 'pipeline.md'), fetch, limit: profile.daily.evaluate, urls });
   if (steps.includes('followups') && !res.stopped) await followupStep({ ...shared, limit: profile.daily.followups });
   if (steps.includes('letters') && !res.stopped) await letterStep({ ...shared, fetch, limit: profile.daily.letters });
   return res;

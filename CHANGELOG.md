@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.2 — 2026-11-02
+
+- Today page: a new "Evaluate specific postings" box takes job links you found yourself, one per line, up to 20. Each page is read, scored by the AI and listed for your decision like a scanned posting. A link evaluated, skipped or queued before is evaluated again and replaces its earlier pending result.
+- "Evaluate only" keeps handling postings the scan found. With none left, the run says so and points to the paste box instead of ending with "0 of 0".
+- Command line: `apply-pilot today URL...` evaluates those links only.
+
 ## 0.7.1 — 2026-11-02
 
 - Today page: a decision made with the mouse now updates the list at once. The list skipped re-rendering while the clicked button still had focus, so an approved or ignored card stayed on screen until focus moved; the decision itself was recorded.

@@ -54,7 +54,7 @@ It holds profile.json, data/applications.md, inbox/, output/.
   mail [test]                           mailbox settings (set up in the panel), or one read-only connection test
   login URL | login list | login remove SITE | login clear   sign in to a site in a separate browser profile
   sources [test ID]                     show job sources, or send one small test request
-  today [--no-scan] [--only evaluate,followups,letters]   scan, evaluate and draft; results wait in the review queue
+  today [--no-scan] [--only evaluate,followups,letters] [URL...]   scan, evaluate and draft; with URLs, evaluate those postings only
   review [approve|reject ID]            list the review queue, or decide one item
   jd URL [--out FILE] [--browser] [--json]   fetch a job description (ATS APIs, page text, optional browser)
   keywords REPORT.md [--cv cv.md] [--json]   which "## Keywords extracted" items your CV covers
@@ -150,10 +150,11 @@ async function main() {
     }
     case 'today': {
       const { readAgent } = await import('../src/agents.mjs');
-      const { runToday } = await import('../src/daily.mjs');
-      const steps = opt.only ? String(opt.only).split(',') : [...(opt['no-scan'] ? [] : ['scan']), 'mail', 'evaluate', 'followups', 'letters'];
+      const { pickUrls, runToday } = await import('../src/daily.mjs');
+      const urls = pickUrls(pos.join('\n')); // `today URL...` evaluates those postings only
+      const steps = urls.length ? ['evaluate'] : opt.only ? String(opt.only).split(',') : [...(opt['no-scan'] ? [] : ['scan']), 'mail', 'evaluate', 'followups', 'letters'];
       const scan = () => new Promise((done) => { spawn(process.execPath, [join(PKG, 'bin', 'apply-pilot.mjs'), 'scan', 'all', '--pipeline'], { stdio: 'inherit' }).on('close', done); });
-      const res = await runToday({ home, profile, agent: readAgent(home), steps, scan });
+      const res = await runToday({ home, profile, agent: readAgent(home), steps, urls, scan });
       console.log(`${res.mail} mail(s) sorted, ${res.evaluated} evaluated, ${res.unread} unreadable, ${res.drafted} follow-ups and ${res.letters} letters drafted, ${res.errors.length} problem(s). Review them in the panel or with "apply-pilot review".`);
       process.exitCode = res.stopped ? 1 : 0;
       break;

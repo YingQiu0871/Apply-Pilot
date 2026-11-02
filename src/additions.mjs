@@ -39,10 +39,16 @@ export function mergeAdditions(tracker, dir, { dryRun = false } = {}) {
 
 /** Unchecked "- [ ] url | company | role | location" lines of data/pipeline.md, oldest first. */
 export function pendingPipeline(file) {
+  return pipelineEntries(file).filter((e) => !e.done).map(({ done, ...e }) => e);
+}
+
+/** Every posting listed in data/pipeline.md, open or ticked off. */
+export function pipelineEntries(file) {
   if (!existsSync(file)) return [];
-  return readFileSync(file, 'utf8').split(/\r?\n/).filter((l) => /^- \[ \] https?:\/\//.test(l)).map((l) => {
-    const [url, company = '', role = '', location = ''] = l.replace(/^- \[ \] /, '').split(' | ').map((s) => s.trim());
-    return { url, company, role, location };
+  return readFileSync(file, 'utf8').split(/\r?\n/).filter((l) => /^- \[[ x]\] https?:\/\//.test(l)).map((l) => {
+    const done = l.startsWith('- [x]');
+    const [url, company = '', role = '', location = ''] = l.replace(/^- \[[ x]\] /, '').split(' | ').map((s) => s.trim());
+    return { url, company, role, location, done };
   });
 }
 

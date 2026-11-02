@@ -305,6 +305,9 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
       <div class="card" id="setupCard" style="margin-bottom:16px"><div class="card-h"><h2 data-t="suTitle"></h2></div><div class="card-b" id="setupSteps"></div></div>
       <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-t="runTitle"></h2><div class="status-line"><span class="spin" id="todaySpin"></span><span id="todayState"></span></div></div>
         <div class="card-b"><pre class="console" id="todayConsole"></pre></div></div>
+      <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-t="evalUrlsTitle"></h2></div>
+        <div class="card-b"><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px" data-t="evalUrlsHint"></p><label class="field" style="margin:0"><textarea id="evalUrls" style="min-height:72px" spellcheck="false" placeholder="https://"></textarea></label>
+        <div class="acts" style="margin-top:10px"><button class="btn primary" data-task="evaluate" data-urls="1" data-t="evalUrlsRun"></button></div></div></div>
       <div id="prefillState"></div><div id="reviewList"></div>
     </section>
 
@@ -433,6 +436,7 @@ const I18N = {
     todaySub: (n) => (n ? `有 ${n} 项等你确认。AI 不会发送或提交任何东西。` : '扫描新岗位、评估匹配度、起草跟进，结果都会先交给你确认。'),
     suTitle: '开始之前', suAgent: '选择搭配的 AI', suAgentDo: '选一个 AI 并通过连接测试', suGo: '去选择', suProfile: '整理你的经历', suProfileDo: '粘贴 CV 全文，AI 会整理出经历和搜索词。这份 CV 会发给你选的 AI 服务。之后的评估和跟进只使用你确认过的内容，请逐条核对。',
     suCv: 'CV 全文', suRead: '让 AI 读取', suReading: '读取中…', suSummary: '目标（两三句话）', suFacts: '可以证明的经历（每行一条）', suLangs: '语言（每行一条）', suKeywords: '搜索词（每行一条）', suSave: '确认并保存', suSaved: '已保存',
+    evalUrlsTitle: '评估指定岗位', evalUrlsHint: '自己找到的岗位，把链接粘贴在这里（每行一个，最多 20 个），AI 会读取页面并评分，结果同样等你确认。“只评估岗位”处理的是扫描找到、还没评估的岗位。', evalUrlsRun: '评估这些链接', evalUrlsNone: '请先粘贴至少一个 http(s) 链接',
     runTitle: '运行情况', runSum: (e, d, n, u) => `上次运行：评估 ${e} 个岗位，起草 ${d} 封跟进，${u} 个页面读不到，${n} 个问题`, runStopped: { login: 'AI 未登录或 key 无效，已停止', quota: 'AI 额度不足，已停止', network: '网络失败，已停止', missing: '没有找到 AI，已停止', other: '运行失败' },
     rvUnread: '需要你打开的岗位', rvUnreadWhy: '软件读不到这个页面的岗位描述，用浏览器也不行。打开看一下，合适就手动记录。', rvRetry: '下次再读一次', rvEmpty: '没有等待确认的内容', rvEval: '待确认的岗位评估', rvFollow: '待确认的跟进邮件', rvLetters: '待确认的求职信', rvLetterSave: '保存为文档', rvLetterSaved: (f, pdf) => `求职信已保存到 ${f}${pdf ? '' : '（没有生成 PDF：需要 Word 或 LibreOffice）'}`, rvAdd: '加入申请表', rvSkip: '忽略', rvOpen: '打开岗位', rvDims: '评分明细', rvGaps: '短板', rvFilter: '命中过滤条件：',
     rvTo: '收件人', rvToNone: '备注里没有找到邮箱，请手动填写', rvSubject: '主题', rvBody: '正文', rvCopy: '复制正文', rvCopied: '已复制', rvMail: '在邮件中打开', rvSent: '我已发送，记入时间线', rvDrop: '不发', rvIssues: '写作检查：',
@@ -484,6 +488,7 @@ const I18N = {
     todaySub: (n) => (n ? `${n} item(s) wait for your decision. The AI never sends or submits anything.` : 'Scan new postings, evaluate them and draft follow-ups. Everything waits for your decision.'),
     suTitle: 'Before you start', suAgent: 'Choose your AI', suAgentDo: 'Pick an AI and pass the connection test', suGo: 'Choose', suProfile: 'Set out your experience', suProfileDo: 'Paste your full CV and the AI will list your experience and search terms. The CV goes to the AI service you chose. Evaluations and follow-ups only use what you confirm here, so check every line.',
     suCv: 'Full CV text', suRead: 'Let the AI read it', suReading: 'Reading…', suSummary: 'Your target (two or three sentences)', suFacts: 'Experience you can prove (one per line)', suLangs: 'Languages (one per line)', suKeywords: 'Search terms (one per line)', suSave: 'Confirm and save', suSaved: 'Saved',
+    evalUrlsTitle: 'Evaluate specific postings', evalUrlsHint: 'Found a posting yourself? Paste its link here (one per line, up to 20). The AI reads the page and scores it, and the result waits for your decision like any other. "Evaluate only" handles postings the scan found that are not evaluated yet.', evalUrlsRun: 'Evaluate these links', evalUrlsNone: 'Paste at least one http(s) link first',
     runTitle: 'Run', runSum: (e, d, n, u) => `Last run: ${e} evaluated, ${d} drafted, ${u} unreadable, ${n} problem(s)`, runStopped: { login: 'Stopped: AI not signed in or the key is invalid', quota: 'Stopped: AI quota used up', network: 'Stopped: network error', missing: 'Stopped: AI not found', other: 'The run failed' },
     rvUnread: 'Postings to open yourself', rvUnreadWhy: 'Apply-Pilot could not read this page, even in a browser. Open it, and log it by hand if it fits.', rvRetry: 'Try again next run', rvEmpty: 'Nothing waits for your decision', rvEval: 'Evaluations to review', rvLetters: 'Cover letters to review', rvLetterSave: 'Save as documents', rvLetterSaved: (f, pdf) => `Letter saved in ${f}${pdf ? '' : ' (no PDF: this needs Word or LibreOffice)'}`, rvFollow: 'Follow-ups to review', rvAdd: 'Add to tracker', rvSkip: 'Ignore', rvOpen: 'Open posting', rvDims: 'Score details', rvGaps: 'Gaps', rvFilter: 'Hit a filter: ',
     rvTo: 'To', rvToNone: 'No address in the notes. Enter it yourself', rvSubject: 'Subject', rvBody: 'Body', rvCopy: 'Copy body', rvCopied: 'Copied', rvMail: 'Open in mail app', rvSent: 'I sent it, log it', rvDrop: 'Do not send', rvIssues: 'Writing check: ',
@@ -1193,7 +1198,14 @@ document.addEventListener('click', async (e) => {
   if (t.dataset.agent) { await post('/api/agent/select', { agent: t.dataset.agent }); return load(); }
   if (t.dataset.launch) { await post('/api/agent/launch', { agent: t.dataset.launch }); return; }
   if (t.dataset.act === 'agent-refresh') { const r = await post('/api/agent/refresh'); if (r.agents) S.agents = r.agents; return render(); }
-  if (t.dataset.task) { $('console').textContent = ''; $('todayConsole').textContent = ''; const r = await post('/api/run', { task: t.dataset.task }); if (!r.ok) log(`! ${r.error}`); return; }
+  if (t.dataset.task) {
+    const urls = t.dataset.urls ? $('evalUrls').value : '';
+    if (t.dataset.urls && !/https?:\/\//i.test(urls)) { log(`! ${T.evalUrlsNone}`); return; }
+    $('console').textContent = ''; $('todayConsole').textContent = '';
+    const r = await post('/api/run', { task: t.dataset.task, urls });
+    if (!r.ok) log(`! ${r.error}`); else if (t.dataset.urls) $('evalUrls').value = '';
+    return;
+  }
   if (t.dataset.act === 'quit') { await post('/api/quit'); $('runState').textContent = T.bye; $('dot').classList.remove('on'); es.close(); return; }
   if (t.dataset.act) return post(`/api/${t.dataset.act}`);
   if (t.id === 'langBtn') { LANG = LANG === 'zh' ? 'en' : 'zh'; store('ap-lang', LANG); T = I18N[LANG]; renderNav(); return render(); }

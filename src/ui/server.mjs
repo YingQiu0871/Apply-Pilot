@@ -17,7 +17,7 @@ import { channelOf, followUpStatus } from '../followups.mjs';
 import { stageOf } from '../events.mjs';
 import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
 import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readAgentState, saveAgent } from '../agents.mjs';
-import { profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
+import { pickUrls, profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
 import { clearLogins, openLogin, readSites, removeSite } from '../browser.mjs';
 import { ANSWER_KEYS, prefill, readAnswers, saveAnswers } from '../forms.mjs';
 import { saveLetter } from '../letters.mjs';
@@ -128,14 +128,15 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
   });
   const begin = (label) => { running = label; push('task', { state: 'start', task: label, at: new Date().toISOString() }); };
   const finish = (label, code) => { running = null; push('task', { state: 'end', task: label, code }); };
-  const runTask = (id) => {
+  const runTask = (id, urls = []) => {
     if (running) return { ok: false, error: `"${running}" is still running` };
     if (WORK[id]) {
       const agent = readAgent(paths.home);
       if (!agent) return { ok: false, error: 'choose an AI agent first' };
+      if (id === 'evaluate' && urls.length && !pickUrls(urls.join('\n')).length) return { ok: false, error: 'paste one http(s) link per line' };
       begin(id);
       profile = loadProfile(paths.home);
-      runToday({ home: paths.home, profile, agent, steps: WORK[id], scan: () => cli(['scan', 'all', '--pipeline']), log })
+      runToday({ home: paths.home, profile, agent, steps: WORK[id], urls: id === 'evaluate' ? pickUrls(urls.join('\n')) : [], scan: () => cli(['scan', 'all', '--pipeline']), log })
         .then((res) => { lastRun = { ...res, at: new Date().toISOString() }; finish(id, res.stopped ? 1 : 0); })
         .catch((e) => { log(`! ${e.message}`); lastRun = { evaluated: 0, drafted: 0, errors: [e.message], stopped: 'other', at: new Date().toISOString() }; finish(id, 1); });
       return { ok: true };
@@ -262,7 +263,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
         req.on('data', (c) => { body += c; if (body.length > limit) req.destroy(); });
         req.on('end', async () => { try { json(res, 200, await fn(JSON.parse(body || '{}'))); } catch (e) { json(res, 400, { ok: false, error: e.message || 'bad request' }); } });
       };
-      if (pathname === '/api/run') return withBody((b) => runTask(b.task));
+      if (pathname === '/api/run') return withBody((b) => runTask(b.task, Array.isArray(b.urls) ? b.urls.map(String) : pickUrls(b.urls)));
       if (pathname === '/api/home/check') return withBody((b) => ({ ok: true, ...inspectHome(b.path || '') }));
       if (pathname === '/api/home/use') return withBody(useHome);
       if (pathname === '/api/agent/select') return withBody((b) => ({ ok: true, agent: saveAgent(paths.home, b.agent) }));

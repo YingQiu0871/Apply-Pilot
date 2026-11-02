@@ -25,6 +25,9 @@ export class ReviewQueue {
   /** A key is reviewed once: a rejected draft does not come back the next day. */
   has(key) { return this.items.some((i) => i.key === key); }
 
+  /** Remove the pending items under a key, so a fresh result can take their place. */
+  drop(key) { this.items = this.items.filter((i) => !(i.key === key && i.status === 'pending')); }
+
   add({ type, key, title, payload }) {
     const item = { id: randomBytes(4).toString('hex'), type, key, title, payload, status: 'pending', created: new Date().toISOString() };
     this.items.push(item);

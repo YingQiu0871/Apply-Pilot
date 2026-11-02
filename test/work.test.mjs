@@ -10,7 +10,7 @@ import { Tracker } from '../src/tracker.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../src/review.mjs';
 import { ANSWER_KEYS, fieldPrompt, fillForm, pickOption, prefill, readAnswers, saveAnswers, validatePlan } from '../src/forms.mjs';
 import { fetchRecent, isNoise, mailState, matchMessage, noteFor, parseMessage, saveMailSettings, statusFor, testMail, validateMail } from '../src/mail.mjs';
-import { runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
+import { pickUrls, runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
 import { asksForHuman, asksForSignIn, assertPublicUrl, clearLogins, findBrowser, loginProfile, openLogin, readSites, removeSite, renderPage, siteAllowed } from '../src/browser.mjs';
 import { buildDocx, plainDocx, readParagraphs } from '../src/docx.mjs';
 import { fetchJd, fromHtml } from '../src/jd.mjs';
@@ -157,6 +157,30 @@ test('runToday queues results and leaves the tracker untouched until the user de
   assert.deepEqual([again.evaluated, again.drafted], [0, 0], 'a second run does not repeat work or spend tokens');
   assert.equal(calls.length, 3);
   assert.equal(queue.pending().filter((i) => i.type === 'followup')[0].payload.num, row.num);
+});
+
+test('pasted links are evaluated even when tracked, queued or ticked off, and replace their pending result', async () => {
+  const home = newHome();
+  const profile = loadProfile(home);
+  const pipeline = join(home, 'data', 'pipeline.md');
+  const calls = [];
+  // /2 was decided before; /1 has an older pending result; /3 is new and not in the pipeline.
+  closePipeline(pipeline, 'https://jobs.example.com/2');
+  await runToday({ home, profile, agent: 'claude', steps: ['evaluate'], ask: fakeAgent(profile, calls), fetch: async () => ({ text: JD }), log: () => {}, today });
+  assert.equal(calls.length, 1, 'only /1 was pending');
+  assert.deepEqual(pickUrls('https://jobs.example.com/3\n not-a-link https://jobs.example.com/1 https://jobs.example.com/1/'), ['https://jobs.example.com/3', 'https://jobs.example.com/1']);
+  const logs = [];
+  const res = await runToday({ home, profile, agent: 'claude', steps: ['evaluate'], urls: ['https://jobs.example.com/1', 'https://jobs.example.com/2', 'https://jobs.example.com/3'], ask: fakeAgent(profile, calls), fetch: async () => ({ text: JD }), log: (l) => logs.push(l), today });
+  assert.deepEqual([res.evaluated, res.errors.length, calls.length], [3, 0, 4]);
+  assert.ok(logs[0].includes('3 pasted link(s)'), logs[0]);
+  const queue = new ReviewQueue(reviewFile(home));
+  const evals = queue.pending().filter((i) => i.type === 'evaluation');
+  assert.deepEqual(evals.map((i) => i.payload.url).sort(), ['https://jobs.example.com/1', 'https://jobs.example.com/2', 'https://jobs.example.com/3'], 'one pending result per link');
+  assert.equal(evals.find((i) => i.payload.url === 'https://jobs.example.com/3').payload.company, 'From the model', 'a bare link takes company and role from the posting');
+  assert.ok(readFileSync(pipeline, 'utf8').includes('- [ ] https://jobs.example.com/3 |'), 'a new link is listed, so approving it can tick it off');
+  const empty = [];
+  await runToday({ home, profile, agent: 'claude', steps: ['evaluate'], ask: fakeAgent(profile, calls), fetch: async () => ({ text: JD }), log: (l) => empty.push(l), today });
+  assert.ok(empty.some((l) => l.startsWith('evaluate: nothing to do')), 'an empty pipeline says where postings come from');
 });
 
 test('approving an evaluation adds a row and closes the posting; rejecting only closes it', async () => {
