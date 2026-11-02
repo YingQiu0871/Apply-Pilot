@@ -624,6 +624,8 @@ function stepsOf(r) {
   return `<div class="steps">${steps.map((s, i) => `<div class="step ${s.on ? 'on' : ''} ${s.cls || ''}"><i></i>${pick(BI.step[i])}<small>${pick([...BI.step[i]].reverse())}</small>${s.on && s.date ? `<span class="date">${s.date.slice(5)}</span>` : ''}</div>`).join('')}</div>`;
 }
 
+// Re-rendering must not swallow what is being typed, but a focused button is not typing.
+const editing = (sel) => { const a = document.activeElement; return Boolean(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest(sel)); };
 const S = { answers: {}, anDraft: {}, answerKeys: [], anMsg: '', anErr: false, lastPrefill: null, mail: null, mailDraft: null, mailTest: null, mailTesting: false, sites: [], loginMsg: '', sources: [], srcWords: {}, srcTests: {}, srcTesting: null, review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: read('ap-view') || 'today', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
 
 function setView(v) {
@@ -763,7 +765,7 @@ function renderAgents() {
 }
 
 function renderAnswers() {
-  if (document.activeElement?.closest?.('#answersForm')) return;
+  if (editing('#answersForm')) return;
   // What was typed stays until a save succeeds, also when a save fails.
   const a = { ...(S.answers || {}), ...S.anDraft };
   const keys = S.answerKeys || [];
@@ -773,7 +775,7 @@ function renderAnswers() {
 }
 
 function renderMail() {
-  if (document.activeElement?.closest?.('#mailForm')) return;
+  if (editing('#mailForm')) return;
   // A choice made in the form stays until a save succeeds, also when a save fails.
   const m = { ...(S.mail || { providers: [] }), ...S.mailDraft };
   const sel = (id) => (m.provider === id ? 'selected' : '');
@@ -808,7 +810,7 @@ function renderSources() {
   renderAnswers();
   renderMail();
   renderLogins();
-  if (document.activeElement?.closest?.('#sourceCards')) return;
+  if (editing('#sourceCards')) return;
   $('sourceCards').innerHTML = (S.sources || []).map((s) => {
     const keys = s.keys.map((k) => `<label class="field">${esc(k.name)}${k.set ? ` · ${T.srcKeySet}` : ''}<span style="display:flex;gap:8px"><input id="srckey-${k.name}" type="password" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button class="btn" data-srckey="${s.id}" data-name="${k.name}">${T.srcKeySave}</button></span></label>`).join('');
     const words = S.srcWords[s.id] ?? s.keywords.join('\n');
@@ -903,7 +905,7 @@ function followCard(i) {
 function renderSetup() {
   const r = S.ready;
   $('setupCard').style.display = !r || r.ready ? 'none' : 'block';
-  if (!r || r.ready || document.activeElement?.closest?.('#setupSteps')) return;
+  if (!r || r.ready || editing('#setupSteps')) return;
   const profileDone = r.profile && r.sources;
   const d = S.draft;
   const field = (k, label, area = true) => `<label class="field">${label}${area ? `<textarea data-draft="${k}">${esc(d[k] || '')}</textarea>` : `<input data-draft="${k}" value="${esc(d[k] || '')}">`}</label>`;
@@ -925,7 +927,7 @@ function renderToday() {
   const pf = S.lastPrefill;
   $('prefillState').innerHTML = !pf ? '' : pf.error ? `<div class="card rv"><div class="t1">${T.pfTitle}</div><div class="bad-line">${esc(pf.error)}</div></div>`
     : `<div class="card rv"><div class="t1">${T.pfTitle} · #${pf.num}</div><p>${T.pfDone(pf.filled.length)}</p>${pf.filled.length ? `<div class="meta" style="white-space:normal">${pf.filled.map((f) => esc(f.label)).join(' · ')}</div>` : ''}${pf.todo.length ? `<div class="warn-line">${T.pfTodo}${pf.todo.map(esc).join(' · ')}</div>` : ''}${pf.note ? `<div class="warn-line">${esc(pf.note)}</div>` : ''}<p class="meta" style="white-space:normal">${T.pfSubmit}</p></div>`;
-  if (document.activeElement?.closest?.('#reviewList')) return;
+  if (editing('#reviewList')) return;
   const evals = S.review.filter((i) => i.type === 'evaluation').sort((a, b) => b.payload.score100 - a.payload.score100);
   const fus = S.review.filter((i) => i.type === 'followup');
   const letters = S.review.filter((i) => i.type === 'letter');

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.1 — 2026-11-02
+
+- Today page: a decision made with the mouse now updates the list at once. The list skipped re-rendering while the clicked button still had focus, so an approved or ignored card stayed on screen until focus moved; the decision itself was recorded.
+- The same fix applies to the Job sources, mailbox and answers cards.
+
 ## 0.7.0 — 2026-10-31
 
 - Form prefill: open an application from the Applications page and press "Prefill the application form". Apply-Pilot opens the page in a visible window on the sign-in profile, reads the form, asks the AI which prepared answer belongs in each field, and fills those. The window stays open for you to check, finish and submit. Nothing is clicked: no submit, no next, no send.
