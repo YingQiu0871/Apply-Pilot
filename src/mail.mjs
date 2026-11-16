@@ -3,9 +3,8 @@
 // Nothing here sends, moves, marks or deletes mail. The password is an app
 // password from the provider, kept in .env; Outlook.com needs OAuth, which this
 // version does not do.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { paths } from './config.mjs';
 import { lintText } from './lint.mjs';
 import { similarity } from './tracker.mjs';
 import { classifyFailure } from './worker.mjs';
@@ -187,6 +186,3 @@ export async function parseWith(source) {
   const { simpleParser } = await import('mailparser');
   return simpleParser(source, { skipHtmlToText: false, skipImageLinks: true, skipTextLinks: true });
 }
-
-export const mailFiles = (home) => ({ settings: settingsFile(home), env: join(paths(home).home, '.env') });
-export const hasMailSettings = (home) => existsSync(settingsFile(home));

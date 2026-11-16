@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'no
 import { join, resolve } from 'node:path';
 import { assertPublicUrl, findBrowser, loginProfile } from './browser.mjs';
 import { localDate, paths } from './config.mjs';
-import { Tracker } from './tracker.mjs';
+import { Tracker, linkOf } from './tracker.mjs';
 import { askJson } from './worker.mjs';
 
 /** Answers a form can ask for. The user fills these on the panel; nothing else is ever typed. */
@@ -194,8 +194,8 @@ export async function fillForm(page, fields, plan, answers) {
 export async function prefill({ home, profile, row, ask, log = () => {}, today = localDate(), open = openFormWindow, connect = connectPage }) {
   const answers = readAnswers(home);
   if (!Object.keys(answers).length) throw new Error('fill in your application answers first');
-  if (!row?.url) throw new Error('this application has no link');
-  const win = await open(home, row.url);
+  if (!linkOf(row)) throw new Error('this application has no link');
+  const win = await open(home, linkOf(row));
   const page = await connect(win.port, win.url);
   try {
     const form = await readForm(page);

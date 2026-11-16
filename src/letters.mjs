@@ -8,7 +8,7 @@ import { which } from './agents.mjs';
 import { localDate } from './config.mjs';
 import { buildDocx, plainDocx } from './docx.mjs';
 import { lintText } from './lint.mjs';
-import { Tracker } from './tracker.mjs';
+import { Tracker, linkOf } from './tracker.mjs';
 
 // Older trackers score out of 5, written as "4.1/5" or just "4.1".
 function scoreOf(row) {
@@ -21,7 +21,7 @@ function scoreOf(row) {
 /** Evaluated rows at or above the Apply threshold without a letter yet, newest first. */
 export function letterCandidates(rows, profile, queue) {
   const min = profile.scoring.thresholds.apply;
-  return rows.filter((r) => r.status === 'Evaluated' && r.url && scoreOf(r) >= min && !queue.has(`letter:${r.num}`)).reverse();
+  return rows.filter((r) => r.status === 'Evaluated' && linkOf(r) && scoreOf(r) >= min && !queue.has(`letter:${r.num}`)).reverse();
 }
 
 export function letterPrompt(profile, row, jdText) {
@@ -42,7 +42,7 @@ export function validateLetter(profile, row) {
     const { issues } = lintText(body, profile);
     const blocked = issues.filter((i) => i.rule === 'forbidden-claim');
     if (blocked.length) throw new Error(`forbidden claim: ${blocked[0].detail}`);
-    return { num: row.num, company: row.company, role: row.role, url: row.url, body, issues };
+    return { num: row.num, company: row.company, role: row.role, url: linkOf(row), body, issues };
   };
 }
 

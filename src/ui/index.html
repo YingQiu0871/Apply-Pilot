@@ -249,9 +249,9 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 /* mobile */
 .work { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .field { display: block; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
-.field input, .field textarea { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; line-height: 1.5; box-sizing: border-box; }
+.field input, .field textarea, .field select { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; line-height: 1.5; box-sizing: border-box; }
 .field textarea { min-height: 96px; resize: vertical; }
-.field input:focus, .field textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+.field input:focus, .field textarea:focus, .field select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
 .su-step { display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
 .su-step:first-child { border-top: 0; padding-top: 0; }
 .su-step:last-child { padding-bottom: 0; }
@@ -265,6 +265,9 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .rv-head .grow { flex: 1; min-width: 0; }
 .rv-score { font-size: 24px; font-weight: 650; line-height: 1; text-align: right; }
 .rv p { margin: 10px 0 0; font-size: 13px; line-height: 1.55; }
+.nav-sep { height: 1px; background: var(--line); margin: 8px 10px; }
+.ov-status { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px; }
+.ov-status.warn { border-color: var(--warn); }
 .rv ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.55; }
 .rv details { margin-top: 8px; font-size: 12px; color: var(--muted); }
 .rv .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
@@ -276,6 +279,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
   .brand { padding: 0 10px 0 0; }
   .brand span, .side-foot { display: none; }
   #navs { display: flex; gap: 2px; }
+  .nav-sep { display: none; }
   .nav { width: auto; white-space: nowrap; }
   main { padding: 18px 16px 48px; }
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -299,9 +303,19 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
   <main>
     <div class="err" id="err"></div>
 
+    <section class="view" data-view="overview">
+      <div class="page-head"><div><h1 data-t="overviewTitle"></h1><p id="overviewSub"></p></div></div>
+      <div id="ovStatus"></div>
+      <div class="grid kpis" id="kpis"></div>
+      <div class="grid two">
+        <div class="card"><div class="card-h"><h2 data-t="needAction"></h2><button class="link" data-go="followups" data-t="seeAll"></button></div><div class="card-b" id="ovAction"></div></div>
+        <div class="card"><div class="card-h"><h2 data-t="thisWeek"></h2><button class="link" data-go="activity" data-t="seeAll"></button></div><div class="card-b" id="ovFeed"></div></div>
+      </div>
+    </section>
+
     <section class="view" data-view="today">
       <div class="page-head"><div><h1 data-t="todayTitle"></h1><p id="todaySub"></p></div>
-        <div class="work"><button class="btn primary" data-task="today" id="todayBtn" data-t="todayStart"></button><button class="btn" data-task="evaluate" data-t="todayEval"></button><button class="btn" data-task="drafts" data-t="todayDraft"></button><button class="btn" data-task="letters" data-t="todayLetters"></button><button class="btn" data-task="mail" data-t="todayMail"></button></div></div>
+        <div class="work"><button class="btn primary" data-task="today" data-t="todayStart"></button><button class="btn" data-task="evaluate" data-t="todayEval"></button><button class="btn" data-task="drafts" data-t="todayDraft"></button><button class="btn" data-task="letters" data-t="todayLetters"></button><button class="btn" data-task="mail" data-t="todayMail"></button></div></div>
       <div class="card" id="setupCard" style="margin-bottom:16px"><div class="card-h"><h2 data-t="suTitle"></h2></div><div class="card-b" id="setupSteps"></div></div>
       <div class="card" style="margin-bottom:16px"><div class="card-h"><h2 data-t="runTitle"></h2><div class="status-line"><span class="spin" id="todaySpin"></span><span id="todayState"></span></div></div>
         <div class="card-b"><pre class="console" id="todayConsole"></pre></div></div>
@@ -309,15 +323,6 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
         <div class="card-b"><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px" data-t="evalUrlsHint"></p><label class="field" style="margin:0"><textarea id="evalUrls" style="min-height:72px" spellcheck="false" placeholder="https://"></textarea></label>
         <div class="acts" style="margin-top:10px"><button class="btn primary" data-task="evaluate" data-urls="1" data-t="evalUrlsRun"></button></div></div></div>
       <div id="prefillState"></div><div id="reviewList"></div>
-    </section>
-
-    <section class="view" data-view="overview">
-      <div class="page-head"><div><h1 data-t="overviewTitle"></h1><p id="overviewSub"></p></div></div>
-      <div class="grid kpis" id="kpis"></div>
-      <div class="grid two">
-        <div class="card"><div class="card-h"><h2 data-t="needAction"></h2><button class="link" data-go="followups" data-t="seeAll"></button></div><div class="card-b" id="ovAction"></div></div>
-        <div class="card"><div class="card-h"><h2 data-t="thisWeek"></h2><button class="link" data-go="activity" data-t="seeAll"></button></div><div class="card-b" id="ovFeed"></div></div>
-      </div>
     </section>
 
     <section class="view" data-view="applications">
@@ -357,34 +362,40 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
       <div class="page-head"><div><h1 data-t="srcTitle"></h1><p data-t="srcSub"></p></div></div>
       <div class="grid tasks" id="sourceCards" style="margin-bottom:16px"></div>
       <p class="meta" style="white-space:normal" data-t="srcSafe"></p>
-      <div class="card task" style="margin-top:16px" id="answersCard">
-        <h3 data-t="anTitle"></h3>
-        <p data-t="anSub"></p>
-        <div id="answersForm"></div>
-        <p class="meta" style="white-space:normal" data-t="anRisk"></p>
-      </div>
-      <div class="card task" style="margin-top:16px" id="mailCard">
+    </section>
+
+    <section class="view" data-view="settings">
+      <div class="page-head"><div><h1 data-t="setTitle"></h1><p data-t="setSub"></p></div></div>
+      <div class="card task" style="margin-bottom:16px">
         <h3 data-t="mlTitle"></h3>
         <p data-t="mlSub"></p>
         <div id="mailForm"></div>
         <p class="meta" style="white-space:normal" data-t="mlRisk"></p>
       </div>
-      <div class="card task" style="margin-top:16px">
+      <div class="card task" style="margin-bottom:16px">
+        <h3 data-t="anTitle"></h3>
+        <p data-t="anSub"></p>
+        <div id="answersForm"></div>
+        <p class="meta" style="white-space:normal" data-t="anRisk"></p>
+      </div>
+      <div class="card task" style="margin-bottom:16px">
         <h3 data-t="lgTitle"></h3>
         <p data-t="lgSub"></p>
         <div class="toolbar" style="padding:0;border:0;gap:8px"><label class="search"><input id="loginUrl" type="url" placeholder="https://" autocomplete="off" spellcheck="false"></label><button class="btn primary" data-login="open" data-t="lgOpen"></button></div>
         <div id="loginSites"></div>
         <p class="meta" style="white-space:normal" data-t="lgRisk"></p>
       </div>
+      <div class="card task">
+        <h3 data-t="homeTitle"></h3>
+        <p class="meta" style="white-space:normal;margin:0" id="homeNow"></p>
+        <div id="homeTools"></div>
+        <div><button class="btn" data-act="open-data" data-t="openData"></button></div>
+      </div>
     </section>
 
     <section class="view" data-view="tools">
       <div class="page-head"><div><h1 data-t="toolsTitle"></h1><p data-t="toolsSub"></p></div>
-        <div class="mini" style="gap:8px"><button class="btn" data-act="open-data" data-t="openData"></button><button class="btn" data-act="quit" data-t="quit"></button></div></div>
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-h"><h2 data-t="homeTitle"></h2></div>
-        <div class="card-b"><p class="meta" style="white-space:normal;margin:0 0 10px" id="homeNow"></p><div id="homeTools"></div></div>
-      </div>
+        <button class="btn" data-act="quit" data-t="quit"></button></div>
       <div class="card" style="margin-bottom:16px">
         <div class="card-h"><h2 data-t="impTitle"></h2></div>
         <div class="card-b">
@@ -421,7 +432,7 @@ const TOKEN = '__TOKEN__';
 let LANG = (() => { try { return localStorage.getItem('ap-lang'); } catch { return null; } })() || new URLSearchParams(location.search).get('lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
 const I18N = {
   zh: {
-    nav: { today: '今日工作', overview: '概览', applications: '申请', followups: '待跟进', activity: '动态', agents: 'AI 助手', sources: '岗位来源', tools: '工具' },
+    nav: { overview: '概览', today: '今日工作', applications: '申请', followups: '待跟进', activity: '动态', sources: '岗位来源', agents: 'AI 助手', settings: '设置', tools: '工具' },
     anTitle: '申请答案', anSub: '预填申请表时只会用这里的答案。留空的项不会填。文件项填 CV 和求职信 PDF 的完整路径。', anSave: '保存答案', anRisk: '这些答案保存在数据目录的 profile.json 里。AI 只看到答案的名称和表单字段，由软件把值填进去；它不能自己编答案。', anKeys: { firstName: '名', lastName: '姓', email: '邮箱', phone: '电话', address: '地址', postalCode: '邮编', city: '城市', country: '国家', nationality: '国籍', dateOfBirth: '出生日期', gender: '性别（建议填 Prefer not to say）', linkedin: 'LinkedIn 链接', website: '个人网站', university: '学校', degree: '学位', fieldOfStudy: '专业', graduationDate: '毕业时间', availableFrom: '可开始日期', duration: '实习时长', salary: '期望薪资', workAuthorization: '工作许可', needsVisa: '是否需要签证', drivingLicence: '驾照', howDidYouHear: '如何得知该岗位', languages: '语言', coverLetter: '求职信正文（通用）', cvFile: 'CV 文件（PDF 路径）', coverLetterFile: '求职信文件（PDF 路径）', agreeToTerms: '同意条款（填 yes 表示允许勾选）' }, pfButton: '预填申请表', pfTitle: '申请表预填', pfDone: (n) => `已填 ${n} 个字段，浏览器窗口已打开。`, pfTodo: '还要你填：', pfSubmit: '请逐项检查，补全后自己点提交。软件不会提交。',
     mlTitle: '邮箱', mlSub: '软件会只读地查看收件箱，把和申请相关的回信交给 AI 归类并起草回复，其他邮件不会发给任何人。邮件不会被标记已读、移动或删除，回复也不会替你发送。', mlProvider: '邮箱服务', mlHost: 'IMAP 服务器', mlUser: '邮箱地址', mlPass: '应用专用密码（不是登录密码）', mlDays: '首次查看最近几天', mlSave: '保存', mlHelp: '如何生成应用专用密码', mlFound: (n) => `连接正常，收件箱有 ${n} 封`, mlChecked: (t) => `上次检查：${t}`, mlRisk: 'Outlook.com 和 Hotmail 个人邮箱已不支持密码登录，这个版本还接不上。密码明文保存在数据目录的 .env 里。匹配到申请的邮件正文会发给你选的 AI。', mlReview: '待确认的回信', mlKind: { positive: '积极回复', interview: '面试邀请', request: '索要材料', rejection: '拒绝', auto: '自动回复', other: '其他' }, mlHow: { address: '按联系人匹配', domain: '按域名匹配', subject: '按主题匹配' }, mlExcerpt: '查看邮件原文', mlReply: '回复草稿', mlNoReply: '不需要回复', mlLog: '记入申请表', mlCopy: '复制回复', mlReplied: '我已回复，记录',
     lgTitle: '登录网站', lgSub: '有些岗位页要登录才能看。在这里打开网站并登录一次，它会自动加入下面的列表，之后读取这个网站时会带上登录状态。这里用的是单独的浏览器配置，不是你平时的 Chrome。', lgOpen: '打开并登录', lgRemove: '移除', lgClear: '清除所有登录', lgClearAsk: '删除专用配置里的所有登录状态？', lgCleared: '已清除所有登录', lgOpened: (s) => `${s} 已加入列表。在弹出的窗口里登录，然后关闭窗口；窗口开着时读不了这些网站。`, lgRisk: '登录后页面上的内容（可能有姓名和申请记录）会发给你选的 AI，所以不要放邮箱。邮箱网站会被拒绝，学校邮箱请自己避开。LinkedIn 等平台限制自动化访问，账号有受限风险。登录信息保存在数据目录的 browser 文件夹，不要同步或发给别人。',
@@ -431,20 +442,22 @@ const I18N = {
     agSelected: '当前搭配', agChoose: '选用', agTerminal: '在终端中打开', agReady: '已就绪', agMissing: '未安装或未配置', agCli: '命令行', agKey: 'API key', agSet: '已设置', agUnset: '未设置', agGet: '获取 / 安装', agRefresh: '重新检测',
     agSafe: '后台工作时，AI 只收到提示词并返回文字，不能操作你的文件，也不能发送或提交任何东西。Key 明文保存在数据目录的 .env 里，不要把这个文件发给别人。',
     agTest: '测试连接', agDetail: '查看详情', agTesting: '测试中…', agOk: (n) => `连接正常（${n} 秒）`, agFail: { restart: '请从开始菜单或桌面图标重新打开 Apply-Pilot，再测试一次', login: '未登录或 key 无效。请先在终端登录，或重新填写 key', quota: '额度不足或请求太频繁', network: '网络连接失败', missing: '没有找到这个 AI，请先安装', timeout: '等待超时', invalid: '收到了回答，但格式不对', busy: '有任务正在运行，稍后再试', other: '调用失败' },
-    agKeyPh: '粘贴 DeepSeek API key', agKeySave: '保存', agKeySaved: 'Key 已保存',
+    agKeyPh: '粘贴 DeepSeek API key', agKeySave: '保存',
     todayTitle: '今日工作', todayStart: '开始今天的工作', todayEval: '只评估岗位', todayDraft: '只起草跟进', todayLetters: '只起草求职信', todayMail: '只检查邮箱',
     todaySub: (n) => (n ? `有 ${n} 项等你确认。AI 不会发送或提交任何东西。` : '扫描新岗位、评估匹配度、起草跟进，结果都会先交给你确认。'),
     suTitle: '开始之前', suAgent: '选择搭配的 AI', suAgentDo: '选一个 AI 并通过连接测试', suGo: '去选择', suProfile: '整理你的经历', suProfileDo: '粘贴 CV 全文，AI 会整理出经历和搜索词。这份 CV 会发给你选的 AI 服务。之后的评估和跟进只使用你确认过的内容，请逐条核对。',
-    suCv: 'CV 全文', suRead: '让 AI 读取', suReading: '读取中…', suSummary: '目标（两三句话）', suFacts: '可以证明的经历（每行一条）', suLangs: '语言（每行一条）', suKeywords: '搜索词（每行一条）', suSave: '确认并保存', suSaved: '已保存',
+    suCv: 'CV 全文', suRead: '让 AI 读取', suReading: '读取中…', suSummary: '目标（两三句话）', suFacts: '可以证明的经历（每行一条）', suLangs: '语言（每行一条）', suKeywords: '搜索词（每行一条）', suSave: '确认并保存',
     evalUrlsTitle: '评估指定岗位', evalUrlsHint: '自己找到的岗位，把链接粘贴在这里（每行一个，最多 20 个），AI 会读取页面并评分，结果同样等你确认。“只评估岗位”处理的是扫描找到、还没评估的岗位。', evalUrlsRun: '评估这些链接', evalUrlsNone: '请先粘贴至少一个 http(s) 链接',
     runTitle: '运行情况', runSum: (e, d, n, u) => `上次运行：评估 ${e} 个岗位，起草 ${d} 封跟进，${u} 个页面读不到，${n} 个问题`, runStopped: { login: 'AI 未登录或 key 无效，已停止', quota: 'AI 额度不足，已停止', network: '网络失败，已停止', missing: '没有找到 AI，已停止', other: '运行失败' },
-    rvUnread: '需要你打开的岗位', rvUnreadWhy: '软件读不到这个页面的岗位描述，用浏览器也不行。打开看一下，合适就手动记录。', rvRetry: '下次再读一次', rvEmpty: '没有等待确认的内容', rvEval: '待确认的岗位评估', rvFollow: '待确认的跟进邮件', rvLetters: '待确认的求职信', rvLetterSave: '保存为文档', rvLetterSaved: (f, pdf) => `求职信已保存到 ${f}${pdf ? '' : '（没有生成 PDF：需要 Word 或 LibreOffice）'}`, rvAdd: '加入申请表', rvSkip: '忽略', rvOpen: '打开岗位', rvDims: '评分明细', rvGaps: '短板', rvFilter: '命中过滤条件：',
+    rvUnread: '需要你打开的岗位', rvUnreadWhy: '软件读不到这个页面的岗位描述，用浏览器也不行。打开看一下，合适就手动记录。', rvRetry: '下次再读一次', rvEmpty: '没有等待确认的内容', rvEval: '待确认的岗位评估', rvFollow: '待确认的跟进邮件', rvLetters: '待确认的求职信', rvLetterSave: '保存为文档', rvLetterSaved: (f, pdf) => `求职信已保存到 ${f}${pdf ? '' : '（没有生成 PDF：需要 Word 或 LibreOffice）'}`, rvAdd: '加入申请表', rvSkip: '忽略', rvOpen: '打开岗位', rvDims: '评分明细', rvFilter: '命中过滤条件：',
     rvTo: '收件人', rvToNone: '备注里没有找到邮箱，请手动填写', rvSubject: '主题', rvBody: '正文', rvCopy: '复制正文', rvCopied: '已复制', rvMail: '在邮件中打开', rvSent: '我已发送，记入时间线', rvDrop: '不发', rvIssues: '写作检查：',
-    overviewTitle: '概览', needAction: '需要你处理', thisWeek: '最近 7 天', seeAll: '查看全部',
+    overviewTitle: '概览', ovSetup: '还差几步就能开始：选好 AI，整理你的经历。', ovSetupGo: '去完成设置', ovReview: (n) => `有 ${n} 项结果等你确认`, ovReviewGo: '去确认', ovRunning: (t) => `正在运行：${t}`, ovRunGo: '查看进度', ovStart: '开始今天的工作', ovIdle: '扫描新岗位、评估、检查邮箱、起草跟进，一次完成。',
+    setTitle: '设置', setSub: '邮箱、申请表答案、网站登录和数据目录。这些内容只保存在你的电脑上。',
+    needAction: '需要你处理', thisWeek: '最近 7 天', seeAll: '查看全部',
     appsTitle: '申请', appsSub: '点任意一行查看详情和完整时间线', fuTitle: '待跟进', actTitle: '动态', actSub: '从申请表备注里提取的带日期事件',
     impTitle: '导入已有数据', impHelp: '输入文件或文件夹路径（Windows 例：C:\\Users\\你\\Documents\\求职，macOS 例：~/Documents/jobs）。支持 applications.md、Markdown 表格、Excel、CSV/TSV、JSON、SQLite。先预览，确认后再导入；已存在的岗位会跳过，原文件不会被修改。',
     impPreview: '预览', impWrite: '导入新行', impPh: '文件或文件夹路径', impFiles: (f, t) => `扫描 ${f} 个文件，识别出 ${t} 个表`, impCounts: (n, d) => `${n} 条新记录，${d} 条已存在或重复`, impDone: (n) => `已导入 ${n} 条`, impNone: '没有可导入的新记录',
-    setupTitle: '选择数据目录', setupSub: '申请记录、个人配置和导出文件都保存在这个文件夹里，只在你的电脑上。可以新建一个，也可以选择已有的数据目录。', setupNote: '以后可以在「工具」页更换。',
+    setupTitle: '选择数据目录', setupSub: '申请记录、个人配置和导出文件都保存在这个文件夹里，只在你的电脑上。可以新建一个，也可以选择已有的数据目录。', setupNote: '以后可以在「设置」页更换。',
     homeTitle: '数据目录', homeNow: (p, src) => `当前：${p}（${src}）`, homeSrc: { env: '来自环境变量 APPLY_PILOT_HOME', settings: '已保存的设置', default: '默认位置' },
     homeUse: '使用这个目录', homeFound: (n) => `这里已有 Apply-Pilot 数据（${n} 条申请记录），会直接使用。`, homeNew: '这里还没有数据，会新建空的申请表和配置文件。', homeIsFile: '这是一个文件，请填写文件夹路径。',
     homeSwitched: (p) => `已切换到 ${p}`, homeEnv: '注意：环境变量 APPLY_PILOT_HOME 指向别的目录，下次启动时会优先使用它。',
@@ -456,8 +469,8 @@ const I18N = {
     tasks: {
       all: ['一键全部扫描', '企业招聘系统 + 招聘网站/公共就业接口 + 搜索引擎，新岗位去重后写入 pipeline.md'],
       portals: ['扫描企业招聘系统', 'Workday、SuccessFactors、Phenom、Greenhouse、Lever 等 12 种系统'],
-      boards: ['扫描招聘网站与公共接口', 'JobTech、Euraxess、France Travail、Adzuna、Jooble、Careerjet（后四个需要在 .env 填 key）'],
-      websearch: ['搜索引擎扫描', '用 Brave / Mojeek / SearXNG 跑多语言搜索语句（需要 key 或自建实例）'],
+      boards: ['扫描招聘网站与公共接口', '「岗位来源」页里已开启的招聘网站、公共就业接口和学术来源'],
+      websearch: ['搜索引擎扫描', '用 Brave / Mojeek / SearXNG 跑多语言搜索语句（Key 在「岗位来源」页填写）'],
       linkedin: ['扫描领英', '用已登录的浏览器配置搜索岗位和动态'],
       followups: ['检查待跟进', '按跟进规则列出到期的申请'],
       doctor: ['自检', '检查环境、配置和申请表'],
@@ -468,12 +481,12 @@ const I18N = {
     inbox: '最近的扫描文件：', bye: '已退出，可以关闭这个页面。',
     days: (n) => `近 ${n} 天`, ago: (n) => (n <= 0 ? '今天' : `${n} 天前`), quiet: (n) => `${n} 天没动静`, count: (n) => `${n} 条`, all: '全部',
     empty: '没有符合条件的申请', emptyFeed: '这段时间没有动态', emptyAction: '暂时没有要处理的事', more: (n) => `显示更多（还有 ${n} 条）`,
-    search: '搜索公司、岗位、联系人或备注…', rows: '行', updated: '更新于', connecting: '连接中…',
+    search: '搜索公司、岗位、联系人或备注…', rows: '行', connecting: '连接中…',
     fuSub: (d, n) => `已投递或有回复、${d} 天以上没有新记录的申请，共 ${n} 条。只是提醒，发不发由你决定。`,
-    overviewSub: (n, a) => `共 ${n} 条记录，其中 ${a} 条正在进行`, open: '打开岗位页面', timeline: '时间线', notes: '完整备注', score: '评分', added: '记录日期', theme: '主题', lang: 'EN', expand: '展开', collapse: '收起', scheduled: '定时', chartEmpty: '这段时间没有对外动态',
+    overviewSub: (n, a) => `共 ${n} 条记录，其中 ${a} 条正在进行`, open: '打开岗位页面', notes: '完整备注', score: '评分', added: '记录日期', theme: '主题', lang: 'EN', expand: '展开', collapse: '收起', scheduled: '定时', chartEmpty: '这段时间没有对外动态',
   },
   en: {
-    nav: { today: 'Today', overview: 'Overview', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', agents: 'AI agent', sources: 'Job sources', tools: 'Tools' },
+    nav: { overview: 'Overview', today: 'Today', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', sources: 'Job sources', agents: 'AI agent', settings: 'Settings', tools: 'Tools' },
     anTitle: 'Application answers', anSub: 'Prefilling uses only the answers here. Empty ones are left out. For files, give the full path of your CV and cover letter PDF.', anSave: 'Save answers', anRisk: 'These are stored in profile.json in your data folder. The AI sees only the answer names and the form fields; Apply-Pilot fills in the values. It cannot make answers up.', anKeys: { firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone', address: 'Address', postalCode: 'Postal code', city: 'City', country: 'Country', nationality: 'Nationality', dateOfBirth: 'Date of birth', gender: 'Gender (Prefer not to say is a good answer)', linkedin: 'LinkedIn URL', website: 'Website', university: 'University', degree: 'Degree', fieldOfStudy: 'Field of study', graduationDate: 'Graduation date', availableFrom: 'Available from', duration: 'Internship length', salary: 'Salary expectation', workAuthorization: 'Work authorization', needsVisa: 'Needs a visa', drivingLicence: 'Driving licence', howDidYouHear: 'How you heard about the job', languages: 'Languages', coverLetter: 'Cover letter text (generic)', cvFile: 'CV file (PDF path)', coverLetterFile: 'Cover letter file (PDF path)', agreeToTerms: 'Agree to terms (yes allows ticking consent boxes)' }, pfButton: 'Prefill the application form', pfTitle: 'Form prefill', pfDone: (n) => `${n} field(s) filled; the browser window is open.`, pfTodo: 'Still yours to fill: ', pfSubmit: 'Check every field, finish the rest and submit yourself. Apply-Pilot does not submit.',
     mlTitle: 'Mailbox', mlSub: 'Apply-Pilot reads your inbox read-only, hands replies about your applications to the AI to sort and draft an answer, and sends nothing else anywhere. Mail is never marked read, moved or deleted, and replies are never sent for you.', mlProvider: 'Mail service', mlHost: 'IMAP server', mlUser: 'Email address', mlPass: 'App password (not your sign-in password)', mlDays: 'Days to look back on the first check', mlSave: 'Save', mlHelp: 'How to create an app password', mlFound: (n) => `Connected, ${n} messages in the inbox`, mlChecked: (t) => `Last check: ${t}`, mlRisk: 'Personal Outlook.com and Hotmail accounts no longer accept password sign-in, so this version cannot read them. The password is stored as plain text in .env in your data folder. The text of a matched message goes to the AI you chose.', mlReview: 'Replies to review', mlKind: { positive: 'Positive reply', interview: 'Interview', request: 'Asked for more', rejection: 'Rejected', auto: 'Auto-reply', other: 'Other' }, mlHow: { address: 'matched by contact', domain: 'matched by domain', subject: 'matched by subject' }, mlExcerpt: 'Show the message', mlReply: 'Reply draft', mlNoReply: 'No reply needed', mlLog: 'Log in the tracker', mlCopy: 'Copy reply', mlReplied: 'I replied, log it',
     lgTitle: 'Sign in to a site', lgSub: 'Some postings need a sign-in. Open the site here and sign in once. It joins the list below, and Apply-Pilot then reads that site signed in. This uses a separate browser profile, not your everyday Chrome.', lgOpen: 'Open and sign in', lgRemove: 'Remove', lgClear: 'Delete all sign-ins', lgClearAsk: 'Delete every sign-in in the separate profile?', lgCleared: 'All sign-ins deleted', lgOpened: (s) => `${s} is on the list. Sign in in the new window, then close it. These sites cannot be read while it is open.`, lgRisk: 'What a signed-in page shows, which can include your name and applications, goes to the AI you chose, so keep mailboxes out. Known mail sites are refused; avoid your school mail yourself. LinkedIn and similar platforms restrict automated access, so your account could be limited. Sign-ins are stored in the browser folder of your data folder. Do not sync or share it.',
@@ -483,20 +496,22 @@ const I18N = {
     agSelected: 'Paired', agChoose: 'Use this', agTerminal: 'Open in terminal', agReady: 'Ready', agMissing: 'Not installed or not configured', agCli: 'CLI', agKey: 'API key', agSet: 'set', agUnset: 'missing', agGet: 'Get / install', agRefresh: 'Re-detect',
     agSafe: 'During background work the AI only receives a prompt and returns text. It cannot touch your files, send or submit anything. Keys are stored as plain text in .env in your data folder, so do not share that file.',
     agTest: 'Test connection', agDetail: 'Details', agTesting: 'Testing…', agOk: (n) => `Connected (${n} s)`, agFail: { restart: 'Reopen Apply-Pilot from the Start menu or desktop icon, then test again', login: 'Not signed in or the key is invalid. Sign in from a terminal, or enter the key again', quota: 'Out of quota or too many requests', network: 'Network error', missing: 'This AI was not found. Install it first', timeout: 'Timed out', invalid: 'It answered, but not in the expected format', busy: 'A task is running. Try again shortly', other: 'The call failed' },
-    agKeyPh: 'Paste your DeepSeek API key', agKeySave: 'Save', agKeySaved: 'Key saved',
+    agKeyPh: 'Paste your DeepSeek API key', agKeySave: 'Save',
     todayTitle: 'Today', todayStart: "Start today's work", todayEval: 'Evaluate only', todayDraft: 'Draft follow-ups only', todayLetters: 'Draft letters only', todayMail: 'Check mail only',
     todaySub: (n) => (n ? `${n} item(s) wait for your decision. The AI never sends or submits anything.` : 'Scan new postings, evaluate them and draft follow-ups. Everything waits for your decision.'),
     suTitle: 'Before you start', suAgent: 'Choose your AI', suAgentDo: 'Pick an AI and pass the connection test', suGo: 'Choose', suProfile: 'Set out your experience', suProfileDo: 'Paste your full CV and the AI will list your experience and search terms. The CV goes to the AI service you chose. Evaluations and follow-ups only use what you confirm here, so check every line.',
-    suCv: 'Full CV text', suRead: 'Let the AI read it', suReading: 'Reading…', suSummary: 'Your target (two or three sentences)', suFacts: 'Experience you can prove (one per line)', suLangs: 'Languages (one per line)', suKeywords: 'Search terms (one per line)', suSave: 'Confirm and save', suSaved: 'Saved',
+    suCv: 'Full CV text', suRead: 'Let the AI read it', suReading: 'Reading…', suSummary: 'Your target (two or three sentences)', suFacts: 'Experience you can prove (one per line)', suLangs: 'Languages (one per line)', suKeywords: 'Search terms (one per line)', suSave: 'Confirm and save',
     evalUrlsTitle: 'Evaluate specific postings', evalUrlsHint: 'Found a posting yourself? Paste its link here (one per line, up to 20). The AI reads the page and scores it, and the result waits for your decision like any other. "Evaluate only" handles postings the scan found that are not evaluated yet.', evalUrlsRun: 'Evaluate these links', evalUrlsNone: 'Paste at least one http(s) link first',
     runTitle: 'Run', runSum: (e, d, n, u) => `Last run: ${e} evaluated, ${d} drafted, ${u} unreadable, ${n} problem(s)`, runStopped: { login: 'Stopped: AI not signed in or the key is invalid', quota: 'Stopped: AI quota used up', network: 'Stopped: network error', missing: 'Stopped: AI not found', other: 'The run failed' },
-    rvUnread: 'Postings to open yourself', rvUnreadWhy: 'Apply-Pilot could not read this page, even in a browser. Open it, and log it by hand if it fits.', rvRetry: 'Try again next run', rvEmpty: 'Nothing waits for your decision', rvEval: 'Evaluations to review', rvLetters: 'Cover letters to review', rvLetterSave: 'Save as documents', rvLetterSaved: (f, pdf) => `Letter saved in ${f}${pdf ? '' : ' (no PDF: this needs Word or LibreOffice)'}`, rvFollow: 'Follow-ups to review', rvAdd: 'Add to tracker', rvSkip: 'Ignore', rvOpen: 'Open posting', rvDims: 'Score details', rvGaps: 'Gaps', rvFilter: 'Hit a filter: ',
+    rvUnread: 'Postings to open yourself', rvUnreadWhy: 'Apply-Pilot could not read this page, even in a browser. Open it, and log it by hand if it fits.', rvRetry: 'Try again next run', rvEmpty: 'Nothing waits for your decision', rvEval: 'Evaluations to review', rvLetters: 'Cover letters to review', rvLetterSave: 'Save as documents', rvLetterSaved: (f, pdf) => `Letter saved in ${f}${pdf ? '' : ' (no PDF: this needs Word or LibreOffice)'}`, rvFollow: 'Follow-ups to review', rvAdd: 'Add to tracker', rvSkip: 'Ignore', rvOpen: 'Open posting', rvDims: 'Score details', rvFilter: 'Hit a filter: ',
     rvTo: 'To', rvToNone: 'No address in the notes. Enter it yourself', rvSubject: 'Subject', rvBody: 'Body', rvCopy: 'Copy body', rvCopied: 'Copied', rvMail: 'Open in mail app', rvSent: 'I sent it, log it', rvDrop: 'Do not send', rvIssues: 'Writing check: ',
-    overviewTitle: 'Overview', needAction: 'Needs your attention', thisWeek: 'Last 7 days', seeAll: 'See all',
+    overviewTitle: 'Overview', ovSetup: 'A few steps before you start: choose your AI and set out your experience.', ovSetupGo: 'Finish setup', ovReview: (n) => `${n} result(s) wait for your decision`, ovReviewGo: 'Review them', ovRunning: (t) => `Running: ${t}`, ovRunGo: 'See progress', ovStart: "Start today's work", ovIdle: 'Scan, evaluate, check mail and draft follow-ups in one run.',
+    setTitle: 'Settings', setSub: 'Mailbox, application answers, site sign-ins and the data folder. All of it stays on your computer.',
+    needAction: 'Needs your attention', thisWeek: 'Last 7 days', seeAll: 'See all',
     appsTitle: 'Applications', appsSub: 'Click a row for details and the full timeline', fuTitle: 'Follow-ups', actTitle: 'Activity', actSub: 'Dated events taken from the tracker notes',
     impTitle: 'Import existing data', impHelp: 'Enter a file or folder path (Windows: C:\\Users\\you\\Documents\\jobs, macOS: ~/Documents/jobs). Reads applications.md, Markdown tables, Excel, CSV/TSV, JSON and SQLite. Preview first; rows already tracked are skipped and source files are never changed.',
     impPreview: 'Preview', impWrite: 'Import new rows', impPh: 'File or folder path', impFiles: (f, t) => `${f} file(s) scanned, ${t} table(s) recognised`, impCounts: (n, d) => `${n} new, ${d} already tracked or repeated`, impDone: (n) => `Imported ${n} row(s)`, impNone: 'Nothing new to import',
-    setupTitle: 'Choose your data folder', setupSub: 'Your applications, profile and exports are kept in this folder, on your computer only. Create a new one or pick an existing data folder.', setupNote: 'You can change it later on the Tools page.',
+    setupTitle: 'Choose your data folder', setupSub: 'Your applications, profile and exports are kept in this folder, on your computer only. Create a new one or pick an existing data folder.', setupNote: 'You can change it later on the Settings page.',
     homeTitle: 'Data folder', homeNow: (p, src) => `Current: ${p} (${src})`, homeSrc: { env: 'from APPLY_PILOT_HOME', settings: 'saved setting', default: 'default location' },
     homeUse: 'Use this folder', homeFound: (n) => `Apply-Pilot data found here (${n} tracked applications). It will be used as is.`, homeNew: 'No data here yet. An empty tracker and profile will be created.', homeIsFile: 'This is a file. Enter a folder path.',
     homeSwitched: (p) => `Switched to ${p}`, homeEnv: 'Note: APPLY_PILOT_HOME points to another folder and takes precedence at the next start.',
@@ -508,8 +523,8 @@ const I18N = {
     tasks: {
       all: ['Scan everything', 'Career sites + job boards/public APIs + search engines; new postings are deduplicated into pipeline.md'],
       portals: ['Scan career sites', 'Workday, SuccessFactors, Phenom, Greenhouse, Lever and 7 more systems'],
-      boards: ['Scan job boards and public APIs', 'JobTech, Euraxess, France Travail, Adzuna, Jooble, Careerjet (the last four need keys in .env)'],
-      websearch: ['Search engines', 'Multilingual queries through Brave, Mojeek or SearXNG (key or own instance needed)'],
+      boards: ['Scan job boards and public APIs', 'The job boards, public employment APIs and academic sources turned on under Job sources'],
+      websearch: ['Search engines', 'Multilingual queries through Brave, Mojeek or SearXNG (enter the key under Job sources)'],
       linkedin: ['Scan LinkedIn', 'Jobs and posts with your logged-in browser profile'],
       followups: ['Check follow-ups', 'Applications due a follow-up under your rules'],
       doctor: ['Check setup', 'Environment, profile and tracker'],
@@ -520,9 +535,9 @@ const I18N = {
     inbox: 'Latest scan files:', bye: 'Stopped. You can close this page.',
     days: (n) => `${n} days`, ago: (n) => (n <= 0 ? 'today' : `${n} d ago`), quiet: (n) => `${n} days quiet`, count: (n) => `${n}`, all: 'All',
     empty: 'No matching applications', emptyFeed: 'Nothing in this period', emptyAction: 'Nothing needs you right now', more: (n) => `Show more (${n} left)`,
-    search: 'Search company, role, contact or notes…', rows: 'rows', updated: 'updated', connecting: 'connecting…',
+    search: 'Search company, role, contact or notes…', rows: 'rows', connecting: 'connecting…',
     fuSub: (d, n) => `${n} applications that are applied or answered and have had no new entry for ${d}+ days. A reminder only; you decide what to send.`,
-    overviewSub: (n, a) => `${n} records, ${a} active`, open: 'Open posting', timeline: 'Timeline', notes: 'Full notes', score: 'Score', added: 'Added', theme: 'Theme', lang: '中文', expand: 'More', collapse: 'Less', scheduled: 'Scheduled', chartEmpty: 'No outward activity in this period',
+    overviewSub: (n, a) => `${n} records, ${a} active`, open: 'Open posting', notes: 'Full notes', score: 'Score', added: 'Added', theme: 'Theme', lang: '中文', expand: 'More', collapse: 'Less', scheduled: 'Scheduled', chartEmpty: 'No outward activity in this period',
   },
 };
 let T = I18N[LANG === 'zh' ? 'zh' : 'en'];
@@ -562,6 +577,7 @@ const ICONS = {
   followups: '<path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/>',
   activity: '<path d="M3 12h4l3 8 4-16 3 8h4"/>',
   agents: '<rect x="6" y="7" width="12" height="11" rx="2"/><path d="M12 3v4M9.5 12h.01M14.5 12h.01M10 15h4"/>',
+  settings: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   tools: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.8-.7-.7-2.8z"/>',
 };
 const X_ICON = '<path d="M6 6l12 12M18 6 6 18"/>';
@@ -631,10 +647,10 @@ function stepsOf(r) {
 
 // Re-rendering must not swallow what is being typed, but a focused button is not typing.
 const editing = (sel) => { const a = document.activeElement; return Boolean(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest(sel)); };
-const S = { answers: {}, anDraft: {}, answerKeys: [], anMsg: '', anErr: false, lastPrefill: null, mail: null, mailDraft: null, mailTest: null, mailTesting: false, sites: [], loginMsg: '', sources: [], srcWords: {}, srcTests: {}, srcTesting: null, review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: read('ap-view') || 'today', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
+const S = { answers: {}, anDraft: {}, answerKeys: [], anMsg: '', anErr: false, lastPrefill: null, mail: null, mailDraft: null, mailTest: null, mailTesting: false, sites: [], loginMsg: '', sources: [], srcWords: {}, srcTests: {}, srcTesting: null, review: [], edits: {}, tests: {}, testing: null, draft: {}, rvErr: {}, ready: null, lastRun: null, rows: [], view: 'overview', filter: read('ap-filter') || 'active', q: '', limit: 60, period: Number(read('ap-period')) || 7, kind: 'all', evType: null, day: null, stage: null, followDays: 14, running: null, inbox: [] };
 
 function setView(v) {
-  S.view = v; store('ap-view', v);
+  S.view = v;
   document.querySelectorAll('.view').forEach((el) => el.classList.toggle('on', el.dataset.view === v));
   renderNav(); render();
   if (location.hash !== `#${v}`) history.replaceState(null, '', `#${v}`);
@@ -642,10 +658,10 @@ function setView(v) {
 
 function renderNav() {
   const badge = { today: S.review.length, followups: S.rows.filter(FILTERS.follow).length, applications: S.rows.filter(FILTERS.active).length };
-  $('navs').innerHTML = Object.keys(T.nav).map((v) => `<button class="nav ${S.view === v ? 'on' : ''}" data-go="${v}">
+  $('navs').innerHTML = Object.keys(T.nav).map((v) => `${v === 'sources' ? '<div class="nav-sep"></div>' : ''}<button class="nav ${S.view === v ? 'on' : ''}" data-go="${v}">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[v]}</svg>${T.nav[v]}
     ${badge[v] ? `<span class="badge ${v === 'followups' ? 'warn' : ''}">${badge[v]}</span>` : ''}
-    ${v === 'tools' && S.running ? '<span class="spin on" style="margin-left:auto"></span>' : ''}</button>`).join('');
+    ${S.running && v === runView() ? '<span class="spin on" style="margin-left:auto"></span>' : ''}</button>`).join('');
 }
 
 function eventsSince(n, notes = false) {
@@ -654,7 +670,20 @@ function eventsSince(n, notes = false) {
     .sort((a, b) => b.date.localeCompare(a.date) || b.r.num - a.r.num);
 }
 
+// The page that shows the output of the task in progress.
+const runView = () => (['today', 'evaluate', 'drafts', 'letters', 'mail', 'prefill'].includes(S.running) ? 'today' : 'tools');
+
+// What the home page says first: finish setup, a run in progress, results to decide, or start a run.
+function overviewStatus() {
+  const line = (text, go, label, cls = '') => `<div class="card ov-status ${cls}"><span class="grow">${esc(text)}</span><button class="btn primary" data-go="${go}">${label}</button></div>`;
+  if (S.ready && !S.ready.ready) return line(T.ovSetup, 'today', T.ovSetupGo, 'warn');
+  if (S.running) return line(T.ovRunning(T.work[S.running] || S.running), runView(), T.ovRunGo);
+  if (S.review.length) return line(T.ovReview(S.review.length), 'today', T.ovReviewGo, 'warn');
+  return `<div class="card ov-status"><span class="grow">${T.ovIdle}</span><button class="btn primary" data-task="today" data-go-after="today">${T.ovStart}</button></div>`;
+}
+
 function renderOverview() {
+  $('ovStatus').innerHTML = S.ready ? overviewStatus() : '';
   const active = S.rows.filter(FILTERS.active).length;
   $('overviewSub').textContent = T.overviewSub(S.rows.length, active);
   $('kpis').innerHTML = Object.keys(T.k).map((id) => {
@@ -791,7 +820,6 @@ function renderMail() {
     <label class="field">${T.mlUser}${m.user ? ` · ${T.srcKeySet}` : ''}<input id="mlUser" type="email" autocomplete="off" spellcheck="false"></label>
     <label class="field">${T.mlPass}${m.password ? ` · ${T.srcKeySet}` : ''}<input id="mlPass" type="password" autocomplete="off"></label>
     <label class="field">${T.mlDays}<input id="mlDays" type="number" min="1" max="60" value="${m.days || 14}" style="width:90px"></label>
-    ${m.provider === 'outlook' ? '' : ''}
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-mail="save">${T.mlSave}</button><button class="btn" data-mail="test" ${m.ready ? '' : 'disabled'}>${T.srcTest}</button>${m.providers.find((p) => p.id === m.provider)?.help ? `<a class="btn" href="${esc(m.providers.find((p) => p.id === m.provider).help)}" target="_blank" rel="noopener">${T.mlHelp} ↗</a>` : ''}</div>
     <div class="ag-note">${mailNote()}</div>`;
   $('mlProvider').addEventListener('change', (e) => { S.mailDraft = { provider: e.target.value, host: '' }; renderMail(); });
@@ -811,10 +839,13 @@ function renderLogins() {
   $('loginSites').innerHTML = `${list}${clear}${S.loginMsg ? `<div class="meta" style="white-space:normal;margin-top:6px">${esc(S.loginMsg)}</div>` : ''}`;
 }
 
-function renderSources() {
-  renderAnswers();
+function renderSettings() {
   renderMail();
+  renderAnswers();
   renderLogins();
+}
+
+function renderSources() {
   if (editing('#sourceCards')) return;
   $('sourceCards').innerHTML = (S.sources || []).map((s) => {
     const keys = s.keys.map((k) => `<label class="field">${esc(k.name)}${k.set ? ` · ${T.srcKeySet}` : ''}<span style="display:flex;gap:8px"><input id="srckey-${k.name}" type="password" autocomplete="off" spellcheck="false" style="flex:1;min-width:0"><button class="btn" data-srckey="${s.id}" data-name="${k.name}">${T.srcKeySave}</button></span></label>`).join('');
@@ -957,7 +988,7 @@ function render() {
   $('impPath').placeholder = T.impPh;
   $('langBtn').textContent = T.lang;
   $('themeBtn').textContent = T.theme;
-  ({ today: renderToday, overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, sources: renderSources, tools: renderTools })[S.view]?.();
+  ({ today: renderToday, overview: renderOverview, applications: renderApps, followups: renderFollowups, activity: renderActivity, agents: renderAgents, sources: renderSources, settings: renderSettings, tools: renderTools })[S.view]?.();
 }
 
 function openDrawer(num) {
@@ -993,7 +1024,7 @@ function logTo(c, text) {
   c.scrollTop = c.scrollHeight;
 }
 
-// Data folder picker, used by the first-run screen and the Tools page.
+// Data folder picker, used by the first-run screen and the Settings page.
 function homeForm(id, value) {
   if ($(`${id}Path`)) return;
   $(id).innerHTML = `<div class="toolbar" style="padding:0;border:0;gap:8px"><label class="search"><input id="${id}Path" type="text" spellcheck="false" value="${esc(value)}"></label>
@@ -1204,6 +1235,7 @@ document.addEventListener('click', async (e) => {
     $('console').textContent = ''; $('todayConsole').textContent = '';
     const r = await post('/api/run', { task: t.dataset.task, urls });
     if (!r.ok) log(`! ${r.error}`); else if (t.dataset.urls) $('evalUrls').value = '';
+    if (t.dataset.goAfter) setView(t.dataset.goAfter);
     return;
   }
   if (t.dataset.act === 'quit') { await post('/api/quit'); $('runState').textContent = T.bye; $('dot').classList.remove('on'); es.close(); return; }
@@ -1236,11 +1268,11 @@ es.addEventListener('task', (m) => {
   const d = JSON.parse(m.data);
   if (d.state === 'start') { S.running = d.task; log(`$ ${d.task}`); }
   else { S.running = null; $('runState').textContent = T.done(d.task, d.code); load(); }
-  renderNav(); if (S.view === 'tools') renderTools(); if (S.view === 'agents') renderAgents(); if (S.view === 'sources') renderSources(); if (S.view === 'today') renderToday();
+  renderNav(); render();
 });
 setInterval(load, 60000);
 const initial = location.hash.slice(1);
-setView(T.nav[initial] ? initial : S.view);
+setView(T.nav[initial] ? initial : 'overview');
 load();
 </script>
 </body>

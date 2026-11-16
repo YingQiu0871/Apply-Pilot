@@ -90,7 +90,7 @@ Windows PowerShell 中用 `$env:APPLY_PILOT_HOME = "$HOME\job-search"` 设置数
 Apply-Pilot looks for your data folder in this order:
 
 1. the `APPLY_PILOT_HOME` environment variable;
-2. the folder you chose in the panel (Tools → Data folder) or with `apply-pilot home PATH`, saved in a small settings file: `%APPDATA%\Apply-Pilot\settings.json` on Windows, `~/Library/Application Support/Apply-Pilot/settings.json` on macOS, `~/.config/apply-pilot/settings.json` on Linux;
+2. the folder you chose in the panel (Settings → Data folder) or with `apply-pilot home PATH`, saved in a small settings file: `%APPDATA%\Apply-Pilot\settings.json` on Windows, `~/Library/Application Support/Apply-Pilot/settings.json` on macOS, `~/.config/apply-pilot/settings.json` on Linux;
 3. `./apply-data` in the current directory.
 
 If the folder holds no data yet, the panel opens a first-run screen to create one or point to an existing one.
@@ -98,7 +98,7 @@ If the folder holds no data yet, the panel opens a first-run screen to create on
 数据目录按以下顺序查找：
 
 1. 环境变量 `APPLY_PILOT_HOME`；
-2. 在面板（工具 → 数据目录）或用 `apply-pilot home 路径` 选定的目录，保存在一个小的设置文件里：Windows 是 `%APPDATA%\Apply-Pilot\settings.json`，macOS 是 `~/Library/Application Support/Apply-Pilot/settings.json`，Linux 是 `~/.config/apply-pilot/settings.json`；
+2. 在面板（设置 → 数据目录）或用 `apply-pilot home 路径` 选定的目录，保存在一个小的设置文件里：Windows 是 `%APPDATA%\Apply-Pilot\settings.json`，macOS 是 `~/Library/Application Support/Apply-Pilot/settings.json`，Linux 是 `~/.config/apply-pilot/settings.json`；
 3. 当前目录下的 `./apply-data`。
 
 如果目录里还没有数据，面板会显示首次设置界面，让你新建或选择已有目录。
@@ -108,9 +108,9 @@ apply-pilot home                                 # show the folder and where it 
 apply-pilot home ~/job-search --init             # save it as the default, create it if empty / 设为默认，空目录则新建
 ```
 
-The control panel runs today's work, scans, the follow-up check, the setup check, imports and the Excel export, with live output. Nothing in it sends email or submits applications. It listens on 127.0.0.1 and accepts requests only with a per-run token from its own page.
+The panel opens on the Overview: what waits for you, the numbers, and the last week. It runs today's work, scans, the follow-up check, the setup check, imports and the Excel export, with live output. Nothing in it sends email or submits applications. It listens on 127.0.0.1 and accepts requests only with a per-run token from its own page.
 
-控制面板可以一键运行今日工作、扫描、待跟进检查、自检、导入和 Excel 导出，并实时显示输出。它不会发邮件，也不会提交申请；只监听本机，并且只接受带有本次运行令牌的请求。
+面板打开后先显示「概览」：等你处理的事、各项数字和最近一周的动态。它可以一键运行今日工作、扫描、待跟进检查、自检、导入和 Excel 导出，并实时显示输出。它不会发邮件，也不会提交申请；只监听本机，并且只接受带有本次运行令牌的请求。
 
 ### Track and score · 记录与打分
 
@@ -138,7 +138,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `import PATH` | read an existing database from a file or folder; preview first, `--write` appends new rows only | 从文件或文件夹读取已有数据；先预览，`--write` 只追加新行 |
 | `add`, `status`, `note`, `list` | the tracker `data/applications.md`, with duplicate detection | 申请表，自动查重 |
 | `followups` | rows due a follow-up, split by email and portal | 该跟进的申请，按邮件 / 招聘系统分组 |
-| `eval prompt / score / run / pipeline` | rubric scoring with hard filters, by your agent or a model API | 按评分表打分，含硬性过滤；agent 或模型 API 均可 |
+| `eval prompt / score / run` | rubric scoring with hard filters, by your agent or a model API | 按评分表打分，含硬性过滤；agent 或模型 API 均可 |
 | `lint` | flags stock phrases, forbidden claims, semicolons, long lists | 检查套话、禁止写的经历、分号、过长的列举 |
 | `docx list / build` | fill a Word template paragraph by paragraph, the rest byte-identical | 按段落填 Word 模板，其余部分（照片、样式）不变 |
 | `scan portals` | 12 career-site systems: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters, Personio, Greenhouse, Lever, Ashby, Teamtailor, Recruitee, Workable | 扫描 12 种企业招聘系统 |
@@ -150,7 +150,6 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `jd`, `keywords` | fetch a full job description; CV keyword coverage | 抓取完整 JD；检查 CV 关键词覆盖 |
 | `merge-additions` | merge batch TSV tracker additions | 合并批量评估产生的新增行 |
 | `export xlsx` | tracker to a fresh spreadsheet | 导出 Excel |
-| `careerops` | optional: run a [career-ops](https://github.com/career-ops-hq/career-ops) script on the same data | 可选：在同一数据上运行 career-ops 脚本 |
 
 Run `apply-pilot help` for every option. 全部参数见 `apply-pilot help`。
 
@@ -174,7 +173,7 @@ Windows 10/11、macOS、Linux 都能用（Node 20 以上），CI 在三个系统
 
 | | Windows | macOS |
 |---|---|---|
-| Desktop app / 桌面应用 | own window; `.msi`, `.dmg`, `.AppImage`, `.deb` / 独立窗口，提供 `.msi`、`.dmg`、`.AppImage`、`.deb` | source install, `npm run app` / 源码安装，`npm run app` |
+| Desktop app / 桌面应用 | own window, `.msi` / 独立窗口，`.msi` | own window, `.dmg` / 独立窗口，`.dmg` |
 | Desktop launcher / 桌面图标 | `Apply-Pilot.lnk`, no console window / 不弹命令行窗口 | `Apply-Pilot.command` |
 | Open data folder / 打开数据文件夹 | Explorer / 资源管理器 | Finder |
 | Agent "Open in terminal" / 在终端中打开 | new `cmd` window | new Terminal window / 新的"终端"窗口 |
@@ -190,7 +189,7 @@ Choose Claude Code, Codex, DeepSeek or DeepSeek Harness once on the panel's AI p
 - [INSTALL_FOR_AI.md](INSTALL_FOR_AI.md): step-by-step setup for an agent / 给 agent 的分步安装指引
 - [AGENTS.md](AGENTS.md): rules for every agent / 所有 agent 必须遵守的规则
 - [CLAUDE.md](CLAUDE.md), [`skills/apply-pilot`](skills/apply-pilot/SKILL.md): Claude Code
-- [docs/harnesses.md](docs/harnesses.md): Claude Code, Codex, DeepSeek/opencode, career-ops
+- [docs/harnesses.md](docs/harnesses.md): Claude Code, Codex, DeepSeek/opencode
 
 ## Your profile · 个人配置
 

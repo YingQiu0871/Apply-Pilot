@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // apply-pilot command line. Run `apply-pilot help` for the command list.
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homeDir, homeSource, loadEnv, loadProfile, paths, saveHome, settingsFile } from '../src/config.mjs';
@@ -12,7 +12,6 @@ import { dueFollowUps } from '../src/followups.mjs';
 import { lintText } from '../src/lint.mjs';
 import { buildDocx, readParagraphs } from '../src/docx.mjs';
 import { triage } from '../src/triage.mjs';
-import { findCareerOps, runCareerOps } from '../src/careerops.mjs';
 
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -48,7 +47,6 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval prompt JD.txt                    print the scoring prompt for your agent to answer
   eval score ANSWER.json [--jd JD.txt]  weighted score from the agent's JSON answer
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
-  eval pipeline [--provider P] [--limit 10]   evaluate pending data/pipeline.md postings into output/agent-evaluation-DATE.md
   agent [claude|codex|deepseek|dsh] [--test]   show or choose the AI agent; --test sends one short request
   prefill NUM                           open the application page and fill it from your answers; you submit
   mail [test]                           mailbox settings (set up in the panel), or one read-only connection test
@@ -63,14 +61,13 @@ It holds profile.json, data/applications.md, inbox/, output/.
   docx build TEMPLATE OUT CHANGES.json  fill paragraphs, keep everything else identical
   scan portals [--only NAME] [--pipeline [FILE]]  company career sites: Workday, SuccessFactors, Phenom, Eightfold, SmartRecruiters,
                                         Personio, Greenhouse, Lever, Ashby, Teamtailor, Recruitee, Workable
-  scan boards [--pipeline]              job boards and public APIs: JobTech, Euraxess, France Travail, Adzuna, Jooble, Careerjet
+  scan boards [--pipeline]              job boards, public APIs and academic sources turned on in profile.sources.boards
   scan websearch [--engine E] [--pipeline]  search queries through Brave, Mojeek or your SearXNG
   scan all [--pipeline]                 portals + boards + websearch
   linkedin login | linkedin scan [--jobs|--posts] [--pipeline]
   triage SCAN.json [--json OUT] [--pipeline [FILE]]   new candidates, minus tracked and filtered; optionally append to data/pipeline.md
   merge-additions [DIR] [--dry-run]     merge batch TSV tracker additions (default DIR: batch/tracker-additions)
   export xlsx OUT.xlsx                  tracker to a fresh spreadsheet
-  careerops SCRIPT [ARGS]               run a career-ops script on the same data (optional)
 
 Nothing here sends email or submits forms. Agents must get your approval first (see AGENTS.md).`;
 
@@ -119,7 +116,6 @@ async function main() {
         let has = true; try { await import(mod); } catch { has = false; }
         ok(has, `${mod} ${has ? 'installed' : 'not installed (optional)'}`);
       }
-      if (findCareerOps()) ok(true, `career-ops ${findCareerOps()} (optional companion)`);
       const { findBrowser } = await import('../src/browser.mjs');
       const browserFile = findBrowser();
       ok(Boolean(browserFile), browserFile ? `browser for JavaScript pages: ${browserFile}` : 'no Chrome or Edge found: pages that need JavaScript will be listed for you to open');
@@ -280,31 +276,7 @@ async function main() {
         }
         break;
       }
-      if (sub === 'pipeline') {
-        // Evaluate pending "- [ ] url | company | role" lines of data/pipeline.md through a model API.
-        const { fetchJd } = await import('../src/jd.mjs');
-        const { pendingPipeline } = await import('../src/additions.mjs');
-        const items = pendingPipeline(join(home, 'data', 'pipeline.md')).slice(-Number(opt.limit || 10)).reverse();
-        const results = [];
-        for (const it of items) {
-          try {
-            const jd = await fetchJd(it.url, { browser: Boolean(opt.browser) });
-            const r = await evaluateText(profile, `${it.company}\n${it.role}\n\n${jd.text}`, { provider: opt.provider || 'deepseek', model: opt.model, baseUrl: opt['base-url'] });
-            results.push({ ...it, ...r });
-            console.log(`${r.score100}/100 ${r.decision}\t${it.company} | ${it.role}`);
-          } catch (e) { results.push({ ...it, error: e.message }); console.log(`ERROR\t${it.company} | ${it.role}: ${e.message}`); }
-        }
-        mkdirSync(p.output, { recursive: true });
-        const base = join(p.output, `agent-evaluation-${new Date().toLocaleDateString('sv-SE')}`);
-        writeFileSync(`${base}.json`, JSON.stringify(results, null, 2));
-        const md = ['| Company | Role | Score | Decision | Main gap | URL |', '|---|---|---|---|---|---|',
-          ...results.map((r) => `| ${r.company} | ${r.role} | ${r.score100 ?? '–'} | ${r.decision || r.error || ''} | ${(r.gaps || [])[0] || ''} | ${r.url} |`),
-          '', ...results.filter((r) => r.summary).map((r) => `**${r.company} — ${r.role}**: ${r.summary}`)].join('\n');
-        writeFileSync(`${base}.md`, `${md}\n`);
-        console.log(`${results.length} evaluated → ${base}.md`);
-        break;
-      }
-      throw new Error('eval prompt|score|run|pipeline');
+      throw new Error('eval prompt|score|run');
     }
     case 'lint': {
       let bad = 0;
@@ -425,9 +397,6 @@ async function main() {
       console.log(`wrote ${await exportXlsx(tracker().rows(), resolve(pos[1] || 'applications.xlsx'))}`);
       break;
     }
-    case 'careerops':
-      process.exitCode = runCareerOps(pos[0], process.argv.slice(4), home);
-      break;
     case undefined:
     case 'help':
     case '--help':

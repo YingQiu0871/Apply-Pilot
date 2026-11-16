@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0 — 2026-11-16
+
+- The panel opens on the Overview, which is now the first page. A line at the top says what to do next: finish setup, watch a run in progress, review waiting results, or start today's work.
+- New Settings page: the mailbox, application answers, site sign-ins and the data folder moved there from Job sources and Tools. Job sources now holds only job sources; Tools holds import, scans, checks and export.
+- A tracked application without a link is no longer offered for a cover letter and then listed as an unreadable page. The posting link is read the same way everywhere, also when a remark follows it in the tracker.
+- Removed: the `careerops` bridge command and `eval pipeline`. `today` evaluates pending postings through the chosen AI and puts the results in the review queue; `eval run` still scores one file through a model API.
+- Cleanup: unused code, strings and exports removed; the Tools page descriptions match the current sources.
+
 ## 0.7.2 — 2026-11-02
 
 - Today page: a new "Evaluate specific postings" box takes job links you found yourself, one per line, up to 20. Each page is read, scored by the AI and listed for your decision like a scanned posting. A link evaluated, skipped or queued before is evaluated again and replaces its earlier pending result.

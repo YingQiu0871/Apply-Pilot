@@ -13,7 +13,7 @@ import { letterCandidates, letterPrompt, validateLetter } from './letters.mjs';
 import { fetchRecent, isNoise, mailPrompt, mailState, markChecked, matchMessage, openImap, parseMessage, parseWith, readMailSettings, validateMail } from './mail.mjs';
 import { lintText } from './lint.mjs';
 import { ReviewQueue, reviewFile } from './review.mjs';
-import { Tracker, findDuplicates, normalizeUrl } from './tracker.mjs';
+import { Tracker, findDuplicates, linkOf, normalizeUrl } from './tracker.mjs';
 import { askAgent, askJson, classifyFailure } from './worker.mjs';
 
 const text = (v, max) => String(v ?? '').trim().slice(0, max);
@@ -158,11 +158,11 @@ async function letterStep({ profile, queue, tracker, ask, fetch, log, limit, res
     try {
       let jd;
       try {
-        jd = await fetch(row.url);
+        jd = await fetch(linkOf(row));
         if (jd.text.length < 200) throw new Error('the page has no readable job description');
       } catch (e) {
         if (classifyFailure(e.message) === 'network') throw Object.assign(e, { reason: 'network' });
-        queue.add({ type: 'unread', key: `letter:${row.num}`, title: `${row.company} | ${row.role}`, payload: { url: row.url, company: row.company, role: row.role, reason: e.message } });
+        queue.add({ type: 'unread', key: `letter:${row.num}`, title: `${row.company} | ${row.role}`, payload: { url: linkOf(row), company: row.company, role: row.role, reason: e.message } });
         queue.save();
         res.unread += 1;
         log(`${label}: no readable page, left for you to open`);

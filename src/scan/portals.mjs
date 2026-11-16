@@ -17,7 +17,6 @@
 //   ]
 // }
 // Boards change. Every provider fails soft: errors are collected, never thrown.
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { localDate } from '../config.mjs';
 
@@ -295,11 +294,4 @@ export async function scanPortals(profile, { only, log = console.log } = {}) {
   }
   for (const q of cfg.searchQueries || []) if (q.enabled !== false) result.websearch.push({ name: q.name, query: q.query });
   return result;
-}
-
-export function savePortalScan(result, inboxDir) {
-  mkdirSync(inboxDir, { recursive: true });
-  const file = join(inboxDir, `portals-${localDate()}-${Date.now()}.json`);
-  writeFileSync(file, JSON.stringify(result, null, 2));
-  return file;
 }

@@ -15,7 +15,7 @@ import { homeSource, loadEnv, loadProfile, localDate, paths as pathsOf, saveEnv,
 import { initHome, inspectHome, suggestedHome, updateProfile } from '../home.mjs';
 import { channelOf, followUpStatus } from '../followups.mjs';
 import { stageOf } from '../events.mjs';
-import { Tracker, events, lastActivity, parseScore } from '../tracker.mjs';
+import { Tracker, events, lastActivity, linkOf, parseScore } from '../tracker.mjs';
 import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readAgentState, saveAgent } from '../agents.mjs';
 import { pickUrls, profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
 import { clearLogins, openLogin, readSites, removeSite } from '../browser.mjs';
@@ -71,7 +71,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
       const channel = f?.channel || channelOf(r);
       return {
         num: r.num, date: r.date, company: r.company, role: r.role, status: r.status, notes: r.notes,
-        score, url: (r.url.match(/https?:\/\/\S+/) || [])[0] || '',
+        score, url: linkOf(r),
         lastActivity: lastActivity(r, today), events: evs, due: Boolean(f?.due), channel,
         stage: stageOf(r, evs, { score, thresholds: profile.scoring?.thresholds, channel, today }),
       };
@@ -284,19 +284,13 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
       if (pathname === '/api/profile/draft') return withBody(draftProfile, 2e5);
       if (pathname === '/api/profile/save') return withBody(saveProfile, 2e5);
       if (pathname === '/api/import/preview' || pathname === '/api/import/write') {
-        let body = '';
-        req.on('data', (c) => { body += c; if (body.length > 1e4) req.destroy(); });
-        req.on('end', async () => {
-          try {
-            const { path } = JSON.parse(body || '{}');
-            if (!path) throw new Error('enter a file or folder path');
-            const { previewImport, writeImport } = await import('../importer.mjs');
-            const pv = await previewImport(path, trackerFile);
-            const added = pathname.endsWith('/write') ? writeImport(pv, trackerFile) : null;
-            json(res, 200, { ok: true, input: pv.input, files: pv.files, sources: pv.sources, errors: pv.errors, fresh: pv.fresh.length, duplicates: pv.duplicates.length, sample: pv.fresh.slice(0, 40), added });
-          } catch (e) { json(res, 200, { ok: false, error: e.message }); }
+        return withBody(async ({ path }) => {
+          if (!path) throw new Error('enter a file or folder path');
+          const { previewImport, writeImport } = await import('../importer.mjs');
+          const pv = await previewImport(path, trackerFile);
+          const added = pathname.endsWith('/write') ? writeImport(pv, trackerFile) : null;
+          return { ok: true, input: pv.input, files: pv.files, sources: pv.sources, errors: pv.errors, fresh: pv.fresh.length, duplicates: pv.duplicates.length, sample: pv.fresh.slice(0, 40), added };
         });
-        return;
       }
       if (pathname === '/api/agent/refresh') { agents = detectAgents(); return json(res, 200, { ok: true, agents }); }
       if (pathname === '/api/open-data') { mkdirSync(paths.home, { recursive: true }); openFolder(paths.home); return json(res, 200, { ok: true }); }

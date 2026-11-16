@@ -41,13 +41,3 @@ Other providers work the same way:
 - `--base-url` points the call at any OpenAI-compatible endpoint.
 
 As an agent backend (opencode or similar with a DeepSeek model), give it `AGENTS.md` as its instructions file. It then uses the CLI exactly like Claude Code or Codex.
-
-## career-ops (optional)
-
-[career-ops](https://github.com/career-ops-hq/career-ops) uses the same `data/applications.md` table. Point both tools at one directory:
-
-```bash
-export APPLY_PILOT_HOME=~/job-search
-export CAREER_OPS_HOME=~/src/career-ops
-apply-pilot careerops tracker sync      # runs career-ops' tracker.mjs with CAREER_OPS_DATA=$APPLY_PILOT_HOME
-```

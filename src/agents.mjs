@@ -2,7 +2,7 @@
 // DeepSeek or DeepSeek Harness. The choice is stored in APPLY_PILOT_HOME/agent.json. Background work
 // goes through src/worker.mjs; this file only knows what is installed and chosen.
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 export const AGENTS = {
@@ -65,5 +65,3 @@ export function launchInteractive(agent, { home }) {
   }
   return true;
 }
-
-export const agentReady = (home) => existsSync(agentFile(home));

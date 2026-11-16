@@ -318,8 +318,9 @@ test('letters are drafted only for evaluated rows at the Apply score, once', asy
   letterRow(home, { company: 'Low', score: '60/100', url: 'https://jobs.example.com/10' });
   letterRow(home, { company: 'Applied', status: 'Applied', url: 'https://jobs.example.com/11' });
   letterRow(home, { company: 'Old low', score: '3.5/5', url: 'https://jobs.example.com/12' });
-  const older = [['4.2/5', 7], ['4.1', 8], ['3.9', 9], ['-', 10]].map(([score, num]) => ({ status: 'Evaluated', url: 'u', score, num }));
-  assert.deepEqual(letterCandidates(older, profile, new ReviewQueue(reviewFile(home))).map((r) => r.num), [8, 7], 'a score out of 5 counts too');
+  const older = [['4.2/5', 7], ['4.1', 8], ['3.9', 9], ['-', 10]].map(([score, num]) => ({ status: 'Evaluated', url: 'https://jobs.example.com/old', score, num }));
+  older.push({ status: 'Evaluated', url: '-', score: '95/100', num: 11 });
+  assert.deepEqual(letterCandidates(older, profile, new ReviewQueue(reviewFile(home))).map((r) => r.num), [8, 7], 'a score out of 5 counts too, and a row without a link is left out');
   const calls = [];
   const ask = async (p) => { calls.push(p); return JSON.stringify({ body: LETTER }); };
   const run = () => runToday({ home, profile, agent: 'codex', steps: ['letters'], ask, fetch: longJd, log: () => {}, today: '2026-10-30' });

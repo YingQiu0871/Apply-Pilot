@@ -100,6 +100,9 @@ export class Tracker {
 
 // ---- derived views -------------------------------------------------------
 
+/** The posting's web address: the url column may be empty ("-") or carry a remark after the link. */
+export const linkOf = (row) => (String(row?.url || '').match(/https?:\/\/[^\s|]+/) || [''])[0].replace(/[;,.)]+$/, '');
+
 export function normalizeUrl(raw) {
   const value = String(raw || '').match(/https?:\/\/[^\s|;)]+/i)?.[0] || '';
   if (!value) return '';
