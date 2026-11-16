@@ -15,7 +15,7 @@ import { homeSource, loadEnv, loadProfile, localDate, paths as pathsOf, saveEnv,
 import { initHome, inspectHome, suggestedHome, updateProfile } from '../home.mjs';
 import { channelOf, followUpStatus } from '../followups.mjs';
 import { stageOf } from '../events.mjs';
-import { Tracker, events, lastActivity, linkOf, parseScore } from '../tracker.mjs';
+import { STATES, Tracker, events, findDuplicates, lastActivity, linkOf, parseScore } from '../tracker.mjs';
 import { AGENTS, detectAgents, launchInteractive, markVerified, readAgent, readAgentState, saveAgent } from '../agents.mjs';
 import { pickUrls, profilePrompt, runToday, setupState, validateProfileDraft } from '../daily.mjs';
 import { clearLogins, openLogin, readSites, removeSite } from '../browser.mjs';
@@ -181,7 +181,35 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
     return { ok: true };
   };
   let lastPrefill = null;
-  const runPrefill = ({ num }) => {
+  // The tracker is edited only on the user's own click: a status, a note, or a new row.
+  const updateRow = ({ num, status, note }) => {
+    const tracker = new Tracker(trackerFile);
+    const row = tracker.get(num);
+    if (!row) throw new Error(`no application #${num}`);
+    const text = String(note || '').replace(/\s+/g, ' ').trim().slice(0, 2000);
+    const next = status || row.status;
+    if (next === row.status && !text) throw new Error('choose another status or write a note');
+    const res = tracker.setStatus(row.num, next, text);
+    tracker.save();
+    push('changed', {});
+    return { ok: true, num: row.num, before: res.before, after: res.after };
+  };
+  const addRow = ({ company, role, url, status, note, force }) => {
+    const clean = (v, max) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, max);
+    const row = { company: clean(company, 160), role: clean(role, 200), url: clean(url, 500), status: status || 'Applied', notes: clean(note, 2000) };
+    if (!row.company || !row.role) throw new Error('company and role are required');
+    if (row.url && !/^https?:\/\/\S+$/i.test(row.url)) throw new Error('the link must start with http:// or https://');
+    if (!STATES.some((s) => s.id === row.status)) throw new Error(`unknown status "${row.status}"`);
+    const tracker = new Tracker(trackerFile);
+    const dupes = findDuplicates(tracker.rows(), row);
+    if (dupes.length && !force) return { ok: false, duplicates: dupes.slice(0, 5).map((d) => ({ num: d.num, company: d.company, role: d.role, status: d.status })) };
+    if (row.notes && !/^20\d\d-\d\d-\d\d/.test(row.notes)) row.notes = `${localDate()}: ${row.notes}`;
+    const added = tracker.add(row);
+    tracker.save();
+    push('changed', {});
+    return { ok: true, num: added.num };
+  };
+  const runPrefill = ({ num, next }) => {
     if (running) return { ok: false, error: `"${running}" is still running` };
     const agent = readAgent(paths.home);
     if (!agent) return { ok: false, error: 'choose an AI agent first' };
@@ -189,7 +217,7 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
     if (!row) return { ok: false, error: `no application #${num}` };
     begin('prefill');
     log(`$ prefill #${row.num} ${row.company}`);
-    prefill({ home: paths.home, profile, row, ask: (p) => askAgent(agent, p), log })
+    prefill({ home: paths.home, profile, row, next: Boolean(next), ask: (p) => askAgent(agent, p), log })
       .then((r) => { lastPrefill = { num: row.num, ...r, at: new Date().toISOString() }; finish('prefill', 0); push('changed', {}); })
       .catch((e) => { log(`! ${e.message}`); lastPrefill = { num: row.num, error: e.message, at: new Date().toISOString() }; finish('prefill', 1); push('changed', {}); });
     return { ok: true };
@@ -274,6 +302,8 @@ export function serve({ home, port = 4321, host = '127.0.0.1', open = false, any
       if (pathname === '/api/login/remove') return withBody(({ site }) => { removeSite(paths.home, site); return { ok: true }; });
       if (pathname === '/api/login/clear') return withBody(() => { clearLogins(paths.home); return { ok: true }; });
       if (pathname === '/api/prefill') return withBody(runPrefill);
+      if (pathname === '/api/row/update') return withBody(updateRow);
+      if (pathname === '/api/row/add') return withBody(addRow);
       if (pathname === '/api/answers') return withBody(putAnswers, 5e4);
       if (pathname === '/api/mail/save') return withBody(saveMail);
       if (pathname === '/api/mail/test') return withBody(() => testMail(paths.home, openImap));

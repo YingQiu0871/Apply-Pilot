@@ -265,6 +265,11 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .rv-head .grow { flex: 1; min-width: 0; }
 .rv-score { font-size: 24px; font-weight: 650; line-height: 1; text-align: right; }
 .rv p { margin: 10px 0 0; font-size: 13px; line-height: 1.55; }
+.d-form { display: flex; gap: 8px; align-items: flex-end; }
+.d-form .field { margin: 0; }
+.d-form .btn { height: 35px; }
+.d-body .bad-line { margin-top: 8px; font-size: 12px; color: var(--rejected); }
+.d-body .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .nav-sep { height: 1px; background: var(--line); margin: 8px 10px; }
 .ov-status { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px; }
 .ov-status.warn { border-color: var(--warn); }
@@ -326,7 +331,7 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
     </section>
 
     <section class="view" data-view="applications">
-      <div class="page-head"><div><h1 data-t="appsTitle"></h1><p data-t="appsSub"></p></div></div>
+      <div class="page-head"><div><h1 data-t="appsTitle"></h1><p data-t="appsSub"></p></div><button class="btn primary" data-addopen data-t="addBtn"></button></div>
       <div class="card">
         <div class="toolbar">
           <label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search"></label>
@@ -433,7 +438,10 @@ let LANG = (() => { try { return localStorage.getItem('ap-lang'); } catch { retu
 const I18N = {
   zh: {
     nav: { overview: '概览', today: '今日工作', applications: '申请', followups: '待跟进', activity: '动态', sources: '岗位来源', agents: 'AI 助手', settings: '设置', tools: '工具' },
-    anTitle: '申请答案', anSub: '预填申请表时只会用这里的答案。留空的项不会填。文件项填 CV 和求职信 PDF 的完整路径。', anSave: '保存答案', anRisk: '这些答案保存在数据目录的 profile.json 里。AI 只看到答案的名称和表单字段，由软件把值填进去；它不能自己编答案。', anKeys: { firstName: '名', lastName: '姓', email: '邮箱', phone: '电话', address: '地址', postalCode: '邮编', city: '城市', country: '国家', nationality: '国籍', dateOfBirth: '出生日期', gender: '性别（建议填 Prefer not to say）', linkedin: 'LinkedIn 链接', website: '个人网站', university: '学校', degree: '学位', fieldOfStudy: '专业', graduationDate: '毕业时间', availableFrom: '可开始日期', duration: '实习时长', salary: '期望薪资', workAuthorization: '工作许可', needsVisa: '是否需要签证', drivingLicence: '驾照', howDidYouHear: '如何得知该岗位', languages: '语言', coverLetter: '求职信正文（通用）', cvFile: 'CV 文件（PDF 路径）', coverLetterFile: '求职信文件（PDF 路径）', agreeToTerms: '同意条款（填 yes 表示允许勾选）' }, pfButton: '预填申请表', pfTitle: '申请表预填', pfDone: (n) => `已填 ${n} 个字段，浏览器窗口已打开。`, pfTodo: '还要你填：', pfSubmit: '请逐项检查，补全后自己点提交。软件不会提交。',
+    anTitle: '申请答案', anSub: '预填申请表时只会用这里的答案。留空的项不会填。文件项填 CV 和求职信 PDF 的完整路径。', anSave: '保存答案', anRisk: '这些答案保存在数据目录的 profile.json 里。AI 只看到答案的名称和表单字段，由软件把值填进去；它不能自己编答案。', anKeys: { firstName: '名', lastName: '姓', email: '邮箱', phone: '电话', address: '地址', postalCode: '邮编', city: '城市', country: '国家', nationality: '国籍', dateOfBirth: '出生日期', gender: '性别（建议填 Prefer not to say）', linkedin: 'LinkedIn 链接', website: '个人网站', university: '学校', degree: '学位', fieldOfStudy: '专业', graduationDate: '毕业时间', availableFrom: '可开始日期', duration: '实习时长', salary: '期望薪资', workAuthorization: '工作许可', needsVisa: '是否需要签证', drivingLicence: '驾照', howDidYouHear: '如何得知该岗位', languages: '语言', coverLetter: '求职信正文（通用）', cvFile: 'CV 文件（PDF 路径）', coverLetterFile: '求职信文件（PDF 路径）', agreeToTerms: '同意条款（填 yes 表示允许勾选）' }, pfButton: '预填申请表', pfNext: '预填当前页面', pfNextHint: '表单有多页时：在浏览器窗口里翻到下一页，再点这里。',
+    dStatus: '状态', dNote: '备注（会自动加上今天的日期）', dNotePh: '例如：已在官网投递，附 CV', dSave: '记录', dNothing: '请先改状态，或写一条备注。', addNeed: '公司和岗位必须填写。',
+    addBtn: '新增申请', addCompany: '公司 / 联系人', addRole: '岗位', addUrl: '岗位链接（可选）', addNote: '备注（可选）', addSave: '新增', addDupes: '可能已经记录过：', addForce: '仍然新增',
+    pfTitle: '申请表预填', pfDone: (n) => `已填 ${n} 个字段，浏览器窗口已打开。`, pfTodo: '还要你填：', pfSubmit: '请逐项检查，补全后自己点提交。软件不会提交。',
     mlTitle: '邮箱', mlSub: '软件会只读地查看收件箱，把和申请相关的回信交给 AI 归类并起草回复，其他邮件不会发给任何人。邮件不会被标记已读、移动或删除，回复也不会替你发送。', mlProvider: '邮箱服务', mlHost: 'IMAP 服务器', mlUser: '邮箱地址', mlPass: '应用专用密码（不是登录密码）', mlDays: '首次查看最近几天', mlSave: '保存', mlHelp: '如何生成应用专用密码', mlFound: (n) => `连接正常，收件箱有 ${n} 封`, mlChecked: (t) => `上次检查：${t}`, mlRisk: 'Outlook.com 和 Hotmail 个人邮箱已不支持密码登录，这个版本还接不上。密码明文保存在数据目录的 .env 里。匹配到申请的邮件正文会发给你选的 AI。', mlReview: '待确认的回信', mlKind: { positive: '积极回复', interview: '面试邀请', request: '索要材料', rejection: '拒绝', auto: '自动回复', other: '其他' }, mlHow: { address: '按联系人匹配', domain: '按域名匹配', subject: '按主题匹配' }, mlExcerpt: '查看邮件原文', mlReply: '回复草稿', mlNoReply: '不需要回复', mlLog: '记入申请表', mlCopy: '复制回复', mlReplied: '我已回复，记录',
     lgTitle: '登录网站', lgSub: '有些岗位页要登录才能看。在这里打开网站并登录一次，它会自动加入下面的列表，之后读取这个网站时会带上登录状态。这里用的是单独的浏览器配置，不是你平时的 Chrome。', lgOpen: '打开并登录', lgRemove: '移除', lgClear: '清除所有登录', lgClearAsk: '删除专用配置里的所有登录状态？', lgCleared: '已清除所有登录', lgOpened: (s) => `${s} 已加入列表。在弹出的窗口里登录，然后关闭窗口；窗口开着时读不了这些网站。`, lgRisk: '登录后页面上的内容（可能有姓名和申请记录）会发给你选的 AI，所以不要放邮箱。邮箱网站会被拒绝，学校邮箱请自己避开。LinkedIn 等平台限制自动化访问，账号有受限风险。登录信息保存在数据目录的 browser 文件夹，不要同步或发给别人。',
     srcTitle: '岗位来源', srcSub: '选择今日工作去哪里找岗位。需要 Key 的来源都有免费额度，填一次即可。', srcSafe: 'Key 明文保存在数据目录的 .env 里，不会发给 AI，只发给对应来源的官方接口。测试只发送一次小请求。', srcOn: '已开启', srcOff: '未开启', srcNeedKey: '需要 Key', srcNoKey: '不需要 Key', srcCaution: '这个网站的 robots.txt 不允许自动读取搜索页，所以默认不开启。开启前请自行判断。', srcAcademic: '学术', srcAll: '读取该机构全部硕士实习和博士岗位，不用搜索词', srcEnable: '开启', srcDisable: '关闭', srcWords: '搜索词（每行一个）', srcMulti: '搜索词按语言分别设置，请在 profile.json 中修改', srcSave: '保存搜索词', srcSaved: '已保存', srcKeySet: '已设置', srcKeySave: '保存', srcGet: '获取 Key', srcTest: '测试', srcTesting: '测试中…', srcFound: (n) => `连接正常，这次搜到 ${n} 条`, srcFail: { input: '没有保存，请检查输入', key: '还缺 Key', login: 'Key 无效或没有权限', quota: '额度不足或请求太频繁', network: '网络连接失败', other: '调用失败' }, srcQueries: (n) => `使用 ${n} 条搜索语句`, srcNoQueries: '没有搜索语句，请在 profile.json 的 searchQueries 中添加',
@@ -487,7 +495,10 @@ const I18N = {
   },
   en: {
     nav: { overview: 'Overview', today: 'Today', applications: 'Applications', followups: 'Follow-ups', activity: 'Activity', sources: 'Job sources', agents: 'AI agent', settings: 'Settings', tools: 'Tools' },
-    anTitle: 'Application answers', anSub: 'Prefilling uses only the answers here. Empty ones are left out. For files, give the full path of your CV and cover letter PDF.', anSave: 'Save answers', anRisk: 'These are stored in profile.json in your data folder. The AI sees only the answer names and the form fields; Apply-Pilot fills in the values. It cannot make answers up.', anKeys: { firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone', address: 'Address', postalCode: 'Postal code', city: 'City', country: 'Country', nationality: 'Nationality', dateOfBirth: 'Date of birth', gender: 'Gender (Prefer not to say is a good answer)', linkedin: 'LinkedIn URL', website: 'Website', university: 'University', degree: 'Degree', fieldOfStudy: 'Field of study', graduationDate: 'Graduation date', availableFrom: 'Available from', duration: 'Internship length', salary: 'Salary expectation', workAuthorization: 'Work authorization', needsVisa: 'Needs a visa', drivingLicence: 'Driving licence', howDidYouHear: 'How you heard about the job', languages: 'Languages', coverLetter: 'Cover letter text (generic)', cvFile: 'CV file (PDF path)', coverLetterFile: 'Cover letter file (PDF path)', agreeToTerms: 'Agree to terms (yes allows ticking consent boxes)' }, pfButton: 'Prefill the application form', pfTitle: 'Form prefill', pfDone: (n) => `${n} field(s) filled; the browser window is open.`, pfTodo: 'Still yours to fill: ', pfSubmit: 'Check every field, finish the rest and submit yourself. Apply-Pilot does not submit.',
+    anTitle: 'Application answers', anSub: 'Prefilling uses only the answers here. Empty ones are left out. For files, give the full path of your CV and cover letter PDF.', anSave: 'Save answers', anRisk: 'These are stored in profile.json in your data folder. The AI sees only the answer names and the form fields; Apply-Pilot fills in the values. It cannot make answers up.', anKeys: { firstName: 'First name', lastName: 'Last name', email: 'Email', phone: 'Phone', address: 'Address', postalCode: 'Postal code', city: 'City', country: 'Country', nationality: 'Nationality', dateOfBirth: 'Date of birth', gender: 'Gender (Prefer not to say is a good answer)', linkedin: 'LinkedIn URL', website: 'Website', university: 'University', degree: 'Degree', fieldOfStudy: 'Field of study', graduationDate: 'Graduation date', availableFrom: 'Available from', duration: 'Internship length', salary: 'Salary expectation', workAuthorization: 'Work authorization', needsVisa: 'Needs a visa', drivingLicence: 'Driving licence', howDidYouHear: 'How you heard about the job', languages: 'Languages', coverLetter: 'Cover letter text (generic)', cvFile: 'CV file (PDF path)', coverLetterFile: 'Cover letter file (PDF path)', agreeToTerms: 'Agree to terms (yes allows ticking consent boxes)' }, pfButton: 'Prefill the application form', pfNext: 'Fill the current page', pfNextHint: 'For a form of several pages: go to the next page in the browser window, then press this.',
+    dStatus: 'Status', dNote: "Note (today's date is added)", dNotePh: 'e.g. applied on the company site with CV', dSave: 'Log', dNothing: 'Choose another status or write a note first.', addNeed: 'Company and role are required.',
+    addBtn: 'Add application', addCompany: 'Company / contact', addRole: 'Role', addUrl: 'Posting link (optional)', addNote: 'Note (optional)', addSave: 'Add', addDupes: 'This may be tracked already: ', addForce: 'Add anyway',
+    pfTitle: 'Form prefill', pfDone: (n) => `${n} field(s) filled; the browser window is open.`, pfTodo: 'Still yours to fill: ', pfSubmit: 'Check every field, finish the rest and submit yourself. Apply-Pilot does not submit.',
     mlTitle: 'Mailbox', mlSub: 'Apply-Pilot reads your inbox read-only, hands replies about your applications to the AI to sort and draft an answer, and sends nothing else anywhere. Mail is never marked read, moved or deleted, and replies are never sent for you.', mlProvider: 'Mail service', mlHost: 'IMAP server', mlUser: 'Email address', mlPass: 'App password (not your sign-in password)', mlDays: 'Days to look back on the first check', mlSave: 'Save', mlHelp: 'How to create an app password', mlFound: (n) => `Connected, ${n} messages in the inbox`, mlChecked: (t) => `Last check: ${t}`, mlRisk: 'Personal Outlook.com and Hotmail accounts no longer accept password sign-in, so this version cannot read them. The password is stored as plain text in .env in your data folder. The text of a matched message goes to the AI you chose.', mlReview: 'Replies to review', mlKind: { positive: 'Positive reply', interview: 'Interview', request: 'Asked for more', rejection: 'Rejected', auto: 'Auto-reply', other: 'Other' }, mlHow: { address: 'matched by contact', domain: 'matched by domain', subject: 'matched by subject' }, mlExcerpt: 'Show the message', mlReply: 'Reply draft', mlNoReply: 'No reply needed', mlLog: 'Log in the tracker', mlCopy: 'Copy reply', mlReplied: 'I replied, log it',
     lgTitle: 'Sign in to a site', lgSub: 'Some postings need a sign-in. Open the site here and sign in once. It joins the list below, and Apply-Pilot then reads that site signed in. This uses a separate browser profile, not your everyday Chrome.', lgOpen: 'Open and sign in', lgRemove: 'Remove', lgClear: 'Delete all sign-ins', lgClearAsk: 'Delete every sign-in in the separate profile?', lgCleared: 'All sign-ins deleted', lgOpened: (s) => `${s} is on the list. Sign in in the new window, then close it. These sites cannot be read while it is open.`, lgRisk: 'What a signed-in page shows, which can include your name and applications, goes to the AI you chose, so keep mailboxes out. Known mail sites are refused; avoid your school mail yourself. LinkedIn and similar platforms restrict automated access, so your account could be limited. Sign-ins are stored in the browser folder of your data folder. Do not sync or share it.',
     srcTitle: 'Job sources', srcSub: "Choose where today's work looks for postings. Sources that need a key have a free tier, and you enter it once.", srcSafe: 'Keys are stored as plain text in .env in your data folder. They go only to that source\'s official API, never to the AI. A test sends one small request.', srcOn: 'On', srcOff: 'Off', srcNeedKey: 'Needs a key', srcNoKey: 'No key needed', srcCaution: "This site's robots.txt disallows automated reading of its search pages, so it is off by default. Decide for yourself before turning it on.", srcAcademic: 'Academic', srcAll: 'Reads all master and PhD positions there, no search terms needed', srcEnable: 'Turn on', srcDisable: 'Turn off', srcWords: 'Search terms, one per line', srcMulti: 'Search terms are set per language. Edit them in profile.json', srcSave: 'Save terms', srcSaved: 'Saved', srcKeySet: 'set', srcKeySave: 'Save', srcGet: 'Get a key', srcTest: 'Test', srcTesting: 'Testing…', srcFound: (n) => `Connected, ${n} results this time`, srcFail: { input: 'Not saved. Check what you entered', key: 'A key is missing', login: 'The key is invalid or has no access', quota: 'Out of quota or too many requests', network: 'Network connection failed', other: 'The call failed' }, srcQueries: (n) => `Uses ${n} search queries`, srcNoQueries: 'No search queries. Add them under searchQueries in profile.json',
@@ -563,7 +574,7 @@ const BI = {
   },
   decision: { Apply: ['建议投递', 'Apply'], Consider: ['可考虑', 'Consider'], Skip: ['建议跳过', 'Skip'] },
   step: [['评估', 'Evaluated'], ['投递', 'Applied'], ['回复', 'Reply'], ['面试', 'Interview'], ['结果', 'Outcome']],
-  ui: { timeline: ['时间线', 'Timeline'], chart: ['每日动态', 'Daily activity'], allStages: ['全部', 'All'] },
+  ui: { log: ['记录进展', 'Log progress'], timeline: ['时间线', 'Timeline'], chart: ['每日动态', 'Daily activity'], allStages: ['全部', 'All'] },
 };
 const pick = (pair) => pair[LANG === 'zh' ? 0 : 1];
 const bi = (pair) => { const [a, b] = LANG === 'zh' ? pair : [pair[1], pair[0]]; return `<span class="bi">${esc(a)}<small>${esc(b)}</small></span>`; };
@@ -962,7 +973,8 @@ function renderToday() {
   renderSetup();
   const pf = S.lastPrefill;
   $('prefillState').innerHTML = !pf ? '' : pf.error ? `<div class="card rv"><div class="t1">${T.pfTitle}</div><div class="bad-line">${esc(pf.error)}</div></div>`
-    : `<div class="card rv"><div class="t1">${T.pfTitle} · #${pf.num}</div><p>${T.pfDone(pf.filled.length)}</p>${pf.filled.length ? `<div class="meta" style="white-space:normal">${pf.filled.map((f) => esc(f.label)).join(' · ')}</div>` : ''}${pf.todo.length ? `<div class="warn-line">${T.pfTodo}${pf.todo.map(esc).join(' · ')}</div>` : ''}${pf.note ? `<div class="warn-line">${esc(pf.note)}</div>` : ''}<p class="meta" style="white-space:normal">${T.pfSubmit}</p></div>`;
+    : `<div class="card rv"><div class="t1">${T.pfTitle} · #${pf.num}</div><p>${T.pfDone(pf.filled.length)}</p>${pf.filled.length ? `<div class="meta" style="white-space:normal">${pf.filled.map((f) => esc(f.label)).join(' · ')}</div>` : ''}${pf.todo.length ? `<div class="warn-line">${T.pfTodo}${pf.todo.map(esc).join(' · ')}</div>` : ''}${pf.note ? `<div class="warn-line">${esc(pf.note)}</div>` : ''}<p class="meta" style="white-space:normal">${T.pfSubmit}</p>
+      <div class="acts" style="align-items:center"><button class="btn" data-prefill="${pf.num}" data-next="1" ${S.running ? 'disabled' : ''}>${T.pfNext}</button><span class="meta" style="white-space:normal">${T.pfNextHint}</span></div></div>`;
   if (editing('#reviewList')) return;
   const evals = S.review.filter((i) => i.type === 'evaluation').sort((a, b) => b.payload.score100 - a.payload.score100);
   const fus = S.review.filter((i) => i.type === 'followup');
@@ -1005,9 +1017,25 @@ function openDrawer(num) {
     const n = next ? gap(e.date, next.date) : 0;
     return evRow(e, { id: `ev${i}` }) + (n > 1 ? `<div class="ev dated ev-gap"><div></div><div class="ev-node"></div><div class="ev-body">${bi([`间隔 ${n} 天`, `${n} days`])}</div></div>` : '');
   }).join('');
-  $('dBody').innerHTML = stepsOf(r) + (ev.length ? `<h4>${bi(BI.ui.timeline)}</h4><div>${rail}</div>` : '')
+  const logForm = `<h4>${bi(BI.ui.log)}</h4><div class="d-form"><label class="field" style="flex:0 0 132px">${T.dStatus}${statusSelect('dStatus', r.status)}</label>
+    <label class="field" style="flex:1">${T.dNote}<input id="dNote" placeholder="${T.dNotePh}" spellcheck="false" data-enter="rowsave"></label>
+    <button class="btn primary" data-rowsave="${r.num}">${T.dSave}</button></div><div class="bad-line" id="dErr"></div>`;
+  $('dBody').innerHTML = stepsOf(r) + logForm + (ev.length ? `<h4>${bi(BI.ui.timeline)}</h4><div>${rail}</div>` : '')
     + `<details><summary>${T.notes}</summary><div class="notes">${esc(r.notes || '—')}</div></details>`;
   $('drawer').classList.add('on'); $('scrim').classList.add('on');
+}
+const STATUS_ORDER = ['Evaluated', 'Applied', 'Responded', 'Interview', 'Offer', 'Rejected', 'SKIP', 'Discarded'];
+const statusSelect = (id, current) => `<select id="${id}">${STATUS_ORDER.map((k) => `<option value="${k}" ${k === current ? 'selected' : ''}>${pick(BI.status[k])}</option>`).join('')}</select>`;
+
+// The same drawer, for a row typed in by hand.
+function openAdd() {
+  $('dHead').innerHTML = `<button class="x" data-close>×</button><h3>${T.addBtn}</h3>`;
+  const field = (id, label, type = 'text') => `<label class="field">${label}<input id="${id}" type="${type}" spellcheck="false" autocomplete="off"></label>`;
+  $('dBody').innerHTML = `${field('aCompany', T.addCompany)}${field('aRole', T.addRole)}${field('aUrl', T.addUrl, 'url')}
+    <label class="field">${T.dStatus}${statusSelect('aStatus', 'Applied')}</label>${field('aNote', T.addNote)}
+    <div class="acts"><button class="btn primary" data-rowadd="add">${T.addSave}</button></div><div class="bad-line" id="aErr"></div>`;
+  $('drawer').classList.add('on'); $('scrim').classList.add('on');
+  $('aCompany').focus();
 }
 const closeDrawer = () => { $('drawer').classList.remove('on'); $('scrim').classList.remove('on'); };
 
@@ -1085,7 +1113,7 @@ async function load() {
 }
 
 document.addEventListener('click', async (e) => {
-  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],[data-review],[data-rvcopy],[data-rvmail],[data-test],[data-key],[data-answers],[data-prefill],[data-mail],[data-login],[data-siteremove],[data-srckey],[data-srcon],[data-srcsave],[data-srctest],[data-suread],[data-susave],#langBtn,#themeBtn,#scrim');
+  const t = e.target.closest('[data-go],[data-kpi],[data-filter],[data-stage],[data-period],[data-kind],[data-evtype],[data-day],[data-expand],[data-open],[data-close],[data-more],[data-task],[data-act],[data-agent],[data-launch],[data-imp],[data-home],[data-review],[data-rvcopy],[data-rvmail],[data-test],[data-key],[data-answers],[data-prefill],[data-rowsave],[data-rowadd],[data-addopen],[data-mail],[data-login],[data-siteremove],[data-srckey],[data-srcon],[data-srcsave],[data-srctest],[data-suread],[data-susave],#langBtn,#themeBtn,#scrim');
   if (!t) return;
   if (t.dataset.go) return setView(t.dataset.go);
   if (t.dataset.kpi) { S.filter = t.dataset.kpi; store('ap-filter', S.filter); S.stage = null; S.limit = 60; return setView(t.dataset.kpi === 'follow' ? 'followups' : 'applications'); }
@@ -1146,8 +1174,25 @@ document.addEventListener('click', async (e) => {
     if (r.ok) S.anDraft = {};
     return load();
   }
+  if (t.hasAttribute('data-addopen')) return openAdd();
+  if (t.dataset.rowsave) {
+    const num = Number(t.dataset.rowsave);
+    if (!$('dNote').value.trim() && $('dStatus').value === S.rows.find((x) => x.num === num)?.status) { $('dErr').textContent = T.dNothing; return; }
+    const r = await post('/api/row/update', { num, status: $('dStatus').value, note: $('dNote').value });
+    if (!r.ok) { $('dErr').textContent = r.error; return; }
+    await load();
+    return openDrawer(num);
+  }
+  if (t.dataset.rowadd) {
+    if (!$('aCompany').value.trim() || !$('aRole').value.trim()) { $('aErr').textContent = T.addNeed; return; }
+    const r = await post('/api/row/add', { company: $('aCompany').value, role: $('aRole').value, url: $('aUrl').value.trim(), status: $('aStatus').value, note: $('aNote').value, force: t.dataset.rowadd === 'force' });
+    if (r.duplicates) { $('aErr').innerHTML = `${T.addDupes}${r.duplicates.map((d) => `#${d.num} ${esc(d.company)} | ${esc(d.role)}`).join('; ')}<div class="acts"><button class="btn" data-rowadd="force">${T.addForce}</button></div>`; return; }
+    if (!r.ok) { $('aErr').textContent = r.error; return; }
+    await load();
+    return openDrawer(r.num);
+  }
   if (t.dataset.prefill) {
-    const r = await post('/api/prefill', { num: Number(t.dataset.prefill) });
+    const r = await post('/api/prefill', { num: Number(t.dataset.prefill), next: Boolean(t.dataset.next) });
     if (!r.ok) { alert(r.error); return; }
     closeDrawer(); setView('today');
     return;
@@ -1247,7 +1292,10 @@ document.addEventListener('click', async (e) => {
     document.documentElement.dataset.theme = next; store('ap-theme', next);
   }
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeDrawer();
+  if (e.key === 'Enter' && e.target.dataset?.enter === 'rowsave') $('dBody').querySelector('[data-rowsave]').click();
+});
 $('q').addEventListener('input', (e) => { S.q = e.target.value; S.limit = 60; renderApps(); });
 $('reviewList').addEventListener('input', (e) => { const { edit, k } = e.target.dataset; if (edit) (S.edits[edit] ||= {})[k] = e.target.value; });
 $('answersForm').addEventListener('input', (e) => { const k = e.target.dataset.answer; if (k) S.anDraft[k] = e.target.value; });

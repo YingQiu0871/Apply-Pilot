@@ -837,3 +837,75 @@ test('prefill reads the page, asks once, fills and logs, and never submits', asy
   assert.ok(new Tracker(trackerFile).get(row.num).notes.includes('application form prefilled (3 field(s))'));
   assert.equal(new Tracker(trackerFile).get(row.num).status, 'Evaluated', 'prefilling is not applying');
 });
+
+test('a group of radio buttons takes the option that matches the prepared answer', async () => {
+  const fields = [
+    { id: 1, type: 'radio', name: 'visa', label: 'Do you need visa sponsorship?', required: true, value: '', options: ['Yes', 'No'] },
+    { id: 2, type: 'radio', name: 'gender', label: 'Gender', required: false, value: '', options: ['Male', 'Female', 'Prefer not to say'] },
+    { id: 3, type: 'radio', name: 'shift', label: 'Preferred shift', required: true, value: '', options: ['Day', 'Night'] },
+  ];
+  const answers = { needsVisa: 'No, I hold a residence permit', gender: 'Prefer not to say', availableFrom: 'January 2027' };
+  const plan = validatePlan(fields, answers)({ fills: [{ id: 1, answer: 'needsVisa' }, { id: 2, answer: 'gender' }, { id: 3, answer: 'availableFrom' }] });
+  assert.deepEqual(plan.fills, [{ id: 1, answer: 'needsVisa', option: 'No' }, { id: 2, answer: 'gender', option: 'Prefer not to say' }], 'no matching option, no fill');
+  assert.equal(pickOption(['Oui', 'Non'], 'yes'), 'Oui');
+  assert.equal(pickOption(['Norway', 'Netherlands'], 'No'), null, 'a country is not a no');
+  const run = [];
+  const res = await fillForm({ evaluate: async (expr) => { run.push(expr); return true; }, send: async () => ({}) }, fields, plan, answers);
+  assert.deepEqual(res.filled.map((f) => f.label), ['Do you need visa sponsorship?', 'Gender']);
+  assert.deepEqual(res.todo, ['Preferred shift']);
+  assert.ok(run[0].includes('data-apply-pilot="1-1"') && run[1].includes('data-apply-pilot="2-2"'), 'the chosen radio button, by its place in the group');
+});
+
+test('prefill uses the window that is open, and fills the next page only there', async () => {
+  const home = newHome();
+  const profile = loadProfile(home);
+  const trackerFile = join(home, 'data', 'applications.md');
+  const t = new Tracker(trackerFile);
+  const row = t.add({ company: 'Acme Pharma', role: 'Formulation intern', status: 'Evaluated', url: 'https://jobs.acme-pharma.example/apply/1' });
+  t.save();
+  saveAnswers(home, { firstName: 'Alex' });
+  const page = { pageUrl: row.url, close: () => {}, send: async () => ({}), evaluate: async (expr) => (expr.includes('document.querySelectorAll(') ? { title: 'Apply', fields: FIELDS } : true) };
+  const ask = async () => JSON.stringify({ fills: [{ id: 1, answer: 'firstName' }] });
+  const mustNotOpen = async () => { throw new Error('must not open a second window'); };
+  await assert.rejects(prefill({ home, profile, row, ask, next: true, live: async () => null, open: mustNotOpen }), /window is closed/);
+  const calls = [];
+  const connect = async (port, url, opts) => { calls.push({ port, url, target: opts?.target?.id }); return page; };
+  await prefill({ home, profile, row, ask, live: async () => ({ port: 9 }), newTab: async (port, url) => ({ id: 'tab-2', url }), open: mustNotOpen, connect });
+  await prefill({ home, profile, row, ask, next: true, live: async () => ({ port: 9 }), open: mustNotOpen, connect });
+  assert.deepEqual(calls, [{ port: 9, url: row.url, target: 'tab-2' }, { port: 9, url: null, target: undefined }]);
+  const notes = new Tracker(trackerFile).get(row.num).notes;
+  assert.ok(notes.includes('application form prefilled (1 field(s))') && notes.includes('next page of the application form prefilled (1 field(s))'));
+});
+
+test('the panel logs a status or a note and adds a row, with a duplicate check', async () => {
+  const home = newHome();
+  const trackerFile = join(home, 'data', 'applications.md');
+  const row = dueRow(home);
+  const panel = await new Promise((resolve) => { const server = serve({ home, port: 0, onListen: (p) => resolve({ ...p, server }) }); });
+  const base = `http://127.0.0.1:${panel.port}`;
+  const token = (await (await fetch(`${base}/`)).text()).match(/const TOKEN = '([0-9a-f]+)'/)[1];
+  const post = async (path, body, t = token) => (await fetch(`${base}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-token': t }, body: JSON.stringify(body) })).json();
+  try {
+    assert.equal((await post('/api/row/update', { num: row.num, status: 'Responded', note: 'reply from Pat' }, 'wrong')).ok, false, 'no token, no change');
+    assert.equal((await post('/api/row/update', { num: row.num, status: 'Applied', note: ' ' })).ok, false, 'nothing to log');
+    assert.equal((await post('/api/row/update', { num: row.num, status: 'Nonsense' })).ok, false);
+    assert.deepEqual(await post('/api/row/update', { num: row.num, status: 'Responded', note: 'reply from Pat | asked for\na transcript' }), { ok: true, num: row.num, before: 'Applied', after: 'Responded' });
+    const saved = new Tracker(trackerFile).get(row.num);
+    assert.equal(saved.status, 'Responded');
+    assert.match(saved.notes, /; 20\d\d-\d\d-\d\d: reply from Pat \/ asked for a transcript$/, 'dated, on one line, and the table stays intact');
+    assert.equal((await post('/api/row/add', { company: 'Delta', role: '' })).ok, false);
+    assert.equal((await post('/api/row/add', { company: 'Delta', role: 'Intern', url: 'ftp://x' })).ok, false);
+    const dupe = await post('/api/row/add', { company: 'Gamma', role: 'Intern' });
+    assert.deepEqual([dupe.ok, dupe.duplicates.map((d) => d.num)], [false, [row.num]]);
+    const forced = await post('/api/row/add', { company: 'Gamma', role: 'Intern', force: true });
+    const fresh = await post('/api/row/add', { company: 'Delta Lab', role: 'Analytical intern', url: 'https://jobs.example.com/77', note: 'applied on the site' });
+    assert.deepEqual([forced.ok, fresh.ok], [true, true]);
+    const added = new Tracker(trackerFile).get(fresh.num);
+    assert.deepEqual([added.status, added.url], ['Applied', 'https://jobs.example.com/77']);
+    assert.match(added.notes, /^20\d\d-\d\d-\d\d: applied on the site$/);
+    assert.equal(new Tracker(trackerFile).rows().length, 3);
+  } finally {
+    panel.server.closeAllConnections();
+    await new Promise((done) => { panel.server.close(done); });
+  }
+});

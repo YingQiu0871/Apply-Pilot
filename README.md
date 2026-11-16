@@ -133,10 +133,10 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `agent` | choose and test the AI agent: Claude Code, Codex CLI, DeepSeek, DeepSeek Harness | 选择并测试搭配的 AI 助手 |
 | `sources` | show job sources and test one | 查看岗位来源并测试 |
 | `mail` | mailbox settings and a read-only connection test | 邮箱设置与只读连接测试 |
-| `prefill NUM` | fill an application form from your answers; you submit | 用你的答案预填申请表，由你提交 |
+| `prefill NUM [--next]` | fill an application form from your answers, page by page; you submit | 用你的答案预填申请表，可逐页填写，由你提交 |
 | `today [URL...]`, `review` | scan, evaluate and draft in one run, or evaluate the postings you pass; decide what comes back | 一次完成扫描、评估和起草，或只评估你给出的链接；审核结果 |
 | `import PATH` | read an existing database from a file or folder; preview first, `--write` appends new rows only | 从文件或文件夹读取已有数据；先预览，`--write` 只追加新行 |
-| `add`, `status`, `note`, `list` | the tracker `data/applications.md`, with duplicate detection | 申请表，自动查重 |
+| `add`, `status`, `note`, `list` | the tracker `data/applications.md`, with duplicate detection; the panel does the same from the Applications page | 申请表，自动查重；面板的「申请」页也能新增、改状态、加备注 |
 | `followups` | rows due a follow-up, split by email and portal | 该跟进的申请，按邮件 / 招聘系统分组 |
 | `eval prompt / score / run` | rubric scoring with hard filters, by your agent or a model API | 按评分表打分，含硬性过滤；agent 或模型 API 均可 |
 | `lint` | flags stock phrases, forbidden claims, semicolons, long lists | 检查套话、禁止写的经历、分号、过长的列举 |

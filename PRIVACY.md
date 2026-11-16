@@ -20,7 +20,7 @@ Everything Apply-Pilot reads or writes stays in your data folder (`APPLY_PILOT_H
 - `agent.json`: which AI agent you chose and when its connection test passed;
 - `data/review.json`: AI evaluations, draft follow-ups and cover letters waiting for your decision, and your past decisions;
 - `output/letters/`: the cover letters you save;
-- `browser/`: the separate browser profile with the sign-ins you made, and the list of those sites. It holds login cookies, is added to `.gitignore`, and should not be synced or shared;
+- `browser/`: the separate browser profile with the sign-ins you made, and the list of those sites. It holds login cookies, is added to `.gitignore`, and should not be synced or shared. A small file there remembers the local port of the open prefill window, so the next prefill can use the same window;
 - `cv.md`: the CV text you paste during setup, if the file does not exist yet.
 
 One more small file sits outside the data folder: the per-user settings file (`%APPDATA%\Apply-Pilot\settings.json` on Windows, `~/Library/Application Support/Apply-Pilot/settings.json` on macOS, `~/.config/apply-pilot/settings.json` on Linux). It stores only the path of your data folder.
@@ -39,7 +39,7 @@ Apply-Pilot 读写的所有数据都放在你自己硬盘上的数据目录（`A
 - `agent.json`：你选择搭配的 AI 助手，以及连接测试通过的时间；
 - `data/review.json`：等待你确认的 AI 评估、跟进草稿和求职信，以及你做过的决定；
 - `output/letters/`：你保存的求职信；
-- `browser/`：专用浏览器配置，含你登录过的网站及其列表。里面有登录 Cookie，已加入 `.gitignore`，不要同步或分享；
+- `browser/`：专用浏览器配置，含你登录过的网站及其列表。里面有登录 Cookie，已加入 `.gitignore`，不要同步或分享。其中还有一个小文件，记着已打开的预填窗口在本机的端口，方便下一次预填继续用同一个窗口；
 - `cv.md`：设置时粘贴的 CV 全文（文件不存在时才写入）。
 
 数据目录之外只有一个小文件：用户设置文件（Windows 是 `%APPDATA%\Apply-Pilot\settings.json`，macOS 是 `~/Library/Application Support/Apply-Pilot/settings.json`，Linux 是 `~/.config/apply-pilot/settings.json`），里面只记录数据目录的路径。

@@ -48,7 +48,8 @@ It holds profile.json, data/applications.md, inbox/, output/.
   eval score ANSWER.json [--jd JD.txt]  weighted score from the agent's JSON answer
   eval run JD.txt [--provider deepseek|openai|openrouter|ollama|anthropic] [--model M] [--add]
   agent [claude|codex|deepseek|dsh] [--test]   show or choose the AI agent; --test sends one short request
-  prefill NUM                           open the application page and fill it from your answers; you submit
+  prefill NUM [--next]                  open the application page and fill it from your answers; you submit.
+                                        --next fills the page you moved to in the window that is still open
   mail [test]                           mailbox settings (set up in the panel), or one read-only connection test
   login URL | login list | login remove SITE | login clear   sign in to a site in a separate browser profile
   sources [test ID]                     show job sources, or send one small test request
@@ -190,7 +191,7 @@ async function main() {
       if (!agent) throw new Error('choose an AI agent first');
       const row = tracker().get(pos[0]);
       if (!row) throw new Error('prefill NUM: the application number from the tracker');
-      const r = await prefill({ home, profile, row, ask: (p) => askAgent(agent, p), log: console.log });
+      const r = await prefill({ home, profile, row, next: Boolean(opt.next), ask: (p) => askAgent(agent, p), log: console.log });
       console.log(JSON.stringify(r, null, 2));
       console.log('The window stays open: check every field, finish the rest and submit yourself.');
       break;

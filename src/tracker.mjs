@@ -139,7 +139,8 @@ export function findDuplicates(rows, candidate, threshold = 0.7) {
   const key = normalizeUrl(candidate.url);
   return rows.filter((r) => {
     if (key && normalizeUrl(r.url || r.notes) === key) return true;
-    return sameCompany(r.company, candidate.company) && similarity(r.role, candidate.role) >= threshold;
+    // The same wording is the same role, also when it is all common words ("Intern").
+    return sameCompany(r.company, candidate.company) && (similarity(r.role, candidate.role) >= threshold || (norm(r.role) !== '' && norm(r.role) === norm(candidate.role)));
   });
 }
 

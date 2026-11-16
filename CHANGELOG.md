@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0 — 2026-11-16
+
+- Applications page: log progress from the panel. Open an application, choose a status, write a note and press Log; the note gets today's date. "Add application" records one you found or sent yourself, with the same duplicate check as the command line.
+- Form prefill fills groups of radio buttons. A Yes / No question takes the side your prepared answer starts with, in English, French, German, Spanish or Chinese.
+- Form prefill works page by page: turn the page in the browser window, then press "Fill the current page" on the Today page (or `prefill NUM --next`). Nothing presses Next or Submit for you.
+- A second prefill no longer needs the first window closed: it opens a new tab in the window that is already open.
+- Two applications at the same company with identically worded roles now count as duplicates, also when the wording is all common words such as "Intern".
+
 ## 0.8.0 — 2026-11-16
 
 - The panel opens on the Overview, which is now the first page. A line at the top says what to do next: finish setup, watch a run in progress, review waiting results, or start today's work.
