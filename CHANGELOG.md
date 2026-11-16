@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.10.0 — 2026-11-16
+
+Form prefill was checked against live application pages on Greenhouse, Lever, Ashby, Workable and Recruitee, read-only or with dummy values, and never submitted. What that turned up is fixed here.
+
+- Dropdowns drawn by the page, which are not real select fields, are filled: the list is opened, read, and the option that matches your prepared answer is chosen. This covers the dropdowns of Greenhouse and Workable, and button dropdowns of the kind Workday uses. With no matching option the dropdown is closed again and listed for you. A consent dropdown with a single option takes it when you prepared "agree to terms".
+- When a cookie banner or another layer covers the form, nothing under it is pressed. The panel says so: close the banner in the browser window, then press "Fill the current page".
+- Filling a page again keeps what is already there. A field that has a value, typed by you or filled before, is not overwritten.
+- Questions are read correctly on more pages: Lever questions that have no label element, upload boxes whose button only says "Attach" or "Upload", labels that contain icons, and the required mark is no longer taken for the question.
+- Several checkboxes under one question count as one field. They are left for you and listed once, instead of once per box.
+- A résumé is not attached to a box that offers to autofill the form from it.
+- Fields inside web components (open shadow roots) are found and filled.
+- The panel lists the fields that were planned but did not take, next to the ones still yours to fill.
+- A form that sits in a frame from another site is named as such instead of "no form fields".
+
+Not checked: SmartRecruiters shows a CAPTCHA to automated checks, and Workday needs an account, so neither was tested on the live site.
+
 ## 0.9.0 — 2026-11-16
 
 - Applications page: log progress from the panel. Open an application, choose a status, write a note and press Log; the note gets today's date. "Add application" records one you found or sent yourself, with the same duplicate check as the command line.

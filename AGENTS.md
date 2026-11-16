@@ -34,7 +34,7 @@ scan ──► triage ──► evaluate ──► (user decides) ──► tail
 | Follow up | `apply-pilot followups` | rules in `profile.followUp`, so drafts only, sending needs approval |
 | Review | `apply-pilot ui` | http://localhost:4321 |
 | Run the day | `apply-pilot today` | scans, evaluates and drafts through the chosen agent; results wait in `data/review.json` |
-| Prefill a form | `apply-pilot prefill NUM`, then `prefill NUM --next` for each further page | fills from the user's answers and leaves the window open; the user turns the pages and submits |
+| Prefill a form | `apply-pilot prefill NUM`, then `prefill NUM --next` for each further page | fills from the user's answers, dropdowns included, keeps fields that already have a value, and leaves the window open; the user closes any cookie banner, turns the pages and submits |
 | Decide | `apply-pilot review`, `review approve ID`, `review reject ID` | for a follow-up, approve means the user has already sent it; for a letter, approve saves its files under `output/letters/` |
 
 ## Writing letters and emails

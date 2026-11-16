@@ -174,6 +174,7 @@ Tell the user, briefly:
 - the panel opens on the Overview, which says what to do next;
 - the daily loop: press "Start today's work" on the Overview or the Today page (or run `apply-pilot today`), decide what comes back, apply, log;
 - logging by hand: on the Applications page, "Add application" records a new one, and an opened application has a status and note box; from the command line use `apply-pilot add`, `status` and `note`;
+- prefill and banners: a cookie banner that covers the form blocks the dropdowns, and Apply-Pilot presses nothing under it; the user closes the banner in the browser window and presses "Fill the current page". Fields that already have a value are kept;
 - a form of several pages: after the first prefill the user turns the page in the browser window and presses "Fill the current page" on the Today page (or you run `apply-pilot prefill NUM --next`);
 - a posting the user found themselves: paste its link into "Evaluate specific postings" on the Today page (or run `apply-pilot today URL...`) instead of evaluating it yourself;
 - that nothing is ever sent or submitted without their approval.

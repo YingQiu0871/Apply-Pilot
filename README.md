@@ -133,7 +133,7 @@ DEEPSEEK_API_KEY=... apply-pilot eval run jd.txt --provider deepseek --add   # o
 | `agent` | choose and test the AI agent: Claude Code, Codex CLI, DeepSeek, DeepSeek Harness | 选择并测试搭配的 AI 助手 |
 | `sources` | show job sources and test one | 查看岗位来源并测试 |
 | `mail` | mailbox settings and a read-only connection test | 邮箱设置与只读连接测试 |
-| `prefill NUM [--next]` | fill an application form from your answers, page by page; you submit | 用你的答案预填申请表，可逐页填写，由你提交 |
+| `prefill NUM [--next]` | fill an application form from your answers, page by page, dropdowns included; you submit | 用你的答案预填申请表（含下拉框），可逐页填写，由你提交 |
 | `today [URL...]`, `review` | scan, evaluate and draft in one run, or evaluate the postings you pass; decide what comes back | 一次完成扫描、评估和起草，或只评估你给出的链接；审核结果 |
 | `import PATH` | read an existing database from a file or folder; preview first, `--write` appends new rows only | 从文件或文件夹读取已有数据；先预览，`--write` 只追加新行 |
 | `add`, `status`, `note`, `list` | the tracker `data/applications.md`, with duplicate detection; the panel does the same from the Applications page | 申请表，自动查重；面板的「申请」页也能新增、改状态、加备注 |

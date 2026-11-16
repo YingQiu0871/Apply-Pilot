@@ -8,7 +8,7 @@ import { initHome, updateProfile } from '../src/home.mjs';
 import { closePipeline, pendingPipeline } from '../src/additions.mjs';
 import { Tracker } from '../src/tracker.mjs';
 import { ReviewQueue, applyDecision, reviewFile } from '../src/review.mjs';
-import { ANSWER_KEYS, fieldPrompt, fillForm, pickOption, prefill, readAnswers, saveAnswers, validatePlan } from '../src/forms.mjs';
+import { ANSWER_KEYS, fieldPrompt, fillCombo, fillForm, pickOption, prefill, readAnswers, saveAnswers, validatePlan } from '../src/forms.mjs';
 import { fetchRecent, isNoise, mailState, matchMessage, noteFor, parseMessage, saveMailSettings, statusFor, testMail, validateMail } from '../src/mail.mjs';
 import { pickUrls, runToday, setupState, validateFollowup, validateProfileDraft } from '../src/daily.mjs';
 import { asksForHuman, asksForSignIn, assertPublicUrl, clearLogins, findBrowser, loginProfile, openLogin, readSites, removeSite, renderPage, siteAllowed } from '../src/browser.mjs';
@@ -803,7 +803,7 @@ test('filling touches only planned fields and clicks nothing else', async () => 
   const run = [];
   const page = {
     evaluate: async (expr) => { run.push(expr); return true; },
-    send: async (method, params) => { run.push(method); return { result: { root: { nodeId: 1 }, nodeId: 2 } }; },
+    send: async (method) => { run.push(method); return { result: { result: { objectId: 'node-1' } } }; },
   };
   const answers = { firstName: 'Alex', country: 'France', agreeToTerms: 'yes', cvFile: 'C:/cv.pdf' };
   const res = await fillForm(page, FIELDS, { fills: [{ id: 1, answer: 'firstName' }, { id: 3, answer: 'country', option: 'France' }, { id: 4, check: true }, { id: 6, answer: 'cvFile' }], unknown: [7] }, answers);
@@ -909,3 +909,69 @@ test('the panel logs a status or a note and adds a row, with a duplicate check',
     await new Promise((done) => { panel.server.close(done); });
   }
 });
+
+test('a drawn dropdown is planned by answer name; checkbox groups, autofill uploads and filled fields are left alone', () => {
+  const fields = [
+    { id: 1, type: 'combo', name: 'country', label: 'Country', required: false, value: '' },
+    { id: 2, type: 'combo', name: 'q7', label: 'GDPR Confirmation', required: true, value: '' },
+    { id: 3, type: 'combo', name: 'site_pref', label: 'Preferred office', required: true, value: '' },
+    { id: 4, type: 'checkboxes', name: 'lang', label: 'Language skills', required: true, value: '', options: ['English', 'French'] },
+    { id: 5, type: 'file', name: '', label: 'Autofill from resume', required: false, value: '' },
+    { id: 6, type: 'file', name: 'resume', label: 'Resume/CV', required: true, value: '' },
+    { id: 7, type: 'text', name: 'city', label: 'City', required: true, value: 'Lyon' },
+    { id: 8, type: 'combo', name: 'q9', label: 'Notice period', required: false, value: '1 month' },
+  ];
+  const answers = { country: 'France', agreeToTerms: 'yes', city: 'Lille', availableFrom: '2 months', cvFile: 'C:/cv.pdf' };
+  const plan = validatePlan(fields, answers)({ fills: [{ id: 1, answer: 'country' }, { id: 2, answer: 'agreeToTerms' }, { id: 3, answer: 'agreeToTerms' }, { id: 4, answer: 'country' }, { id: 5, answer: 'cvFile' }, { id: 6, answer: 'cvFile' }, { id: 7, answer: 'city' }, { id: 8, answer: 'availableFrom' }] });
+  assert.deepEqual(plan.fills, [{ id: 1, answer: 'country' }, { id: 2, answer: 'agreeToTerms' }, { id: 6, answer: 'cvFile' }], 'a consent goes only into a consent field; what the applicant typed stays');
+  const { user } = fieldPrompt(fields, answers, { company: 'Acme', role: 'Intern' });
+  assert.ok(user.includes('1. [combo] Country') && user.includes('3. [combo, required] Preferred office (name: site_pref)') && user.includes('6. [file, required] Resume/CV\n') && user.includes('8. [combo] Notice period (already has a value)'));
+  assert.ok(!user.includes('Lille') && !user.includes('C:/cv.pdf'), 'answer values stay out of the prompt');
+});
+
+// A page with one dropdown, as the DevTools protocol shows it: scripts by their marker, input events in order.
+function comboPage({ options, covered = false, typedOptions = null }) {
+  const events = [];
+  let typed = false, open = false;
+  return {
+    events,
+    evaluate: async (expr) => {
+      if (expr.includes('scrollIntoView({ block: \'center\'')) return { x: 100, y: 200, typed: true, covered };
+      if (expr.includes('role=option')) return (typed && typedOptions) || options;
+      if (expr.includes('data-apply-pilot-opt="')) return { x: 110, y: 260 + Number(expr.match(/data-apply-pilot-opt="(\d+)"/)[1]) };
+      if (expr.includes("=== 'true';")) return open;
+      return true;
+    },
+    send: async (method, params) => {
+      if (method === 'Input.insertText') { typed = true; events.push(`type ${params.text}`); }
+      if (method === 'Input.dispatchMouseEvent' && params.type === 'mousePressed') { open = params.y === 200; events.push(`press ${params.x},${params.y}`); }
+      if (method === 'Input.dispatchKeyEvent' && params.type === 'keyDown') { open = false; events.push(params.key); }
+      return {};
+    },
+  };
+}
+
+test('a drawn dropdown is opened and the matching option pressed; with no match it is closed again', async () => {
+  const pause = async () => {};
+  const yesNo = comboPage({ options: ['Yes', 'No'] });
+  assert.equal(await fillCombo(yesNo, 3, 'No, I hold a residence permit', { pause }), true);
+  assert.deepEqual(yesNo.events, ['press 100,200', 'press 110,261'], 'the dropdown, then the second option');
+  const long = comboPage({ options: ['Afghanistan +93', 'Albania +355'], typedOptions: ['France +33'] });
+  assert.equal(await fillCombo(long, 3, 'France', { pause }), true);
+  assert.deepEqual(long.events, ['press 100,200', 'type France', 'press 110,260'], 'a long list is narrowed by typing the answer');
+  const none = comboPage({ options: ['Woman', 'Man'] });
+  assert.equal(await fillCombo(none, 3, 'Prefer not to say', { pause }), false);
+  assert.deepEqual(none.events, ['press 100,200', 'type Prefer not to say', 'Escape'], 'no guess: closed and left to the applicant');
+  const consent = comboPage({ options: ['Acknowledge/Confirm'] });
+  assert.equal(await fillCombo(consent, 3, 'yes', { only: true, pause }), true);
+  assert.equal(await fillCombo(comboPage({ options: ['Acknowledge/Confirm'] }), 3, 'yes', { pause }), false, 'a single option is the answer only for a consent');
+});
+
+test('nothing is pressed while something covers the dropdown, and the result says so', async () => {
+  const page = comboPage({ options: ['Yes', 'No'], covered: true });
+  const fields = [{ id: 1, type: 'combo', name: 'visa', label: 'Need a visa?', required: true, value: '' }];
+  const res = await fillForm(page, fields, { fills: [{ id: 1, answer: 'needsVisa' }] }, { needsVisa: 'No' });
+  assert.deepEqual(page.events, [], 'a cookie banner has buttons of its own');
+  assert.deepEqual([res.filled.length, res.failed.map((f) => f.label), res.covered], [0, ['Need a visa?'], true]);
+});
+
