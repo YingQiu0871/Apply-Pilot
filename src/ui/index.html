@@ -70,7 +70,8 @@ main { padding: 28px 36px 60px; max-width: 1180px; width: 100%; }
 .card-h .link { font-size: 12px; color: var(--accent); cursor: pointer; background: none; border: 0; }
 .card-b { padding: 6px 18px 16px; }
 .grid { display: grid; gap: 16px; }
-.kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); margin-bottom: 16px; }
+.kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-bottom: 16px; }
+@media (max-width: 1240px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .kpi { padding: 16px 18px; display: flex; flex-direction: column; justify-content: flex-start; cursor: pointer; text-align: left; border: 1px solid var(--line); transition: border-color .15s, transform .15s; }
 .kpi:hover { border-color: var(--accent); transform: translateY(-1px); }
 .kpi .n { font-size: 28px; font-weight: 680; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -470,8 +471,8 @@ const I18N = {
     homeUse: '使用这个目录', homeFound: (n) => `这里已有 Apply-Pilot 数据（${n} 条申请记录），会直接使用。`, homeNew: '这里还没有数据，会新建空的申请表和配置文件。', homeIsFile: '这是一个文件，请填写文件夹路径。',
     homeSwitched: (p) => `已切换到 ${p}`, homeEnv: '注意：环境变量 APPLY_PILOT_HOME 指向别的目录，下次启动时会优先使用它。',
     toolsTitle: '工具', toolsSub: '只运行本地任务：扫描、检查、导出。不会发送或提交任何东西。', output: '运行输出', openData: '打开数据文件夹', quit: '退出',
-    k: { applied: '已投递，等待中', reply: '有回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒' },
-    f: { active: '进行中', applied: '已投递', reply: '回复 / 面试', follow: '待跟进', pending: '待决定', rejected: '被拒', all: '全部' },
+    k: { applied: '已投递，等待中', reply: '有回复 / 面试', offer: '录取', follow: '待跟进', pending: '待决定', rejected: '被拒' },
+    f: { active: '进行中', applied: '已投递', reply: '回复 / 面试', offer: '录取', follow: '待跟进', pending: '待决定', rejected: '被拒', all: '全部' },
     channel: { email: '邮件联系', portal: '招聘系统', unknown: '渠道不明' },
     head: ['#', '公司 / 联系人', '岗位', '评分', '状态', '最近动态'],
     tasks: {
@@ -527,8 +528,8 @@ const I18N = {
     homeUse: 'Use this folder', homeFound: (n) => `Apply-Pilot data found here (${n} tracked applications). It will be used as is.`, homeNew: 'No data here yet. An empty tracker and profile will be created.', homeIsFile: 'This is a file. Enter a folder path.',
     homeSwitched: (p) => `Switched to ${p}`, homeEnv: 'Note: APPLY_PILOT_HOME points to another folder and takes precedence at the next start.',
     toolsTitle: 'Tools', toolsSub: 'Runs local tasks only: scans, checks, export. Nothing is sent or submitted.', output: 'Output', openData: 'Open data folder', quit: 'Quit',
-    k: { applied: 'Applied, waiting', reply: 'Replies / interviews', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
-    f: { active: 'Active', applied: 'Applied', reply: 'Replies', follow: 'Follow-up', pending: 'To decide', rejected: 'Rejected', all: 'All' },
+    k: { applied: 'Applied, waiting', reply: 'Replies / interviews', offer: 'Offers', follow: 'Follow-up due', pending: 'To decide', rejected: 'Rejected' },
+    f: { active: 'Active', applied: 'Applied', reply: 'Replies', offer: 'Offers', follow: 'Follow-up', pending: 'To decide', rejected: 'Rejected', all: 'All' },
     channel: { email: 'By email', portal: 'Through a portal', unknown: 'Channel unknown' },
     head: ['#', 'Company / contact', 'Role', 'Score', 'Status', 'Last activity'],
     tasks: {
@@ -555,16 +556,16 @@ let T = I18N[LANG === 'zh' ? 'zh' : 'en'];
 
 // Category names are always shown in both languages: [Chinese, English].
 const BI = {
-  kind: { sent: ['发出', 'Sent'], followup: ['跟进', 'Follow-up'], ack: ['回执', 'Receipt'], reply: ['回复', 'Reply'], interview: ['面试', 'Interview'], offer: ['录用', 'Offer'], rejected: ['被拒', 'Rejected'], note: ['记录', 'Note'] },
+  kind: { sent: ['发出', 'Sent'], followup: ['跟进', 'Follow-up'], ack: ['回执', 'Receipt'], reply: ['回复', 'Reply'], interview: ['面试', 'Interview'], offer: ['录取', 'Offer'], rejected: ['被拒', 'Rejected'], note: ['记录', 'Note'] },
   type: {
     applied: ['投递', 'Application'], outreach: ['主动联系', 'Outreach'], materials: ['补交材料', 'Documents sent'], response: ['我方回复', 'My reply'],
     followup: ['跟进', 'Follow-up'], ack: ['收件确认', 'Acknowledged'], autoreply: ['自动回复', 'Auto-reply'],
     positive: ['积极回复', 'Positive reply'], request: ['索要材料', 'Asked for more'], pending: ['对方审阅中', 'Under review'], reply: ['回复', 'Reply'],
-    invite: ['面试邀请', 'Interview invite'], held: ['面试完成', 'Interview held'], offer: ['录用', 'Offer'],
+    invite: ['面试邀请', 'Interview invite'], held: ['面试完成', 'Interview held'], offer: ['录取', 'Offer'],
     filled: ['名额已满', 'Position filled'], afterinterview: ['面试后被拒', 'Rejected after interview'], rejected: ['被拒', 'Rejected'],
     prep: ['准备', 'Preparation'], evaluation: ['评估', 'Evaluation'], audit: ['核查', 'Audit'], note: ['记录', 'Note'],
   },
-  status: { Applied: ['已投递', 'Applied'], Responded: ['有回复', 'Responded'], Interview: ['面试', 'Interview'], Offer: ['录用', 'Offer'], Rejected: ['被拒', 'Rejected'], Evaluated: ['待决定', 'To decide'], SKIP: ['跳过', 'Skipped'], Discarded: ['已关闭', 'Closed'] },
+  status: { Applied: ['已投递', 'Applied'], Responded: ['有回复', 'Responded'], Interview: ['面试', 'Interview'], Offer: ['录取', 'Offer'], Rejected: ['被拒', 'Rejected'], Evaluated: ['待决定', 'To decide'], SKIP: ['跳过', 'Skipped'], Discarded: ['已关闭', 'Closed'] },
   stage: {
     ready: ['材料已备', 'Materials ready'], recommended: ['建议投递', 'Recommended'], consider: ['可考虑', 'Consider'], weak: ['匹配偏弱', 'Weak fit'], unscored: ['未评分', 'Not scored'],
     queued: ['定时待发', 'Queued'], followedup: ['已跟进', 'Followed up'], acknowledged: ['已收回执', 'Acknowledged'], byemail: ['邮件投递', 'By email'], outreached: ['主动联系', 'Outreach'], byportal: ['招聘系统', 'Via portal'], channelunknown: ['渠道不明', 'Channel unknown'],
@@ -616,13 +617,14 @@ const read = (k) => { try { return localStorage.getItem(k); } catch { return nul
 const FILTERS = {
   active: (r) => ['Applied', 'Responded', 'Interview', 'Offer', 'Evaluated'].includes(r.status),
   applied: (r) => r.status === 'Applied',
-  reply: (r) => ['Responded', 'Interview', 'Offer'].includes(r.status),
+  reply: (r) => ['Responded', 'Interview'].includes(r.status),
+  offer: (r) => r.status === 'Offer',
   follow: (r) => r.due,
   pending: (r) => r.status === 'Evaluated',
   rejected: (r) => r.status === 'Rejected',
   all: () => true,
 };
-const KPI_COLORS = { applied: 'var(--applied)', reply: 'var(--responded)', follow: 'var(--warn)', pending: 'var(--evaluated)', rejected: 'var(--rejected)' };
+const KPI_COLORS = { applied: 'var(--applied)', reply: 'var(--responded)', offer: 'var(--offer)', follow: 'var(--warn)', pending: 'var(--evaluated)', rejected: 'var(--rejected)' };
 const CHART_KINDS = ['sent', 'followup', 'reply', 'interview', 'offer', 'rejected'];
 const chartKind = (k) => (k === 'ack' ? 'reply' : k);
 
@@ -703,7 +705,8 @@ function renderOverview() {
     const sub = id === 'follow' ? '' : parts.map(([p, n]) => `${pick(p)} ${n}`).join(' · ');
     return `<button class="card kpi" data-kpi="${id}"><div class="n">${list.length}</div><div class="l"><i style="background:${KPI_COLORS[id]}"></i>${bi(both('k', id))}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</button>`;
   }).join('');
-  const replies = S.rows.filter(FILTERS.reply);
+  // An offer waits for the applicant's answer: it leads the list.
+  const replies = [...S.rows.filter(FILTERS.offer), ...S.rows.filter(FILTERS.reply)];
   const due = S.rows.filter(FILTERS.follow).sort((a, b) => days(b.lastActivity) - days(a.lastActivity));
   const items = [...replies.map((r) => ({ r, meta: `<div style="text-align:right">${pill(r.status)}${stageTag(r)}</div>` })), ...due.slice(0, 6).map((r) => ({ r, meta: `<span class="age warn">${T.quiet(days(r.lastActivity))}</span>` }))];
   $('ovAction').innerHTML = items.length ? items.map(({ r, meta }) => `<div class="item" data-open="${r.num}"><div class="grow"><div class="t1">${esc(r.company)}</div><div class="t2">${esc(r.role)}</div></div>${meta}</div>`).join('') : `<div class="empty">${T.emptyAction}</div>`;
@@ -715,7 +718,7 @@ function renderApps() {
   $('filters').innerHTML = Object.keys(T.f).map((f) => `<button class="${S.filter === f ? 'on' : ''}" data-filter="${f}">${bi(both('f', f))}</button>`).join('');
   const q = S.q.trim().toLowerCase();
   const scoped = S.rows.filter(FILTERS[S.filter]).filter((r) => !q || `${r.num} ${r.company} ${r.role} ${r.notes}`.toLowerCase().includes(q));
-  const stages = ['applied', 'reply', 'pending', 'rejected'].includes(S.filter) ? Object.keys(BI.stage).filter((k) => scoped.some((r) => r.stage === k)) : [];
+  const stages = ['applied', 'reply', 'offer', 'pending', 'rejected'].includes(S.filter) ? Object.keys(BI.stage).filter((k) => scoped.some((r) => r.stage === k)) : [];
   if (!stages.includes(S.stage)) S.stage = null;
   $('stages').style.display = stages.length > 1 ? 'flex' : 'none';
   $('stages').innerHTML = [['', BI.ui.allStages, scoped.length], ...stages.map((k) => [k, BI.stage[k], scoped.filter((r) => r.stage === k).length])]

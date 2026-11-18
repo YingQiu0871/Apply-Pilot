@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1 — 2026-11-18
+
+- Offers have a place of their own: an "Offers" tile on the Overview and an "Offers" filter on the Applications page. They were counted under "Replies / interviews" before, where an offer was easy to miss. An offer also leads the "Needs you" list.
+- The six Overview tiles stand in two rows of three in a narrower window.
+- Chinese label for the Offer status: 录取.
+
 ## 0.10.0 — 2026-11-16
 
 Form prefill was checked against live application pages on Greenhouse, Lever, Ashby, Workable and Recruitee, read-only or with dummy values, and never submitted. What that turned up is fixed here.
